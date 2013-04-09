@@ -1,0 +1,9 @@
+CREATE_TABLE_VAR_LENGTH = @colName @dataType(@length) DEFAULT @default
+CREATE_TABLE_FIX_LENGTH = @colName @dataType DEFAULT @default
+
+ADD_COLUMN_VAR_LENGTH = ADD (@colName @dataType(@length) DEFAULT @default)
+ADD_COLUMN_FIX_LENGTH = ADD (@colName @dataType DEFAULT @default)
+
+WIDEN_COLUMN = MODIFY (@colName @dataType(@length))
+
+CREATE_INDEX = CREATE INDEX @indexName ON @table (@columns) COMPRESS

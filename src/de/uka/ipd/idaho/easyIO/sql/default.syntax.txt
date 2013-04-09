@@ -1,0 +1,13 @@
+CREATE_TABLE_VAR_LENGTH = @colName @dataType(@length) DEFAULT @default
+CREATE_TABLE_FIX_LENGTH = @colName @dataType DEFAULT @default
+
+ADD_COLUMN_VAR_LENGTH = ADD COLUMN @colName @dataType(@length) DEFAULT @default
+ADD_COLUMN_FIX_LENGTH = ADD COLUMN @colName @dataType DEFAULT @default
+
+WIDEN_COLUMN = ALTER COLUMN @colName @dataType(@length)
+
+CREATE_INDEX = CREATE INDEX @indexName ON @table (@columns)
+
+//	MySQL, MSSQL, Oracle should be OK, to test: Derby, PostgreSQL  
+CREATE_PK = ALTER TABLE @table ADD CONSTRAINT @keyConstraintName PRIMARY KEY (@column)
+CREATE_FK = ALTER TABLE @table ADD CONSTRAINT @keyConstraintName FOREIGN KEY (@column) REFERENCES @refTable (@refColumn)

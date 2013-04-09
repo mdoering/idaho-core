@@ -1,0 +1,1 @@
+WIDEN_COLUMN = ALTER COLUMN @colName SET DATA TYPE @dataType(@length)

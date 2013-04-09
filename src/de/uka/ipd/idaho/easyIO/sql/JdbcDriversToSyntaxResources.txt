@@ -1,0 +1,11 @@
+org.apache.derby.jdbc.EmbeddedDriver = derby.syntax.txt
+
+com.microsoft.jdbc.sqlserver.SQLServerDriver = mssql.syntax.txt
+com.merant.datadirect.jdbc.sqlserver.SQLServerDriver = mssql.syntax.txt
+
+org.postgresql.Driver = postgresql.syntax.txt
+
+com.mysql.jdbc.Driver = mysql.syntax.txt
+org.gjt.mm.mysql.Driver = mysql.syntax.txt
+
+oracle.jdbc.driver.OracleDriver = oracle.syntax.txt

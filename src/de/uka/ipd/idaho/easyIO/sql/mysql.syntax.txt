@@ -1,0 +1,3 @@
+WIDEN_COLUMN = CHANGE @colName @colName @dataType(@length)
+
+CREATE_INDEX = CREATE INDEX @indexName ON @table (@columns) USING BTREE
