@@ -490,7 +490,7 @@ public class WebAppHost {
 				this.writeLine("<table class=\"webAppHost_loginTable loginTable\" id=\"webAppHost_loginTable\">");
 				String forwardUrl = loginForwardUrl;
 				if (forwardUrl == null) forwardUrl = this.request.getContextPath() + this.request.getServletPath();
-				this.writeLine("<input type=\"hidden\" name=\"" + FORWARD_URL_PARAMETER + "\" value=\"" + forwardUrl + "\">");
+				this.writeLine("<input type=\"hidden\" name=\"" + FORWARD_URL_PARAMETER + "\" value=\"" + forwardUrl + "\" />");
 				
 				this.writeLine("<tr>");
 				this.writeLine("<td class=\"webAppHost_loginTableCell loginTableCell\" id=\"webAppHost_loginFieldCell\">");
@@ -517,7 +517,7 @@ public class WebAppHost {
 				
 				this.writeLine("<tr>");
 				this.writeLine("<td class=\"webAppHost_loginTableCell loginTableCell\" id=\"webAppHost_loginButtonCell\">");
-				this.writeLine("<input type=\"submit\" value=\"Login\" id=\"webAppHost_button\" id=\"webAppHost_loginButton\">");
+				this.writeLine("<input type=\"submit\" value=\"Login\" id=\"webAppHost_button\" id=\"webAppHost_loginButton\" />");
 				this.writeLine("</td>");
 				this.writeLine("</tr>");
 				
@@ -583,7 +583,7 @@ public class WebAppHost {
 		//	add logout button and associated JavaScript
 		String fwUrlQuery = "";
 		if (logoutForwardUrl != null) fwUrlQuery = ("?" + FORWARD_URL_PARAMETER + "=" + URLEncoder.encode(logoutForwardUrl, "UTF-8"));
-		pageBuilder.writeLine("<input type=\"button\" class=\"webAppHost_button\" id=\"webAppHost_logoutButton\" value=\"Logout\" onclick=\"webAppHost_doLogout();\">");
+		pageBuilder.writeLine("<input type=\"button\" class=\"webAppHost_button\" id=\"webAppHost_logoutButton\" value=\"Logout\" onclick=\"webAppHost_doLogout();\" />");
 		pageBuilder.writeLine("<script type=\"text/javascript\">");
 		pageBuilder.writeLine("function webAppHost_doLogout() {");
 		pageBuilder.writeLine("  window.location.href = '" + pageBuilder.request.getContextPath() + pageBuilder.request.getServletPath() + "/webAppLogout" + fwUrlQuery + "';");

@@ -163,14 +163,14 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.write("User&nbsp;Name");
 			pageBuilder.writeLine("</td>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_loginTableFieldCell loginTableFieldCell\">");
-			pageBuilder.write("<input type=\"text\" id=\"" + this.getName() + "_" + USER_NAME_PARAMETER + "_input\" name=\"" + this.getName() + "_" + USER_NAME_PARAMETER + "\">");
+			pageBuilder.write("<input type=\"text\" id=\"" + this.getName() + "_" + USER_NAME_PARAMETER + "_input\" name=\"" + this.getName() + "_" + USER_NAME_PARAMETER + "\" />");
 			pageBuilder.writeLine("</td>");
 			
 			pageBuilder.write("<td class=\"" + this.getName() + "_loginTableLabelCell loginTableLabelCell\">");
 			pageBuilder.write("Password");
 			pageBuilder.writeLine("</td>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_loginTableFieldCell loginTableFieldCell\">");
-			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_" + PSWD_PARAMETER + "_input\" name=\"" + this.getName() + "_" + PSWD_PARAMETER + "\">");
+			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_" + PSWD_PARAMETER + "_input\" name=\"" + this.getName() + "_" + PSWD_PARAMETER + "\" />");
 			pageBuilder.writeLine("</td>");
 			
 			pageBuilder.writeLine("</tr>");
@@ -187,8 +187,8 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.writeLine("<div id=\"" + this.getName() + "_CreateAccountScreen\" style=\"position: fixed; left: 0px; top: 0px; width: 100%; height: 100%; display: none; background-color: black; opacity: 0.3;\"></div>");
 			pageBuilder.writeLine("<div id=\"" + this.getName() + "_CreateAccountDialog\" style=\"position: fixed; left: 0px; top: 0px; width: 100px; height: 100px; display: none; background-color: white; opacity: 1;\">");
 			pageBuilder.writeLine("<iframe id=\"" + this.getName() + "_CreateAccountFrame\" src=\"#\" style=\"width: 100%; height: 100%; border: 0px;\"></iframe>");
-			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_createAccountButton\" value=\"Create Account\" onclick=\"" + this.getName() + "_doCreateAccount();\">");
-			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_cancelAccountButton\" value=\"Cancel\" onclick=\"" + this.getName() + "_doCancelAccount();\">");
+			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_createAccountButton\" value=\"Create Account\" onclick=\"" + this.getName() + "_doCreateAccount();\" />");
+			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_cancelAccountButton\" value=\"Cancel\" onclick=\"" + this.getName() + "_doCancelAccount();\" />");
 			pageBuilder.writeLine("</div>");
 			
 			//	add JavaScript functions for registration
@@ -302,7 +302,7 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.writeLine("</script>");
 		}
 		public void writeAccountManagerHtml(HtmlPageBuilder pageBuilder) throws IOException {
-			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_ChangePasswordButton\" value=\"Change Password\" onclick=\"" + this.getName() + "_showChangePasswordFields();\">");
+			pageBuilder.writeLine("<input type=\"button\" id=\"" + this.getName() + "_ChangePasswordButton\" value=\"Change Password\" onclick=\"" + this.getName() + "_showChangePasswordFields();\" />");
 			
 			pageBuilder.writeLine("<div id=\"" + this.getName() + "_ChangePasswordFields\" style=\"position: absolute; display: none;\" onmouseover=\"" + this.getName() + "_changePasswordFields_mouseOver(event);\" onmouseout=\"" + this.getName() + "_changePasswordFields_mouseOut(event);\">");
 			pageBuilder.writeLine("<table class=\"" + this.getName() + "_ChangePasswordFieldTable\">");
@@ -312,7 +312,7 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.write("Old&nbsp;Password");
 			pageBuilder.write("</td>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_ChangePasswordFieldCell\">");
-			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_oldPwd_input\" name=\"" + this.getName() + "_oldPwd" + "\">");
+			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_oldPwd_input\" name=\"" + this.getName() + "_oldPwd" + "\" />");
 			pageBuilder.write("</td>");
 			pageBuilder.writeLine("</tr>");
 			
@@ -321,7 +321,7 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.write("New&nbsp;Password");
 			pageBuilder.write("</td>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_ChangePasswordFieldCell\">");
-			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_newPwd_input\" name=\"" + this.getName() + "_newPwd" + "\">");
+			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_newPwd_input\" name=\"" + this.getName() + "_newPwd" + "\" />");
 			pageBuilder.write("</td>");
 			pageBuilder.writeLine("</tr>");
 			
@@ -330,13 +330,13 @@ public class AuthenticationServlet extends HtmlServlet {
 			pageBuilder.write("Confirm&nbsp;Password");
 			pageBuilder.write("</td>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_ChangePasswordFieldCell\">");
-			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_confirmPwd_input\" name=\"" + this.getName() + "_confirmPwd" + "\">");
+			pageBuilder.write("<input type=\"password\" id=\"" + this.getName() + "_confirmPwd_input\" name=\"" + this.getName() + "_confirmPwd" + "\" />");
 			pageBuilder.write("</td>");
 			pageBuilder.writeLine("</tr>");
 			
 			pageBuilder.write("<tr>");
 			pageBuilder.write("<td class=\"" + this.getName() + "_ChangePasswordButtonCell\" colspan=\"2\">");
-			pageBuilder.write("<input type=\"button\" id=\"" + this.getName() + "_changePwdButton\" value=\"Change Password\" onclick=\"" + this.getName() + "_doChangePassword();\">");
+			pageBuilder.write("<input type=\"button\" id=\"" + this.getName() + "_changePwdButton\" value=\"Change Password\" onclick=\"" + this.getName() + "_doChangePassword();\" />");
 			pageBuilder.write("</td>");
 			pageBuilder.writeLine("</tr>");
 			
@@ -503,9 +503,9 @@ public class AuthenticationServlet extends HtmlServlet {
 				BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "UTF-8"));
 				bw.write("<html><body>");
 				bw.write("<form id=\"changePwdForm\" method=\"POST\" action=\"" + request.getContextPath() + request.getServletPath() + "/webAppAuthProvider/changePwd" + "\">");
-				bw.write("<input type=\"hidden\" id=\"oldPwd_field\" name=\"oldPwd\" value=\"\">");
-				bw.write("<input type=\"hidden\" id=\"newPwd_field\" name=\"newPwd\" value=\"\">");
-				bw.write("<input type=\"hidden\" id=\"confirmPwd_field\" name=\"confirmPwd\" value=\"\">");
+				bw.write("<input type=\"hidden\" id=\"oldPwd_field\" name=\"oldPwd\" value=\"\" />");
+				bw.write("<input type=\"hidden\" id=\"newPwd_field\" name=\"newPwd\" value=\"\" />");
+				bw.write("<input type=\"hidden\" id=\"confirmPwd_field\" name=\"confirmPwd\" value=\"\" />");
 				bw.write("</form>");
 				bw.write("</body></html>");
 				bw.flush();
@@ -557,7 +557,7 @@ public class AuthenticationServlet extends HtmlServlet {
 				BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "UTF-8"));
 				bw.write("<html><body>");
 				bw.write("<form id=\"changePwdResultForm\" action=\"#\">");
-				bw.write("<input type=\"hidden\" id=\"changePwdResult_field\" name=\"changePwdResult\" value=\"" + message + "\">");
+				bw.write("<input type=\"hidden\" id=\"changePwdResult_field\" name=\"changePwdResult\" value=\"" + message + "\" />");
 				bw.write("</form>");
 				bw.write("</body></html>");
 				bw.flush();
@@ -662,9 +662,9 @@ public class AuthenticationServlet extends HtmlServlet {
 					BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "UTF-8"));
 					bw.write("<html><body>");
 					bw.write("<form id=\"createAccountForm\" method=\"POST\" action=\"#\">");
-					bw.write("<input type=\"hidden\" id=\"createAccountUn\" name=\"un\" value=\"" + userName + "\">");
-					bw.write("<input type=\"hidden\" id=\"createAccountPwd\" name=\"pw\" value=\"" + password + "\">");
-					bw.write("<input type=\"hidden\" id=\"createAccountResult\" name=\"car\" value=\"OK\">");
+					bw.write("<input type=\"hidden\" id=\"createAccountUn\" name=\"un\" value=\"" + userName + "\" />");
+					bw.write("<input type=\"hidden\" id=\"createAccountPwd\" name=\"pw\" value=\"" + password + "\" />");
+					bw.write("<input type=\"hidden\" id=\"createAccountResult\" name=\"car\" value=\"OK\" />");
 					bw.write("</form>");
 					bw.write("</body></html>");
 					bw.flush();
@@ -734,7 +734,7 @@ public class AuthenticationServlet extends HtmlServlet {
 		bw.write("Password");
 		bw.write("</td>");
 		bw.write("<td class=\"" + this.authProviderName + "_CreateAccountFieldCell\">");
-		bw.write("<input type=\"password\" id=\"pswd_field\" name=\"pswd\" value=\"\" tabindex=\"2\">");
+		bw.write("<input type=\"password\" id=\"pswd_field\" name=\"pswd\" value=\"\" tabindex=\"2\" />");
 		bw.write("</td>");
 		bw.write("</tr>"); bw.newLine();
 		
@@ -743,13 +743,13 @@ public class AuthenticationServlet extends HtmlServlet {
 		bw.write("Confirm&nbsp;Password");
 		bw.write("</td>");
 		bw.write("<td class=\"" + this.authProviderName + "_CreateAccountFieldCell\">");
-		bw.write("<input type=\"password\" id=\"cPswd_field\" name=\"cPswd\" value=\"\" tabindex=\"3\">");
+		bw.write("<input type=\"password\" id=\"cPswd_field\" name=\"cPswd\" value=\"\" tabindex=\"3\" />");
 		bw.write("</td>");
 		bw.write("</tr>"); bw.newLine();
 		
 		bw.write("</table>"); bw.newLine();
 		
-		bw.write("<input type=\"hidden\" id=\"createAccountResult\" name=\"car\" value=\"" + ((error == null) ? "" : error) + "\">");
+		bw.write("<input type=\"hidden\" id=\"createAccountResult\" name=\"car\" value=\"" + ((error == null) ? "" : error) + "\" />");
 		bw.write("</form>"); bw.newLine();
 		
 		bw.write("<script type=\"text/javascript\">"); bw.newLine();

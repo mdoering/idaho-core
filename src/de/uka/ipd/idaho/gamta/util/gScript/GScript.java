@@ -787,7 +787,6 @@ public class GScript {
 			String[] parameterTypes = function.getParameterTypes();
 			GPathObject[] functionParameters = new GPathObject[scriptParameters.length];
 			StringVector results = new StringVector();
-//			results.addContent(executeCommand(data, function, functionParameters, parameterTypes, scriptParameters, 0, GPath.getDummyVariableResolver(), null));
 			results.addContent(executeCommand(data, function, functionParameters, parameterTypes, scriptParameters, 0, new GPathVariableResolver(), null));
 			return results.concatStrings("\n");
 		}
@@ -944,8 +943,7 @@ public class GScript {
 					
 					//	binding to value of expression
 					else if (isExpression(value)) {
-						value = value.substring(1, (value.length() - 1));
-						GPathObject exRes = GPath.evaluateExpression(value.substring(1, (value.length() - 1)), data, globalBindings);
+						GPathObject exRes = GPath.evaluateExpression(value, data, globalBindings);
 						globalBindings.setVariable(commandTokens[1], exRes);
 						
 						//	write debug info
@@ -1353,7 +1351,6 @@ public class GScript {
 						
 						//	annotation set constructor coded as expression
 						else if (isExpression(pathExpression)) {
-							pathExpression = pathExpression.substring(1, (pathExpression.length() - 1));
 							GPathObject exRes = GPath.evaluateExpression(pathExpression, data, inLineBindings);
 							pathExpression = exRes.asString().value;
 							
@@ -1410,7 +1407,6 @@ public class GScript {
 						
 						//	cut expression brackets
 						String pathExpression = scriptParameters[pIndex].asString().value;
-						pathExpression = pathExpression.substring(1, (pathExpression.length() - 1));
 						
 						//	evaluate expression, deferring evaluation if it fails here due to non-existing inline binding 
 						try {
@@ -2046,9 +2042,6 @@ public class GScript {
 			//	binding to value of expression
 			else if (isExpression(definition)) {
 				
-				//	cut annotation set constructor brackets
-				definition = definition.substring(1, (definition.length() - 1));
-				
 				//	initialize fields
 				this.literal = null;
 				this.annotationSetDefinition = null;
@@ -2233,12 +2226,6 @@ public class GScript {
 			
 			//	test parts one by one
 			for (int b = 0; b < this.body.length; b++) {
-//				
-//				//	test condition
-//				if ((this.body[b].condition == null) || GPath.evaluateExpression(this.body[b].condition, data, globalBindings).asBoolean().value)
-//					
-//					//	on match, execute command & return its result
-//					return this.body[b].command.execute(data, globalBindings, debug);
 				
 				//	test condition
 				boolean conditionFulfilled = true;
@@ -2360,7 +2347,6 @@ public class GScript {
 							
 							//	annotation set constructor coded as expression
 							else if (isExpression(pathExpression)) {
-								pathExpression = pathExpression.substring(1, (pathExpression.length() - 1));
 								GPathObject exRes = GPath.evaluateExpression(pathExpression, data, inLineBindings);
 								pathExpression = exRes.asString().value;
 								
@@ -2416,7 +2402,6 @@ public class GScript {
 							
 							//	cut expression brackets
 							String pathExpression = resolvedParameterDefinitions[pIndex].asString().value;
-							pathExpression = pathExpression.substring(1, (pathExpression.length() - 1));
 							
 							//	evaluate expression
 							gpo = GPath.evaluateExpression(pathExpression, data, inLineBindings);

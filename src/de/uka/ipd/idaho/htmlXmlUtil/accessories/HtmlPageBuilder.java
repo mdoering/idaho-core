@@ -215,33 +215,8 @@ public class HtmlPageBuilder extends TokenReceiver {
 	 */
 	protected HtmlPageBuilder(HtmlPageBuilderHost host, HttpServletRequest request, HttpServletResponse response) throws IOException {
 		this.host = host;
-		
-//		cannot do this here, as sub classes may overwrite the getters with code that depends on the sub class constructor having been executed
-//		this.onloadCalls = combineArrays(this.host.getOnloadCalls(), this.getOnloadCalls());
-//		if (this.onloadCalls == null)
-//			this.onloadCalls = new String[0];
-//		this.onunloadCalls = combineArrays(this.host.getOnunloadCalls(), this.getOnunloadCalls());
-//		if (this.onunloadCalls == null)
-//			this.onunloadCalls = new String[0];
-		
 		this.request = request;
 		this.out = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "utf-8"));
-//		this.out = new BufferedWriter(new OutputStreamWriter(response.getOutputStream(), "utf-8")) {
-//			public void close() throws IOException {
-//				System.out.println("HtmlPageBuilder Writer: being closed ...");
-//				StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-//				for (int e = 0; e < stes.length; e++)
-//					System.out.println(stes[e].toString());
-//				super.close();
-//			}
-//			public void flush() throws IOException {
-//				System.out.println("HtmlPageBuilder Writer: being fushed ");
-//				StackTraceElement[] stes = Thread.currentThread().getStackTrace();
-//				for (int e = 0; e < stes.length; e++)
-//					System.out.println(stes[e].toString());
-//				super.flush();
-//			}
-//		};
 	}
 	
 	private static String[] combineArrays(String[] strs1, String[] strs2) {
@@ -398,7 +373,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 					src = this.adjustLink(src);
 					if (!src.equals(tnas.getAttribute("src"))) {
 						tnas.setAttribute("src", src);
-						token = ("<img " + tnas.getAttributeValueString(html) + ">");
+						token = ("<img " + tnas.getAttributeValueString(html) + " />");
 					}
 				}
 				this.write(token);
@@ -414,7 +389,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 					href = this.adjustLink(href);
 					if (!href.equals(tnas.getAttribute("href"))) {
 						tnas.setAttribute("href", href);
-						token = ("<link " + tnas.getAttributeValueString(html) + ">");
+						token = ("<link " + tnas.getAttributeValueString(html) + " />");
 					}
 				}
 				this.write(token);
@@ -588,10 +563,10 @@ public class HtmlPageBuilder extends TokenReceiver {
 				
 				//	write IE link
 				if ("ico".equalsIgnoreCase(imageType))
-					this.writeLine("<link rel=\"shortcut icon\" href=\"" + iconFileName + "\">");
+					this.writeLine("<link rel=\"shortcut icon\" href=\"" + iconFileName + "\" />");
 				
 				//	write generic link
-				this.writeLine("<link rel=\"icon\" type=\"image/" + imageType.toLowerCase() + "\" href=\"" + iconFileName + "\">");
+				this.writeLine("<link rel=\"icon\" type=\"image/" + imageType.toLowerCase() + "\" href=\"" + iconFileName + "\" />");
 			}
 		}
 		
