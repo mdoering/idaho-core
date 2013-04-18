@@ -8,7 +8,7 @@
 	<include file="ant/javac.ant" />
 	<include file="ant/dist.ant" />
 	
-	<target name="all" depends="clean,dirs,compile,jars">
+	<target name="all" depends="dirs,clean,compile,jars">
 		<!--<input message="Press Enter to start Tomcat.." />-->
 	</target>
 	
