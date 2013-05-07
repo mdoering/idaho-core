@@ -601,11 +601,126 @@ public class HtmlPageBuilder extends TokenReceiver {
 			this.writeLine("</script>");
 		}
 		
+		//	write DOM helpers if required
+		if (this.includeJavaScriptDomHelpers())
+			writeJavaScriptDomHelpers(this);
+		
 		//	write servlet specific header
 		this.host.writePageHeadExtensions(this);
 		
 		//	write page builder specific header
 		this.writePageHeadExtensions();
+	}
+	
+	/**
+	 * Indicate whether or not to include JavaScript functions in the page head
+	 * that help with manipulation the generated HTML page in a browser. This
+	 * default implementation returns false, sub classes wanting the helper
+	 * functions included should overwrite it to return true.<br>
+	 * If this method does return true, the writeJavaScriptDomHelpers() method
+	 * is called to include the functions described there.
+	 * @see de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder#writeJavaScriptDomHelpers(de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder)
+	 * @see de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder#writeJavaScriptDomHelpers(java.io.Writer)
+	 * @return the indicator whether or not to include the helper functions
+	 */
+	protected boolean includeJavaScriptDomHelpers() {
+		return false;
+	}
+	
+	/**
+	 * Write JavaScript functions into the page head that help with manipulation
+	 * the generated HTML page in a browser. This method loops through to
+	 * writeJavaScriptDomHelpers(Writer).
+	 * @see de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder#writeJavaScriptDomHelpers(java.io.Writer)
+	 * @return the indicator whether or not to include the helper functions
+	 */
+	public static void writeJavaScriptDomHelpers(HtmlPageBuilder hpb) throws IOException {
+		writeJavaScriptDomHelpers(hpb.asWriter());
+	}
+	
+	/**
+	 * Write JavaScript functions into the page head that help with manipulation
+	 * the generated HTML page in a browser. If the argument <code>Writer</code>
+	 * is not a <code>BufferedWriter</code>, an instance of the lattter is
+	 * wrapped around it, and is flushed at the end of the method. Thus, if
+	 * flushing is undesired, client code should make sure to hand over a
+	 * <code>BufferedWriter</code>.<br>
+	 * In particular, this method writes the following functions:
+	 * <ul>
+	 * <li><code>getById(id)</code>: shorthand for
+	 * <code>document.getElementById(id)</code>.</li>
+	 * <li><code>getByName(name)</code>: shorthand for
+	 * <code>document.getElementByName(name)[0]</code>.</li>
+	 * <li><code>newElement(type, id, cssClass, text)</code>: create an element
+	 * of a given type (e.g. <code>div</code> or <code>span</code>), set its id
+	 * and CSS class, and add textual content.</li>
+	 * <li><code>removeElement(node)</code>: shorthand for
+	 * <code>node.parentNode.removeChild(node)</code>.</li>
+	 * <li><code>addAttribute(node, name, value)</code>: add an attribute with a
+	 * specific value to a node, especially useful when creating elements using
+	 * the <code>newElement()</code> function.</li>
+	 * <li><code>getOverlay(id, cssClass, add)</code>: create a <code>div</code>
+	 * element overlaying and blocking the page, set its id and CSS class, and
+	 * make it visible if <code>add</code> is true.</li>
+	 * <li><i>To be extended</i></li>
+	 * </ul>
+	 * @return the indicator whether or not to include the helper functions
+	 */
+	public static void writeJavaScriptDomHelpers(Writer out) throws IOException {
+		BufferedWriter bw = ((out instanceof BufferedWriter) ? ((BufferedWriter) out) : new BufferedWriter(out));
+		
+		bw.write("<script type=\"text/javascript\">");bw.newLine();
+		
+		bw.write("function getById(id) {");bw.newLine();
+		bw.write("  return document.getElementById(id);");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("function getByName(name) {");bw.newLine();
+		bw.write("  var elements = document.getElementsByTagName(name);");bw.newLine();
+		bw.write("  return (((elements != null) && (elements.lenght != 0)) ? elements[0] : null);");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("function newElement(type, id, cssClass, text) {");bw.newLine();
+		bw.write("  var element = document.createElement(type);");bw.newLine();
+		bw.write("  if (id != null)");bw.newLine();
+		bw.write("    setAttribute(element, 'id', id);");bw.newLine();
+		bw.write("  if (cssClass != null)");bw.newLine();
+		bw.write("    setAttribute(element, 'class', cssClass);");bw.newLine();
+		bw.write("  if (text != null)");bw.newLine();
+		bw.write("    element.appendChild(document.createTextNode(text));");bw.newLine();
+		bw.write("  return element;");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("function removeElement(node) {");bw.newLine();
+		bw.write("  if (node.parentNode != null)");bw.newLine();
+		bw.write("    node.parentNode.removeChild(node);");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("function setAttribute(node, name, value) {");bw.newLine();
+		bw.write("  if (!node.setAttributeNode)");bw.newLine();
+		bw.write("    return;");bw.newLine();
+		bw.write("  var attribute = document.createAttribute(name);");bw.newLine();
+		bw.write("  attribute.nodeValue = value;");bw.newLine();
+		bw.write("  node.setAttributeNode(attribute);");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("function getOverlay(id, cssClass, add) {");bw.newLine();
+		bw.write("  var overlay = newElement('div', id, cssClass, null);");bw.newLine();
+		bw.write("  setAttribute(overlay, 'style', 'position: fixed; left: 0; top: 0; width: 100%; height: 100%;');");bw.newLine();
+		bw.write("  if (add) {");bw.newLine();
+		bw.write("    var body = getByName('body');");bw.newLine();
+		bw.write("    if (body != null)");bw.newLine();
+		bw.write("      body.appendChild(overlay);");bw.newLine();
+		bw.write("  }");bw.newLine();
+		bw.write("  return overlay;");bw.newLine();
+		bw.write("}");bw.newLine();
+		
+		bw.write("</script>");bw.newLine();
+		
+		if (bw != out)
+			bw.flush();
+		
+		//	TODO move this to file and include file in JAR
 	}
 	
 	/**
