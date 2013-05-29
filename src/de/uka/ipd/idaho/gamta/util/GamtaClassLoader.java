@@ -334,6 +334,9 @@ public class GamtaClassLoader extends ClassLoader {
 			catch (NoClassDefFoundError ncdfe) {
 				System.out.println("  required class not found: " + ncdfe.getMessage() + ".");
 			}
+			catch (LinkageError le) {
+				System.out.println("  class linkage failed: " + le.getMessage() + " (" + le.getClass().getName() + ").");
+			}
 			catch (SecurityException se) { // may happen due to jar signatures
 				System.out.println("  not allowed to load class.");
 			}

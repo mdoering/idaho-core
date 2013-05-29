@@ -99,10 +99,6 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		host.registerServlet(this);
 		
 		//	get local environment
-//		String path = this.getServletContext().getRealPath("./");
-//		this.rootFolder = new File(path);
-//		
-//		this.webInfFolder = new File(this.rootFolder, "WEB-INF");
 		this.rootFolder = host.getRootFolder();
 		this.webInfFolder = host.getWebInfFolder();
 		

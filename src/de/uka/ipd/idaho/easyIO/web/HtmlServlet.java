@@ -147,13 +147,13 @@ public abstract class HtmlServlet extends WebServlet implements HtmlPageBuilderH
 		this.popupBasePage = this.getSetting("popupBasePage", this.popupBasePage);
 		
 		String cssNameString = this.getSetting("cssNames");
-		if (cssNameString != null) {
+		if ((cssNameString != null) && (cssNameString.trim().length() != 0)) {
 			this.cssNames = cssNameString.trim().split("\\s+");
 			for (int n = 0; n < this.cssNames.length; n++)
 				ResourceServlet.registerAccessibleResource(this.getServletContext(), this.cssNames[n]);
 		}
 		String jsNameString = this.getSetting("javaScriptNames");
-		if (jsNameString != null) {
+		if ((jsNameString != null) && (jsNameString.trim().length() != 0)) {
 			this.javaScriptNames = jsNameString.trim().split("\\s+");
 			for (int n = 0; n < this.javaScriptNames.length; n++)
 				ResourceServlet.registerAccessibleResource(this.getServletContext(), this.javaScriptNames[n]);
