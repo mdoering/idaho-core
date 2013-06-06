@@ -48,7 +48,7 @@ import de.uka.ipd.idaho.easyIO.web.WebAppHost.AuthenticationProvider;
 import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder;
 
 /**
- * Servlet providing authentication via e-mail verified self-registration
+ * Servlet providing authentication via reCAPTCHA protected self-registration
  * accounts.
  * 
  * @author sautter

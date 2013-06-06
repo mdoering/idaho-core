@@ -5,7 +5,7 @@
 -->
 
 <project name="dist">
-	<target name="jars" depends="stringutils,htmlxmlutil,easyio,gamta">
+	<target name="jars" depends="stringutils,htmlxmlutil,easyio,webappupdater,gamta">
 	</target>
 	
 	<target name="stringutils">
@@ -30,11 +30,26 @@
 	<target name="easyio">
 		<delete file="${jar.easyio}" />
 		<jar destfile="${jar.easyio}">
-			<fileset dir="${build.home}/classes" includes="**/easyIO/**/**.class"/>
-			<fileset dir="${src.home}" includes="**/easyIO/**/**.java"/>
+			<fileset dir="${build.home}/classes" includes="**/easyIO/**/**.class"  excludes="**/easyIO/**/tools/**.class"/>
+			<fileset dir="${src.home}" includes="**/easyIO/**/**.java" excludes="**/easyIO/**/tools/**.java"/>
 			<fileset dir="${src.home}" includes="**/easyIO/**/**.txt"/>
 			<fileset dir="." includes="LICENSE.txt"/>
 		</jar>
+	</target>
+	
+	<target name="webappupdater">
+		<delete file="${jar.webappupdater}" />
+		<jar destfile="${jar.webappupdater}" manifest="${data.home}/MANIFEST.webappupdater.MF">
+			<fileset dir="${build.home}/classes" includes="**/easyIO/**/tools/**.class"/>
+			<fileset dir="${src.home}" includes="**/easyIO/**/tools/**.java"/>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</jar>
+		<delete file="${zip.webappupdater}" />
+		<zip destfile="${zip.webappupdater}">
+			<fileset dir="${data.home}/webAppUpdater"/>
+			<fileset dir="${dist.home}" includes="Updater.jar"/>
+			<fileset dir="." includes="LICENSE.txt"/>
+		</zip>
 	</target>
 	
 	<target name="gamta">
