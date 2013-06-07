@@ -83,12 +83,10 @@ public class WebAppUpdater {
 		String webAppName = args[0];
 		boolean webAppExists = true;
 		File webAppPath = (basePath.getName().equals(webAppName) ? basePath : new File(basePath, webAppName));
-//		System.out.println("WebApp path is " + webAppPath.getAbsolutePath());
 		
 		//	make sure base path is parent of webapp folder
 		if (webAppPath == basePath)
 			basePath = basePath.getParentFile();
-//		System.out.println("Base path is " + basePath.getAbsolutePath());
 		
 		//	we're actually installing
 		if (!webAppPath.exists()) {
@@ -97,12 +95,12 @@ public class WebAppUpdater {
 		}
 		
 		//	find archive to extract (check update case first)
-		String zipName = ((args.length == 1) ? webAppName : args[1]);
-		File zipFile = new File(webAppPath, (zipName + ".zip"));
+		String zipName = ((args.length == 1) ? (webAppName + ".zip") : args[1]);
+		File zipFile = new File(webAppPath, zipName);
 		if (!zipFile.exists())
-			zipFile = new File(basePath, (zipName + ".zip"));
+			zipFile = new File(basePath, zipName);
 		if (!zipFile.exists()) {
-			System.out.println(zipName + ".zip not found.");
+			System.out.println(zipName + " not found.");
 			return;
 		}
 		
@@ -110,7 +108,6 @@ public class WebAppUpdater {
 		ArrayList ignoreFileNames = new ArrayList();
 		if (webAppExists) try {
 			File ifnFile = new File(webAppPath, "update.cnfg");
-//			System.out.println("Reading ignore list");
 			BufferedReader ifnBr = new BufferedReader(new InputStreamReader(new FileInputStream(ifnFile)));
 			for (String ifn; (ifn = ifnBr.readLine()) != null;) {
 				ifn = ifn.trim();
@@ -119,7 +116,6 @@ public class WebAppUpdater {
 				
 				//	simple string
 				if (ifn.indexOf('*') == -1) {
-//					System.out.println(" - ignoring file name: " + ifn);
 					ignoreFileNames.add(ifn);
 					continue;
 				}
@@ -137,7 +133,6 @@ public class WebAppUpdater {
 						ifnRegEx.append(ch);
 					}
 				}
-//				System.out.println(" - ignoring file names matching: " + ifnRegEx.toString());
 				ignoreFileNames.add(Pattern.compile(ifnRegEx.toString(), Pattern.CASE_INSENSITIVE));
 			}
 		} catch (IOException ioe) {}
@@ -148,10 +143,8 @@ public class WebAppUpdater {
 			for (ZipEntry ze; (ze = webAppZip.getNextEntry()) != null;) {
 				
 				//	test for folders
-				if (ze.isDirectory()) {
-//					System.out.println(" - ignoring folder " + ze.getName());
+				if (ze.isDirectory())
 					continue;
-				}
 				
 				//	check ignore patterns
 				for (int i = 0; i < ignoreFileNames.size(); i++) {
@@ -167,7 +160,6 @@ public class WebAppUpdater {
 				
 				//	get timestamp and unpack file
 				long zipLastModified = ze.getTime();
-//				System.out.println("   - last modified " + zipLastModified);
 				updateFile(webAppPath, ze.getName(), webAppZip, zipLastModified);
 				
 				//	close current entry
@@ -223,6 +215,7 @@ public class WebAppUpdater {
 		
 		//	create target file
 		File targetFile = new File(webAppPath, fileName);
+		boolean targetFileExists = targetFile.exists();
 		
 		//	check if more recent version of file available in file system
 		if (targetFile.exists() && (zipLastModified < (targetFile.lastModified() + 1000))) {
@@ -237,28 +230,14 @@ public class WebAppUpdater {
 		targetFile.createNewFile();
 		
 		//	report status
-		System.out.println(" - un-zipping " + fileName);
+		System.out.println(" - " + (targetFileExists ? "updating" : "installing") + " " + fileName);
 		
 		//	copy file
 		OutputStream target = new BufferedOutputStream(new FileOutputStream(targetFile));
 		int count;
-		int total = 0;
 		byte[] data = new byte[1024];
-		try {
-			while ((count = zip.read(data, 0, 1024)) != -1) {
-				target.write(data, 0, count);
-				total += count;
-			}
-		}
-		
-		//	catch omitted empty config and text files
-		catch (IOException ioe) {
-			if (total != 0)
-				throw ioe;
-			fileName = fileName.toLowerCase();
-			if (!fileName.endsWith(".cnfg") && !fileName.endsWith(".txt"))
-				throw ioe;
-		}
+		while ((count = zip.read(data, 0, 1024)) != -1)
+			target.write(data, 0, count);
 		
 		//	close streams
 		target.flush();
@@ -267,11 +246,8 @@ public class WebAppUpdater {
 		//	set timestamp of copied file
 		try {
 			targetFile.setLastModified(zipLastModified);
-//			System.out.println("   - last modified set to " + zipLastModified);
-//			System.out.println("   --> file extracted");
 		}
 		catch (RuntimeException re) {
-//			System.out.println("   - error setting file timestamp: " + re.getClass().getName() + " (" + re.getMessage() + ")");
 			re.printStackTrace(System.out);
 		}
 	}
