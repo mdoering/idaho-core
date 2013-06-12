@@ -891,7 +891,7 @@ public class XPathEngine {
 			StringBuffer assembler = new StringBuffer();
 			for (int s = 0; s < string.length(); s++) {
 				String o = string.substring(s, (s + 1));
-				assembler.append(o);
+				assembler.append(dictionary.getProperty(o, o));
 			}
 			
 			return new XPathString(assembler.toString());
