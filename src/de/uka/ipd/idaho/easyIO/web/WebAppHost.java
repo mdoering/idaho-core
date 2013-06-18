@@ -235,9 +235,9 @@ public class WebAppHost {
 		 * must return null to indicate that they could not authenticate the
 		 * argument HTTP request. Returning a non-null result indicates that the
 		 * authentication provider authenticates the HTTP session associated
-		 * with the argument HTTP request. Further, implementation may create an
-		 * HTTP session (call request.getSession(true)) only after successful
-		 * authentication.
+		 * with the argument HTTP request. Further, implementations may create
+		 * an HTTP session (call <code>request.getSession(true)</code>) only
+		 * after successful authentication.
 		 * @param request the request the HTTP session belongs to
 		 * @return the user name belonging to the argument HTTP request
 		 */
@@ -336,7 +336,7 @@ public class WebAppHost {
 		 * an HTTP request to get here, the (first step of the) path info has to
 		 * be 'webAppAuthProvider'. For pre-authentication callbacks, e.g.
 		 * password recovery, the second step has to be the name of the
-		 * authentication provider. This default implementation simply return
+		 * authentication provider. This default implementation simply returns
 		 * false, sub classes are welcome to overwrite it as needed.
 		 * @param request the HTTP request to handle
 		 * @param response the HTTP resonse to write to
