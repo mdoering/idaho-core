@@ -31,7 +31,7 @@ package de.uka.ipd.idaho.gamta.util;
 import de.uka.ipd.idaho.gamta.DocumentRoot;
 
 /**
- * This class implments a generic wrapper for arbitrary document roots. It loops
+ * This class implements a generic wrapper for arbitrary document roots. It loops
  * all method calls through to the wrapped document. The purpose of this class
  * is to provide a standard wrapper implementation of all the methods in
  * DocumentRoot in situations where some few of the methods need to be added

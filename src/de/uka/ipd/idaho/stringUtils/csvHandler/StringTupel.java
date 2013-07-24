@@ -42,7 +42,6 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  */
 public class StringTupel {
 	
-//	private Properties data = new Properties();
 	private LinkedHashMap data = new LinkedHashMap();
 	
 	/**	add a key/value pair to this StringTupel
@@ -52,7 +51,6 @@ public class StringTupel {
 	 */
 	public String setValue(String key, String value) {
 		if (key == null) return value;
-//		Object old = this.data.setProperty(key, value);
 		Object old = this.data.put(key, value);
 		return ((old == null) ? null : old.toString());
 	}
@@ -61,9 +59,6 @@ public class StringTupel {
 	 */
 	public StringVector getKeys() {
 		StringVector sv = new StringVector();
-//		ArrayList keys = new ArrayList(this.data.keySet());
-//		for (int k = 0; k < keys.size(); k++)
-//			sv.addElement(keys.get(k).toString());
 		this.getKeys(sv);
 		return sv;
 	}
@@ -86,7 +81,6 @@ public class StringTupel {
 	 * @return the value assigned to the specified key, or def if there is no such value
 	 */
 	public String getValue(String key, String def) {
-//		return this.data.getProperty(key, def);
 		String value = ((String) this.data.get(key));
 		return ((value == null) ? def : value);
 	}
@@ -256,9 +250,11 @@ public class StringTupel {
 	public boolean equals(Object obj) {
 		if (obj == null) return false;
 		if (obj == this) return true;
-		if (!(obj instanceof StringTupel)) return super.equals(obj);
+		if (!(obj instanceof StringTupel))
+			return super.equals(obj);
 		StringTupel st = ((StringTupel) obj);
-		if (st.size() != this.size()) return false;
+		if (st.size() != this.size())
+			return false;
 		StringVector keys = this.getKeys().union(st.getKeys());
 		return this.toCsvString(keys).equals(st.toCsvString(keys));
 	}

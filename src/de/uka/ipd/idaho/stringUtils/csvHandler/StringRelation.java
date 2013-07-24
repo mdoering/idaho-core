@@ -164,7 +164,6 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 	public StringVector getKeys() {
 		StringVector sv = new StringVector();
 		for (int t = 0; t < this.size(); t++)
-//			sv.addContentIgnoreDuplicates(this.get(t).getKeys());
 			this.get(t).getKeys(sv);
 		return sv;
 	}
@@ -232,19 +231,21 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 	 * @param	key		the key the values of which to use for comparison
 	 */
 	public void orderBy(final String key) {
-		if (key != null)
-			Collections.sort(this.data, new StringTupelComparator() {
-				public int compare(StringTupel st1, StringTupel st2) {
-					if (st1 == st2) return 0;
-					if (st1 == null) return 1;
-					if (st2 == null) return -1;
-					String s1 = st1.getValue(key);
-					String s2 = st2.getValue(key);
-					if (s1 == null) return 1;
-					if (s2 == null) return -1;
-					return s1.compareToIgnoreCase(s2);
-				}
-			});
+		if (key == null)
+			return;
+		Collections.sort(this.data, new StringTupelComparator() {
+			public int compare(StringTupel st1, StringTupel st2) {
+				if (st1 == st2) return 0;
+				if (st1 == null) return 1;
+				if (st2 == null) return -1;
+				String s1 = st1.getValue(key);
+				String s2 = st2.getValue(key);
+				if (s1 == s2) return 0;
+				if (s1 == null) return 1;
+				if (s2 == null) return -1;
+				return s1.compareToIgnoreCase(s2);
+			}
+		});
 	}
 	
 	/**	sort the StringTupels, using the values of a set of keys for comparison 
@@ -345,8 +346,9 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 			if (c < 0) {
 				ownIndex++;
 				if (leftOuter) result.addElement((StringTupel) ownData.get(ownKey));
-				
-			} else if (c == 0) {
+			}
+			
+			else if (c == 0) {
 				ownIndex++;
 				result.addElement(((StringTupel) ownData.get(ownKey)).join((StringTupel) otherData.get(otherKey)));
 				
@@ -357,8 +359,9 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 					if (c == 0) result.addElement(((StringTupel) ownData.get(ownKey)).join((StringTupel) otherData.get(otherKey)));
 					i++;
 				}
-				
-			} else {
+			}
+			
+			else {
 				otherIndex++;
 				if (rightOuter) result.addElement((StringTupel) otherData.get(otherKey));
 			}
@@ -374,7 +377,7 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 			otherIndex++;
 		}
 		
-		//	tidy up
+		//	clean up
 		ownKeys.clear();
 		ownData.clear();
 		otherKeys.clear();
@@ -394,8 +397,10 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 		if (this.size() == 0) return stv;
 		
 		StringRelation result = new StringRelation();
-		for (int t = 0; t < this.size(); t++) result.addElement(this.get(t));
-		for (int t = 0; t < stv.size(); t++) result.addElement(stv.get(t));
+		for (int t = 0; t < this.size(); t++)
+			result.addElement(this.get(t));
+		for (int t = 0; t < stv.size(); t++)
+			result.addElement(stv.get(t));
 		result.removeDuplicates();
 		
 		return result;
@@ -409,7 +414,8 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 		StringRelation result = new StringRelation();
 		for (int t = 0; t < this.size(); t++) {
 			StringTupel tupel = this.get(t);
-			if (tupel.matches(filter)) result.addElement(tupel);
+			if (tupel.matches(filter))
+				result.addElement(tupel);
 		}
 		return result;
 	}
@@ -423,7 +429,8 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 		StringRelation result = new StringRelation();
 		for (int t = 0; t < this.size(); t++) {
 			StringTupel tupel = this.get(t);
-			if (filter.matches(tupel)) result.addElement(tupel);
+			if (filter.matches(tupel))
+				result.addElement(tupel);
 		}
 		return result;
 	}
@@ -445,9 +452,10 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 	 * @param	newKey	the String to replace the key with
 	 */
 	public void renameKey(String key, String newKey) {
-		if ((key != null) && (newKey != null))
-			for (int t = 0; t < this.size(); t++)
-				this.get(t).renameKey(key, newKey);
+		if ((key == null) || (newKey == null))
+			return;
+		for (int t = 0; t < this.size(); t++)
+			this.get(t).renameKey(key, newKey);
 	}
 	
 	/**	remove the values assigned to a given key in all tupels contained in this StringRelation
@@ -461,7 +469,8 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 	/**	remove all duplicates from this StringRelation
 	 */
 	public void removeDuplicates() {
-		if (this.size() < 2) return;
+		if (this.size() < 2)
+			return;
 		
 		//	generate & sort keys
 		StringVector keys = this.getKeys();
@@ -487,7 +496,8 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 			if (first.equals(second)) {
 				tupelKeys.remove(index);
 				removeIndices.add(tupelPositions.remove(second));
-			} else {
+			}
+			else {
 				first = second;
 				index ++;
 			}
@@ -549,123 +559,6 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 		}
 	};
 	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @return a StringRelation containing the StringTupels read from the specified file
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, true, null, TRUE_FILTER, null);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, StringTupel filter, StringVector projectionKeys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, true, null, filter, projectionKeys);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, StringTupelFilter filter, StringVector projectionKeys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, true, null, filter, projectionKeys);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line)
-//	 * @return a StringRelation containing the StringTupels read from the specified file
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, StringVector keys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, (keys == null), keys, TRUE_FILTER, null);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	firstLineIsKeys		if set to true, the first line of the file is treated as keys instaed of a tupel
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line if firstLineIsKeys is true, if the latter is false, the column numbers are used as keys)
-//	 * @return a StringRelation containing the StringTupels read from the specified file
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, boolean firstLineIsKeys, StringVector keys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, firstLineIsKeys, keys, TRUE_FILTER, null);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line)
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, StringVector keys, StringTupel filter, StringVector projectionKeys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, (keys == null), keys, filter, projectionKeys);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line)
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, StringVector keys, StringTupelFilter filter, StringVector projectionKeys) throws IOException {
-//		return readCsvFile(fileName, valueDelimiter, (keys == null), keys, filter, projectionKeys);
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	firstLineIsKeys		if set to true, the first line of the file is treated as keys instaed of a tupel
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line if firstLineIsKeys is true, if the latter is false, the column numbers are used as keys)
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, boolean firstLineIsKeys, StringVector keys, StringTupel filter, StringVector projectionKeys) throws IOException {
-//		Reader input = new FileReader(new File(fileName));
-//		StringRelation fileContent = readCsvData(input, valueDelimiter, firstLineIsKeys, keys, filter, projectionKeys);
-//		input.close();
-//		return fileContent;
-//	}
-//	
-//	/**	read a CSV file and create a StringRelation from it
-//	 * @param	fileName			the path and name of the file to read
-//	 * @param	valueDelimiter		the value delimiter character
-//	 * @param	firstLineIsKeys		if set to true, the first line of the file is treated as keys instaed of a tupel
-//	 * @param	keys				the keys to use for the values (if set to null, the keys are extracted from the file's first line if firstLineIsKeys is true, if the latter is false, the column numbers are used as keys)
-//	 * @param	filter				a StringTupel serving as a filter for the tupels read (if it is not null, only tupels matching the filter are added to the resulting StringRelation; matching is done by the StringTupel.matches(StringTupel filter) method)
-//	 * @param	projectionKeys		a StringVector containing keys to restrict the resulting StringRelation to (if it is not null, each StringTupel is projected to the specified keys via its project(StringVector keys) method)
-//	 * @return a StringRelation containing the StringTupels read from the specified file, eventually filtered and/or projected according to the specified filter or projection key list
-//	 * @throws IOException
-//	 */
-//	public static StringRelation readCsvFile(String fileName, char valueDelimiter, boolean firstLineIsKeys, StringVector keys, StringTupelFilter filter, StringVector projectionKeys) throws IOException {
-//		Reader input = new FileReader(new File(fileName));
-//		StringRelation fileContent = readCsvData(input, valueDelimiter, firstLineIsKeys, keys, filter, projectionKeys);
-//		input.close();
-//		return fileContent;
-//	}
-//	
 	/**
 	 * The default separator character, the comma
 	 */
@@ -2019,7 +1912,7 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 		while (next != -1) {
 			currentChar = nextChar;
 			next = input.read();
-			nextChar = ((char) next);
+			nextChar = ((next == -1) ? '\u0000' : ((char) next));
 			
 			//	escaped character
 			if (escaped) {
@@ -2169,53 +2062,6 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 //		System.out.println("Guessed separator: '" + sep + "'");
 //	}
 	
-//	/**	store a StringRelation to a file
-//	 * @param	fileName		the path and name of the file to store the StringRelation to
-//	 * @param	data			the StringRelation to be stored
-//	 * @return true if and only if the file is stored successfully
-//	 * @throws IOException
-//	 */
-//	public static boolean storeToCsvFile(String fileName, StringRelation data) throws IOException {
-//		return storeToCsvFile(fileName, data, '"', true);
-//	}
-//	
-//	/**	store a StringRelation to a file
-//	 * @param	fileName		the path and name of the file to store the StringRelation to
-//	 * @param	data			the StringRelation to be stored
-//	 * @param	writeKeys		if set to true, the keys are written to the first line of the file (default is true)
-//	 * @return true if and only if the file is stored successfully
-//	 * @throws IOException
-//	 */
-//	public static boolean storeToCsvFile(String fileName, StringRelation data, boolean writeKeys) throws IOException {
-//		return storeToCsvFile(fileName, data, '"', writeKeys);
-//	}
-//	
-//	/**	store a StringRelation to a file
-//	 * @param	fileName		the path and name of the file to store the StringRelation to
-//	 * @param	data			the StringRelation to be stored
-//	 * @param	valueDelimiter	the value delimiter character (default is '"')
-//	 * @return true if and only if the file is stored successfully
-//	 * @throws IOException
-//	 */
-//	public static boolean storeToCsvFile(String fileName, StringRelation data, char valueDelimiter) throws IOException {
-//		return storeToCsvFile(fileName, data, valueDelimiter, true);
-//	}
-//	
-//	/**	store a StringRelation to a file
-//	 * @param	fileName		the path and name of the file to store the StringRelation to
-//	 * @param	data			the StringRelation to be stored
-//	 * @param	valueDelimiter	the value delimiter character (default is '"')
-//	 * @param	writeKeys		if set to true, the keys are written to the first line of the file (default is true)
-//	 * @return true if and only if the file is stored successfully
-//	 * @throws IOException
-//	 */
-//	public static boolean storeToCsvFile(String fileName, StringRelation data, char valueDelimiter, boolean writeKeys) throws IOException {
-//		FileWriter output = new FileWriter(new File(fileName), true);
-//		boolean ok = writeCsvData(output, data, valueDelimiter, writeKeys);
-//		output.close();
-//		return ok;
-//	}
-//	
 	/**
 	 * Write a StringRelation to a Writer, delimiting values with double quotes
 	 * and separating them with commas. Keys are written to the first line.

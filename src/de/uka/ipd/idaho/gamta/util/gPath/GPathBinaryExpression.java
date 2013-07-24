@@ -43,8 +43,10 @@ public class GPathBinaryExpression extends GPathExpression {
 	/**	@see java.lang.Object#toString()
 	 */
 	public String toString() {
-		if (this.leftExpression == null) return "";
-		if (this.rightExpression == null) return this.leftExpression.toString();
+		if (this.leftExpression == null)
+			return "";
+		if (this.rightExpression == null)
+			return this.leftExpression.toString();
 		return this.leftExpression.toString() + " " + this.operator + " " + this.rightExpression.toString();
 	}
 }

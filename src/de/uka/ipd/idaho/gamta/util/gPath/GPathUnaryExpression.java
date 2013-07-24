@@ -68,10 +68,14 @@ public class GPathUnaryExpression extends GPathExpression {
 	/**	@see java.lang.Object#toString()
 	 */
 	public String toString() {
-		if (this.literal != null) return (this.quoter + this.literal.value + this.quoter);
-		if (this.number != null) return ((this.isNegative ? "-" : "") + ((((int) Math.round(this.number.value)) == this.number.value) ? ("" + ((int) Math.round(this.number.value))) : ("" + this.number.value)));
-		if (this.variableName != null) return this.variableName;
-		if (this.enclosedExpression != null) return ("(" + this.enclosedExpression.toString() + ")");
+		if (this.literal != null)
+			return (this.quoter + this.literal.value + this.quoter);
+		if (this.number != null)
+			return ((this.isNegative ? "-" : "") + ((((int) Math.round(this.number.value)) == this.number.value) ? ("" + ((int) Math.round(this.number.value))) : ("" + this.number.value)));
+		if (this.variableName != null)
+			return this.variableName;
+		if (this.enclosedExpression != null)
+			return ("(" + this.enclosedExpression.toString() + ")");
 		if (this.functionName != null) {
 			String string = this.functionName + "(";
 			if ((this.functionArgs != null) && (this.functionArgs.length != 0)) {
@@ -83,12 +87,12 @@ public class GPathUnaryExpression extends GPathExpression {
 			if (this.predicates != null)
 				for (int p = 0; p < this.predicates.length; p++)
 					string += this.predicates[p];
-			if (this.pathExpression != null) {
+			if (this.pathExpression != null)
 				string += "/" + this.pathExpression.toString();
-			}
 			return string;
 		}
-		if (this.pathExpression != null) return this.pathExpression.toString();
+		if (this.pathExpression != null)
+			return this.pathExpression.toString();
 		if ((this.partExpressions != null) && (this.partExpressions.length != 0)) {
 			String string = this.partExpressions[0].toString();
 			for (int p = 1; p < this.partExpressions.length; p++)

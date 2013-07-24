@@ -38,7 +38,7 @@ import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.TokenSequenceListener;
 
 /**
- * This class implments a generic wrapper for arbitrary mutable annotations. It
+ * This class implements a generic wrapper for arbitrary mutable annotations. It
  * loops all method calls through to the wrapped annotations. The purpose of
  * this class is to provide a standard wrapper implementation of all the methods
  * in MutableAnnotation in situations where some few of the methods need to be
