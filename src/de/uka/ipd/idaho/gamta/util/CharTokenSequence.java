@@ -77,6 +77,7 @@ public class CharTokenSequence implements TokenSequence {
 			Tokenizer.CharSequenceToken cst = ti.getNextToken();
 			this.tokens.add(new CtsToken(cst.startOffset, cst.endOffset));
 		}
+//		System.out.println("Token overlay created");
 	}
 	
 	/* (non-Javadoc)
@@ -185,7 +186,7 @@ public class CharTokenSequence implements TokenSequence {
 	 */
 	public TokenSequence getSubsequence(int start, int size) {
 		this.ensureTokens();
-		return new CharTokenSequence(this.charData.subSequence(((CtsToken) this.tokens.get(start)).startOffset, ((CtsToken) this.tokens.get(start + size)).endOffset), this.tokenizer);
+		return new CharTokenSequence(this.charData.subSequence(((CtsToken) this.tokens.get(start)).startOffset, ((CtsToken) this.tokens.get(start + size - 1)).endOffset), this.tokenizer);
 	}
 	
 	/* (non-Javadoc)
@@ -194,12 +195,15 @@ public class CharTokenSequence implements TokenSequence {
 	public String toString() {
 		return this.charData.toString();
 	}
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
+//	
+//	/**
+//	 * @param args
+//	 */
+//	public static void main(String[] args) {
+//		TokenSequence ts = new CharTokenSequence("this is a test", Gamta.INNER_PUNCTUATION_TOKENIZER);
+//		System.out.println(ts.length());
+//		System.out.println(ts.charAt(2));
+//		System.out.println(ts.valueAt(2));
+//		System.out.println(ts.getSubsequence(1, 2));
+//	}
 }

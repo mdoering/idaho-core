@@ -187,6 +187,7 @@ public class AttributeMapAnnotation extends AbstractAttributed implements Queria
 		if (this.tokens != null)
 			return;
 		this.tokens = new CharTokenSequence(this.charData, this.tokenizer);
+//		System.out.println("Token sequence created");
 	}
 	
 	/* (non-Javadoc)
@@ -451,12 +452,13 @@ public class AttributeMapAnnotation extends AbstractAttributed implements Queria
 	public String toString() {
 		return this.getValue();
 	}
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
+//	
+//	/**
+//	 * @param args
+//	 */
+//	public static void main(String[] args) {
+//		QueriableAnnotation qa = new AttributeMapAnnotation("test", System.getProperties(), null);
+//		System.out.println(qa.toXML());
+//		System.out.println(qa.firstValue());
+//	}
 }
