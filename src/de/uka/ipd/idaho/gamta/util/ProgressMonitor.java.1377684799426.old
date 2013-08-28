@@ -30,7 +30,11 @@ package de.uka.ipd.idaho.gamta.util;
 
 
 /**
- * Observer for retrieving information on some process.
+ * Observer for retrieving information on some process. Implementations can also
+ * pause and resume the observed process by blocking it in one of the setter
+ * methods, or interrupt the process by throwing a runtime exception. If the
+ * latter behavior is desired, the observed code should not catch runtime
+ * exception originating from any of the progress monitor's methods.
  * 
  * @author sautter
  */
@@ -53,6 +57,13 @@ public interface ProgressMonitor {
 		public void setInfo(String text) {
 			System.out.println(text);
 		}
+//		public boolean supportsPauseResume() {
+//			return false;
+//		}
+//		public boolean supportsAbort() {
+//			return false;
+//		}
+//		public void setAbortExceptionMessage(String aem) {}
 	};
 	
 	/**
@@ -88,4 +99,29 @@ public interface ProgressMonitor {
 	 * @param progress the progress to indicate
 	 */
 	public abstract void setProgress(int progress);
+//	
+//	/**
+//	 * Check if this progress monitor supports pausing/resuming a monitored
+//	 * process in some sort of way.
+//	 * @return true if the progress monitor can pause/resume the monitored
+//	 *         process, false otherwise
+//	 */
+//	public abstract boolean supportsPauseResume();
+//	
+//	/**
+//	 * Check if this progress monitor supports aborting a monitored process in
+//	 * some sort of way.
+//	 * @return true if the progress monitor can abort the monitored process,
+//	 *         false otherwise
+//	 */
+//	public abstract boolean supportsAbort();
+//	
+//	/**
+//	 * Set the message text of the runtime exception to throw in the monitored
+//	 * process when the progress monitor aborts it. Invoking this method with a
+//	 * null argument has no effect. If the supportsAbort() message returns
+//	 * false, this method has no effect.
+//	 * @param aem the message text of the exception to throw on abort
+//	 */
+//	public abstract void setAbortExceptionMessage(String aem);
 }

@@ -243,8 +243,8 @@ public class GPathEngine implements GPathConstants {
 					if (!annotation.getAnnotationID().equals(annotations[an].getAnnotationID()))
 						annotationResult.add(annotations[an]);
 			}
-			else if (step.axis.startsWith("preceeding-sibling"))
-				annotationResult = getPreceedingSibling(document, annotation, filterType);
+			else if (step.axis.startsWith("preceding-sibling"))
+				annotationResult = getPrecedingSibling(document, annotation, filterType);
 			
 			else if (step.axis.startsWith("following-sibling"))
 				annotationResult = getFollowingSibling(document, annotation, filterType);
@@ -370,7 +370,7 @@ public class GPathEngine implements GPathConstants {
 	 * @param	filterType	the type of the annotations to include in the resuling annotationSet
 	 * @return all Annotations that are on the preceeding-sibling axis of the specified Annotation
 	 */
-	private static GPathAnnotationSet getPreceedingSibling(GPathAnnotation document, QueriableAnnotation startAnnotation, String filterType) {
+	private static GPathAnnotationSet getPrecedingSibling(GPathAnnotation document, QueriableAnnotation startAnnotation, String filterType) {
 		GPathAnnotationSet result = new GPathAnnotationSet(true);
 		
 		if (startAnnotation instanceof GPathAnnotation) {

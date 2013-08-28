@@ -29,11 +29,7 @@ package de.uka.ipd.idaho.gamta.util;
 
 /**
  * Progress monitor that is able to pause/resume and to abort the process it
- * observers. Implementations should pause and resume the observed process by
- * blocking it in one of the setter methods, or interrupt the process by
- * throwing a runtime exception. If the latter behavior is desired, the observed
- * code should not catch runtime exception originating from any of the progress
- * monitor's methods.
+ * observers.
  * 
  * @author sautter
  */
