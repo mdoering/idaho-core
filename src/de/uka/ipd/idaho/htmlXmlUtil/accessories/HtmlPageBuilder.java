@@ -719,8 +719,6 @@ public class HtmlPageBuilder extends TokenReceiver {
 		
 		if (bw != out)
 			bw.flush();
-		
-		//	TODO move this to file and include file in JAR
 	}
 	
 	/**
