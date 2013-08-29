@@ -103,6 +103,15 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class AnnotationPatternMatcher {
+	
+	//	TODO facilitate parts in brackets
+	
+	//	TODO facilitate quantifiers
+	
+	//	TODO facilitate starting with literals
+	
+	//	TODO create manager plugin in goldengate-plugins
+	
 	private static Grammar grammar = new StandardGrammar();
 	private static Parser parser = new Parser(grammar);
 	
