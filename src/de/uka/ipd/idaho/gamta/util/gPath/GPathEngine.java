@@ -41,12 +41,12 @@ import de.uka.ipd.idaho.gamta.Attributed;
 import de.uka.ipd.idaho.gamta.DocumentRoot;
 import de.uka.ipd.idaho.gamta.Gamta;
 import de.uka.ipd.idaho.gamta.MutableAnnotation;
+import de.uka.ipd.idaho.gamta.MutableTokenSequence.TokenSequenceEvent;
 import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.Token;
 import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.TokenSequenceListener;
 import de.uka.ipd.idaho.gamta.Tokenizer;
-import de.uka.ipd.idaho.gamta.MutableTokenSequence.TokenSequenceEvent;
 import de.uka.ipd.idaho.gamta.defaultImplementation.PlainTokenSequence;
 import de.uka.ipd.idaho.gamta.util.gPath.exceptions.GPathException;
 import de.uka.ipd.idaho.gamta.util.gPath.exceptions.InvalidArgumentsException;
@@ -80,10 +80,11 @@ public class GPathEngine implements GPathConstants {
 		this.isDefaultEngine = isDefaultEngine;
 	}
 	
-	/**	evaluate a GPath query on a DocumentPart
-	 * @param	context				the DocumentPart to evaluate the query on
-	 * @param	path				a String representing the GPath to evaluate
-	 * @param	variableBindings	the variable bindings which are currently valid
+	/**
+	 * Evaluate a GPath query on a document.
+	 * @param context the document to evaluate the query on
+	 * @param path a String representing the GPath to evaluate
+	 * @param variableBindings the variable bindings which are currently valid
 	 * @return an array containing the Annotations resulting form the evaluation
 	 * @throws GPathException
 	 */
@@ -91,10 +92,11 @@ public class GPathEngine implements GPathConstants {
 		return this.evaluatePath(context, GPathParser.parsePath(path), variableBindings);
 	}
 		
-	/**	evaluate a GPath query on a DocumentPart
-	 * @param	context				the DocumentPart to evaluate the query on
-	 * @param	path				the GPath to evaluate
-	 * @param	variableBindings	the variable bindings which are currently valid
+	/**
+	 * Evaluate a GPath query on a document.
+	 * @param context the document to evaluate the query on
+	 * @param path the GPath to evaluate
+	 * @param variableBindings the variable bindings which are currently valid
 	 * @return an array containing the Annotations resulting form the evaluation
 	 * @throws GPathException
 	 */
@@ -142,25 +144,12 @@ public class GPathEngine implements GPathConstants {
 		return ((QueriableAnnotation[]) resultList.toArray(new QueriableAnnotation[resultList.size()]));
 	}
 	
-	/**	evaluate a GPath query on a DocumentPart
-	 * @param	path				the GPath to evaluate
-	 * @param	variableBindings	the variable bindings which are currently valid
-	 * @return the annotationSet resulting form the evaluation
-	 * @throws GPathException
-	 */
 	private GPathAnnotationSet evaluatePath(GPathDocument document, GPath path, GPathAnnotation startAnnotation, GPathVariableResolver variableBindings) throws GPathException {
 		GPathAnnotationSet result = new GPathAnnotationSet();
 		result.add(startAnnotation);
 		return this.evaluatePath(document, path, result, variableBindings);
 	}
 	
-	/**	evaluate a GPath query
-	 * @param	path				the GPath to evaluate
-	 * @param	startAnnotations	the annotationSet with the Annotations to start at
-	 * @param	variableBindings	the variable bindings which are currently valid
-	 * @return the annotationSet resulting form the evaluation
-	 * @throws GPathException
-	 */
 	private GPathAnnotationSet evaluatePath(GPathDocument document, GPath path, GPathAnnotationSet startAnnotations, GPathVariableResolver variableBindings) throws GPathException {
 		
 		//	empty path
@@ -217,19 +206,13 @@ public class GPathEngine implements GPathConstants {
 		}
 	}
 	
-	/**	evaluate a GPathStep
-	 * @param	step				the step to execute
-	 * @param	startAnnotations	the annotationSet with the Annotations to start at
-	 * @param	variableBindings	the variable bindings which are currently valid
-	 * @return the annotationSet resulting form the evaluation
-	 * @throws GPathException
-	 */
 	private GPathAnnotationSet evaluateStep(GPathDocument document, GPathStep step, GPathAnnotationSet startAnnotations, GPathVariableResolver variableBindings) throws GPathException {
 		if (step.axis == null) step.axis = "child";
 		GPathAnnotationSet result = new GPathAnnotationSet();
 		
 		String filterType;
-		if ("annotation()".equals(step.annotationTest) || "*".equals(step.annotationTest)) filterType = null;
+		if ("annotation()".equals(step.annotationTest) || "*".equals(step.annotationTest))
+			filterType = null;
 		else filterType = step.annotationTest;
 		
 		for (int a = 0; a < startAnnotations.size(); a++) {
@@ -243,11 +226,15 @@ public class GPathEngine implements GPathConstants {
 					if (!annotation.getAnnotationID().equals(annotations[an].getAnnotationID()))
 						annotationResult.add(annotations[an]);
 			}
+			
 			else if (step.axis.startsWith("preceding-sibling"))
 				annotationResult = getPrecedingSibling(document, annotation, filterType);
 			
 			else if (step.axis.startsWith("following-sibling"))
 				annotationResult = getFollowingSibling(document, annotation, filterType);
+				
+			else if (step.axis.startsWith("interleaving-"))
+				annotationResult = getInterleavingSibling(document, annotation, filterType, !step.axis.endsWith("right"), !step.axis.endsWith("left"));
 				
 			else if ("child".equals(step.axis)) {
 				QueriableAnnotation[] annotations = annotation.getAnnotations(filterType);
@@ -255,6 +242,7 @@ public class GPathEngine implements GPathConstants {
 					if (!annotation.getAnnotationID().equals(annotations[an].getAnnotationID()))
 						annotationResult.add(annotations[an]);
 			}
+			
 			else if ("attribute".equals(step.axis)) {
 				if (filterType == null) {
 					String[] attributeNames = annotation.getAttributeNames();
@@ -274,24 +262,11 @@ public class GPathEngine implements GPathConstants {
 					}
 				}
 			}
+			
 			else if (Token.TOKEN_ANNOTATION_TYPE.equals(step.axis)) {
 				if (filterType == null) {
 					for (int t = 0; t < annotation.size(); t++)
 						annotationResult.add(new GPathTokenAnnotation(annotation, t));
-//					System.out.println("generating token annotations ...");
-//					long start = System.currentTimeMillis();
-//					long intermediate = start;
-//					long stop;
-//					for (int t = 0; t < annotation.size(); t++) {
-//						annotationResult.add(new GPathTokenAnnotation(annotation, t));
-//						if ((t % 100) == 99) {
-//							stop = System.currentTimeMillis();
-//							System.out.println("  " + (t+1) + " in " + (stop - intermediate));
-//							intermediate = stop;
-//						}
-//					}
-//					stop = System.currentTimeMillis();
-//					System.out.println("token annotations generated in " + (stop - start));
 				}
 				else if ("first".equals(filterType))
 					annotationResult.add(new GPathTokenAnnotation(annotation, 0));
@@ -341,7 +316,8 @@ public class GPathEngine implements GPathConstants {
 				}
 			}
 			
-			if (step.axis.endsWith("self")) annotationResult.add(annotation);
+			if (step.axis.endsWith("self"))
+				annotationResult.add(annotation);
 			else if ("parent".equals(step.axis)) {
 				GPathAnnotation parent = ((GPathAnnotation) annotation).getParent();
 				if (parent != null)
@@ -365,76 +341,59 @@ public class GPathEngine implements GPathConstants {
 		return result;
 	}
 	
-	/**	compute the preceeding-sibling axis of a given Annotation
-	 * @param	startAnnotation	the Annotation to compute the preceeding-sibling axis for
-	 * @param	filterType	the type of the annotations to include in the resuling annotationSet
-	 * @return all Annotations that are on the preceeding-sibling axis of the specified Annotation
-	 */
 	private static GPathAnnotationSet getPrecedingSibling(GPathAnnotation document, QueriableAnnotation startAnnotation, String filterType) {
 		GPathAnnotationSet result = new GPathAnnotationSet(true);
-		
 		if (startAnnotation instanceof GPathAnnotation) {
 			QueriableAnnotation parent = ((GPathAnnotation) startAnnotation).getParent();
-			if (parent != null) {
-				QueriableAnnotation[] annotations = parent.getAnnotations(startAnnotation.getType());
-				int a = 0;
-				while ((a < annotations.length) && !annotations[a].equals(startAnnotation)) {
-					result.add(annotations[a]);
-					a++;
-				}
+			if (parent == null)
 				return result;
+			QueriableAnnotation[] annotations = parent.getAnnotations(filterType);
+			for (int a = 0; a < annotations.length; a++) {
+				if (annotations[a].getEndIndex() <= startAnnotation.getStartIndex())
+					result.add(annotations[a]);
+				else if (startAnnotation.getStartIndex() <= annotations[a].getStartIndex())
+					break;
 			}
-		}
-		
-		QueriableAnnotation[] annotations = document.getAnnotations(startAnnotation.getType());
-		int a = 0;
-		while ((a < annotations.length) && !annotations[a].equals(startAnnotation)) {
-			result.add(annotations[a]);
-			a++;
 		}
 		return result;
 	}
 	
-	/**	compute the following-sibling axis of a given Annotation
-	 * @param	startAnnotation	the Annotation to compute the following-sibling axis for
-	 * @param	filterType	the type of the annotations to include in the resuling annotationSet
-	 * @return all Annotations that are on the following-sibling axis of the specified Annotation
-	 */
 	private static GPathAnnotationSet getFollowingSibling(GPathAnnotation document, QueriableAnnotation startAnnotation, String filterType) {
 		GPathAnnotationSet result = new GPathAnnotationSet(false);
-		
 		if (startAnnotation instanceof GPathAnnotation) {
 			QueriableAnnotation parent = ((GPathAnnotation) startAnnotation).getParent();
-			if (parent != null) {
-				QueriableAnnotation[] annotations = parent.getAnnotations(startAnnotation.getType());
-				int a = 0;
-				while ((a < annotations.length) && !annotations[a].equals(startAnnotation)) a++;
-				a++;
-				while (a < annotations.length) {
-					result.add(annotations[a]);
-					a++;
-				}
+			if (parent == null)
 				return result;
+			QueriableAnnotation[] annotations = parent.getAnnotations(filterType);
+			for (int a = 0; a < annotations.length; a++) {
+				if (startAnnotation.getEndIndex() <= annotations[a].getStartIndex())
+					result.add(annotations[a]);
 			}
-		}
-		
-		QueriableAnnotation[] annotations = document.getAnnotations(startAnnotation.getType());
-		int a = 0;
-		while ((a < annotations.length) && !annotations[a].equals(startAnnotation)) a++;
-		a++;
-		while (a < annotations.length) {
-			result.add(annotations[a]);
-			a++;
 		}
 		return result;
 	}
 	
-	/**	filter a annotationSet according to a predicate expression
-	 * @param	annotationSet				the GPathAnnotationSet to be filtered
-	 * @param	axisName			the name of the axis
-	 * @param	variableBindings	the current variable bindings
-	 * @return
-	 */
+	private static GPathAnnotationSet getInterleavingSibling(GPathAnnotation document, QueriableAnnotation startAnnotation, String filterType, boolean includeLeft, boolean includeRight) {
+		GPathAnnotationSet result = new GPathAnnotationSet(false);
+		if (startAnnotation instanceof GPathAnnotation) {
+			QueriableAnnotation parent = ((GPathAnnotation) startAnnotation).getParent();
+			if (parent == null)
+				return result;
+			QueriableAnnotation[] annotations = parent.getAnnotations(filterType);
+			for (int a = 0; a < annotations.length; a++) {
+				if (annotations[a].getEndIndex() <= startAnnotation.getStartIndex())
+					continue;
+				if (startAnnotation.getEndIndex() <= annotations[a].getStartIndex())
+					break;
+				if (includeLeft && (annotations[a].getStartIndex() < startAnnotation.getStartIndex()) && (annotations[a].getEndIndex() < startAnnotation.getEndIndex()))
+					result.add(annotations[a]);
+				else if (includeRight && (startAnnotation.getStartIndex() < annotations[a].getStartIndex()) && (startAnnotation.getEndIndex() < annotations[a].getEndIndex()))
+					result.add(annotations[a]);
+			}
+		}
+		return result;
+	}
+	
 	private GPathAnnotationSet applyPredicate(GPathDocument document, GPathPredicate predicate, GPathAnnotationSet annotationSet, GPathVariableResolver variableBindings) throws GPathException {
 		if (predicate.expression == null) return annotationSet;
 		GPathAnnotationSet resultAnnotationSet = new GPathAnnotationSet();
@@ -454,10 +413,11 @@ public class GPathEngine implements GPathConstants {
 		return resultAnnotationSet;
 	}
 	
-	/**	evaluate a GPath expression on a DocumentPart
-	 * @param	context				the DocumentPart to evaluate the expression on
-	 * @param	expression			the GPath expression to evaluate
-	 * @param	variableBindings	the variable bindings which are currently valid
+	/**
+	 * Evaluate a GPath expression on a document.
+	 * @param context the document to evaluate the expression on
+	 * @param expression the GPath expression to evaluate
+	 * @param variableBindings the variable bindings which are currently valid
 	 * @return the resulting GPathObject
 	 */
 	public GPathObject evaluateExpression(GPathExpression expression, QueriableAnnotation context, GPathVariableResolver variableBindings) throws GPathException {
@@ -473,14 +433,6 @@ public class GPathEngine implements GPathConstants {
 		return this.evaluateExpression(wrappedContext, expression, wrappedContext, 1, 1, variableBindings);
 	}
 	
-	/**	evaluate a GPath expression
-	 * @param	expression			the GPath expression to evaluate
-	 * @param	contextAnnotation	the context annotation
-	 * @param	contextPosition		the context position
-	 * @param	contextSize			the context size
-	 * @param	variableBindings	the variable bindings
-	 * @return the resulting GPathObject
-	 */
 	private GPathObject evaluateExpression(GPathDocument document, GPathExpression expression, GPathAnnotation contextAnnotation, int contextPosition, int contextSize, GPathVariableResolver variableBindings) throws GPathException {
 		if (expression instanceof GPathUnaryExpression)
 			return this.evaluateUnaryExpression(document, ((GPathUnaryExpression) expression), contextAnnotation, contextPosition, contextSize, variableBindings);
@@ -489,14 +441,6 @@ public class GPathEngine implements GPathConstants {
 		else return new GPathBoolean(false);
 	}
 	
-	/**	evaluate a GPath unary expression
-	 * @param	expression			the GPath expression to evaluate
-	 * @param	contextAnnotation	the context annotation
-	 * @param	contextPosition		the context position
-	 * @param	contextSize			the context size
-	 * @param	variableBindings	the variable bindings
-	 * @return the resulting GPathObject
-	 */
 	private GPathObject evaluateUnaryExpression(GPathDocument document, GPathUnaryExpression expression, GPathAnnotation contextAnnotation, int contextPosition, int contextSize, GPathVariableResolver variableBindings) throws GPathException {
 		if (expression.literal != null) return expression.literal;
 		if (expression.number != null) return (expression.isNegative ? new GPathNumber(-expression.number.value) : expression.number);
@@ -552,14 +496,6 @@ public class GPathEngine implements GPathConstants {
 		return new GPathBoolean(false);
 	}
 	
-	/**	evaluate a GPath binary expression
-	 * @param	expression			the GPath expression to evaluate
-	 * @param	contextAnnotation	the context annotation
-	 * @param	contextPosition		the context position
-	 * @param	contextSize			the context size
-	 * @param	variableBindings	the variable bindings
-	 * @return the resulting GPathObject
-	 */
 	private GPathObject evaluateBinaryExpression(GPathDocument document, GPathBinaryExpression expression, GPathAnnotation contextAnnotation, int contextPosition, int contextSize, GPathVariableResolver variableBindings) throws GPathException {
 		if (expression.leftExpression == null) return new GPathBoolean(true);
 		
@@ -857,19 +793,11 @@ public class GPathEngine implements GPathConstants {
 		throw new UndefinedOperatorException("The operator '" + expression.operator + "' is not defined.");
 	}
 	
-	/**	compute the String value of a given Annotation
-	 * @param	annotation	the annotation the String value of which to compute
-	 * @return the String value of the specified annotation as an GPathString
-	 */
 	private static GPathString stringValue(Annotation annotation) {
 		if (annotation == null) return new GPathString("");
 		return new GPathString(annotation.getValue());
 	}
 	
-	/**	compute the String values of the Annotations in a given AnnotationSet
-	 * @param	annotationSet		the annotationSet containing the Annotations the String values of which are to compute
-	 * @return the String values of the specified annotations as an array of GPathStrings
-	 */
 	private static GPathString[] stringValues(GPathAnnotationSet annotationSet) {
 		if (annotationSet == null) return new GPathString[0];
 		GPathString[] strings = new GPathString[annotationSet.size()];
@@ -878,15 +806,6 @@ public class GPathEngine implements GPathConstants {
 		return strings;
 	}
 	
-	/**	execute an GPath core function
-	 * @param	functionName		the name of the function to be executed
-	 * @param	contextAnnotation			the context annotation
-	 * @param	contextPosition		the context position
-	 * @param	contextSize			the context size
-	 * @param	args				the arguments for the function call
-	 * @return the result of the function execution
-	 * @throws GPathException
-	 */
 	private GPathObject executeFunction(String functionName, GPathAnnotation contextAnnotation, int contextPosition, int contextSize, GPathObject[] args) throws GPathException {
 		
 		//	execute custom function if there is one for the specified name
@@ -1255,6 +1174,37 @@ public class GPathEngine implements GPathConstants {
 		return ((GPathFunction) this.customFunctions.remove(functionName));
 	}
 	
+	//	!!! TEST ONLY !!!
+	public static void main(String[] args) throws Exception {
+		MutableAnnotation doc = Gamta.newDocument(Gamta.newTokenSequence("A B C D E F G", null));
+		doc.addAnnotation("a", 0, 3);
+		doc.addAnnotation("b", 1, 3);
+		doc.addAnnotation("a", 2, 3);
+		doc.addAnnotation("a", 0, 5);
+		doc.addAnnotation("b", 0, 6);
+		Annotation[] res;
+		res = GPath.evaluatePath(doc, "a/interleaving-sibling::b", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("1 - " + res[r].toXML());
+		res = GPath.evaluatePath(doc, "a/interleaving-sibling::a", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("2 - " + res[r].toXML());
+		res = GPath.evaluatePath(doc, "a/interleaving-left::a", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("2a - " + res[r].toXML());
+		res = GPath.evaluatePath(doc, "a/interleaving-right::a", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("2b - " + res[r].toXML());
+		res = GPath.evaluatePath(doc, "b/interleaving-sibling::b", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("3 - " + res[r].toXML());
+		res = GPath.evaluatePath(doc, "b/interleaving-sibling::a", null);
+		for (int r = 0; r < res.length; r++)
+			System.out.println("4 - " + res[r].toXML());
+		
+		//	TODO test interleaving axis
+	}
+	
 	private static abstract class GPathAnnotation implements QueriableAnnotation {
 		
 		protected QueriableAnnotation source;
@@ -1286,7 +1236,6 @@ public class GPathEngine implements GPathConstants {
 		/** @see java.lang.Object#hashCode()
 		 */
 		public int hashCode() {
-//			return (this.getType() + "@" + this.getAbsoluteStartIndex() + "-" + this.size()).hashCode();
 			return this.getAnnotationID().hashCode();
 		}
 
@@ -1678,13 +1627,6 @@ public class GPathEngine implements GPathConstants {
 			this.value = value;
 		}
 		
-//		/** @see java.lang.Object#hashCode()
-//		 */
-//		public int hashCode() {
-////			return (this.source.getType() + "." + this.type + "@" + this.source.getAbsoluteStartIndex() + "-" + this.source.size()).hashCode();
-//			return (this.source.getAnnotationID() + "." + this.type).hashCode();
-//		}
-		
 		/** @see de.uka.ipd.idaho.gamta.util.gPath.GPathEngine.GPathAnnotation#cleanup()
 		 */
 		void cleanup() {}
@@ -1922,10 +1864,6 @@ public class GPathEngine implements GPathConstants {
 			this.token = source.tokenAt(this.index);
 		}
 		
-//		public int hashCode() {
-//			return (Token.TOKEN_ANNOTATION_TYPE + "@" + this.getAbsoluteStartIndex()).hashCode();
-//		}
-		
 		/** @see de.uka.ipd.idaho.gamta.util.gPath.GPathEngine.GPathAnnotation#cleanup()
 		 */
 		void cleanup() {}
@@ -2004,7 +1942,6 @@ public class GPathEngine implements GPathConstants {
 		/** @see de.uka.ipd.idaho.gamta.Annotation#getAnnotationID()
 		 */
 		public String getAnnotationID() {
-//			return (this.source.getAnnotationID() + "." + Token.TOKEN_ANNOTATION_TYPE + "@" + this.getStartIndex());
 			return (Token.TOKEN_ANNOTATION_TYPE + "@" + this.getAbsoluteStartIndex());
 		}
 		
@@ -2275,7 +2212,6 @@ public class GPathEngine implements GPathConstants {
 		/** @see de.uka.ipd.idaho.gamta.Annotation#getAnnotationID()
 		 */
 		public String getAnnotationID() {
-//			return (this.source.getAnnotationID() + "." + Token.TOKEN_ANNOTATION_TYPE + "@" + this.getStartIndex());
 			return (Token.TOKEN_ANNOTATION_TYPE + "@" + this.getAbsoluteStartIndex());
 		}
 		

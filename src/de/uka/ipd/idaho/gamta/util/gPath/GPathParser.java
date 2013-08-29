@@ -46,8 +46,9 @@ public class GPathParser {
 	private static final char NULLCHAR = '\u0000';
 	private static final boolean DEBUG = false;
 	
-	/**	parse a GPath
-	 * @param	path	the String representation of the GPath to parse
+	/**
+	 * Parse a GPath query.
+	 * @param path the String representation of the GPath to parse
 	 * @return a GPath object representing the parsed GPath
 	 */
 	public static GPath parsePath(String path) {
@@ -139,12 +140,13 @@ public class GPathParser {
 		String[][] stepStrings = ((String[][]) steps.toArray(new String[steps.size()][]));
 		steps.clear();
 		
-		GPath xp = new GPath();
-		xp.steps = new GPathStep[stepStrings.length];
+		GPath pg = new GPath();
+		pg.steps = new GPathStep[stepStrings.length];
 		
-		for (int s = 0; s < stepStrings.length; s++) xp.steps[s] = parseStep(stepStrings[s]);
+		for (int s = 0; s < stepStrings.length; s++)
+			pg.steps[s] = parseStep(stepStrings[s]);
 		
-		return xp;
+		return pg;
 	}
 	
 	private static GPathStep parseStep(String[] stepTokens) {
@@ -154,76 +156,78 @@ public class GPathParser {
 		
 		//	abbreviated step
 		if (stepTokens.length == 0) {
-			GPathStep xps = new GPathStep();
-			xps.axis = "descendant-or-self";
-			return xps;
+			GPathStep gps = new GPathStep();
+			gps.axis = "descendant-or-self";
+			return gps;
 		}
 		else if (".".equals(stepTokens[0])) {
-			GPathStep xps = new GPathStep();
-			xps.axis = "self";
-			return xps;
+			GPathStep gps = new GPathStep();
+			gps.axis = "self";
+			return gps;
 		}
 		else if ("..".equals(stepTokens[0])) {
-			GPathStep xps = new GPathStep();
-			xps.axis = "parent";
-			return xps;
+			GPathStep gps = new GPathStep();
+			gps.axis = "parent";
+			return gps;
 		}
 		
 		//	implicit axis
 		if (stepTokens.length == 1) {
 			if ("#".equals(stepTokens[0])) {
-				GPathStep xps = new GPathStep();
-				xps.axis = "token";
-				return xps;
+				GPathStep gps = new GPathStep();
+				gps.axis = "token";
+				return gps;
 			}
 			else if ("@".equals(stepTokens[0])) {
-				GPathStep xps = new GPathStep();
-				xps.axis = "attribute";
-				return xps;
+				GPathStep gps = new GPathStep();
+				gps.axis = "attribute";
+				return gps;
 			}
 			else {
-				GPathStep xps = new GPathStep();
-				xps.annotationTest = stepTokens[0];
-				return xps;
+				GPathStep gps = new GPathStep();
+				gps.annotationTest = stepTokens[0];
+				return gps;
 			}
 		}
 		
-		GPathStep xps = new GPathStep();
+		GPathStep gps = new GPathStep();
 		int index = 0;
 		
 		//	read axis and annotation test
 		if ("::".equals(stepTokens[1])) {
-			if ("@".equals(stepTokens[0])) xps.axis = "attribute";
-			else if ("#".equals(stepTokens[0])) xps.axis = "token";
-			else xps.axis = stepTokens[0];
+			if ("@".equals(stepTokens[0]))
+				gps.axis = "attribute";
+			else if ("#".equals(stepTokens[0]))
+				gps.axis = "token";
+			else gps.axis = stepTokens[0];
 			index = 2;
 		}
 		else if ("@".equals(stepTokens[0])) {
-			xps.axis = "attribute";
+			gps.axis = "attribute";
 			index = 1;
 		}
 		else if ("#".equals(stepTokens[0])) {
-			xps.axis = "token";
+			gps.axis = "token";
 			index = 1;
 		}
 		
 		//	read annotation test if given
 		if (!"[".equals(stepTokens[index]) && !"(".equals(stepTokens[index])) {
-			xps.annotationTest = stepTokens[index];
+			gps.annotationTest = stepTokens[index];
 			index++;
 		}
 		if (index < stepTokens.length) {
 			if ("(".equals(stepTokens[index])) {
-				xps.annotationTest += "(";
+				gps.annotationTest += "(";
 				index ++;
 				if (")".equals(stepTokens[index])) {
-					xps.annotationTest += ")";
+					gps.annotationTest += ")";
 					index ++;
 				}
 				else {
-					xps.annotationTest += stepTokens[index];
+					gps.annotationTest += stepTokens[index];
 					index ++;
-					xps.annotationTest += ")";
+					gps.annotationTest += ")";
 					index ++;
 				}
 			}
@@ -293,18 +297,20 @@ public class GPathParser {
 			
 			String[][] predicateStrings = ((String[][]) predicates.toArray(new String[predicates.size()][]));
 			
-			xps.predicates = new GPathPredicate[predicateStrings.length];
+			gps.predicates = new GPathPredicate[predicateStrings.length];
 			for (int p = 0; p < predicateStrings.length; p++) {
-				xps.predicates[p] = new GPathPredicate();
-				xps.predicates[p].expression = parseOrExpression(predicateStrings[p]);
+				gps.predicates[p] = new GPathPredicate();
+				gps.predicates[p].expression = parseOrExpression(predicateStrings[p]);
 			}
 		}
 		
-		return xps;
+		return gps;
 	}
 	
-	/**	parse a GPath expression
-	 * @param	expression	the String representation of the GPath expression to parse
+	/**
+	 * Parse a GPath expression.
+	 * @param expression the String representation of the GPath expression to
+	 *            parse
 	 * @return a GPathExpression object representing the parsed GPath
 	 */
 	public static GPathExpression parseExpression(String expression) {
@@ -409,17 +415,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseAndExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseAndExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 1) {
-			tempXpe.rightExpression = parseAndExpression(partStrings[i]);
-			tempXpe.operator = "or";
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseAndExpression(partStrings[i]);
+			tempGpe.operator = "or";
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i--;
 		}
 		
@@ -430,10 +438,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseAndExpression(partStrings[1]);
-		tempXpe.operator = "or";
-		tempXpe.leftExpression = parseAndExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseAndExpression(partStrings[1]);
+		tempGpe.operator = "or";
+		tempGpe.leftExpression = parseAndExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathExpression parseAndExpression(String[] expressionTokens) {
@@ -510,17 +518,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseEqualityExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseEqualityExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 1) {
-			tempXpe.rightExpression = parseEqualityExpression(partStrings[i]);
-			tempXpe.operator = "and";
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseEqualityExpression(partStrings[i]);
+			tempGpe.operator = "and";
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i--;
 		}
 		
@@ -531,10 +541,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseEqualityExpression(partStrings[1]);
-		tempXpe.operator = "and";
-		tempXpe.leftExpression = parseEqualityExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseEqualityExpression(partStrings[1]);
+		tempGpe.operator = "and";
+		tempGpe.leftExpression = parseEqualityExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathExpression parseEqualityExpression(String[] expressionTokens) {
@@ -600,17 +610,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseRelationalExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseRelationalExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 2) {
-			tempXpe.rightExpression = parseRelationalExpression(partStrings[i]);
-			tempXpe.operator = partStrings[i - 1][0];
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseRelationalExpression(partStrings[i]);
+			tempGpe.operator = partStrings[i - 1][0];
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i -= 2;
 		}
 		
@@ -621,10 +633,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseRelationalExpression(partStrings[2]);
-		tempXpe.operator = partStrings[1][0];
-		tempXpe.leftExpression = parseRelationalExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseRelationalExpression(partStrings[2]);
+		tempGpe.operator = partStrings[1][0];
+		tempGpe.leftExpression = parseRelationalExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathExpression parseRelationalExpression(String[] expressionTokens) {
@@ -690,17 +702,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseAdditiveExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseAdditiveExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 2) {
-			tempXpe.rightExpression = parseAdditiveExpression(partStrings[i]);
-			tempXpe.operator = partStrings[i - 1][0];
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseAdditiveExpression(partStrings[i]);
+			tempGpe.operator = partStrings[i - 1][0];
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i -= 2;
 		}
 		
@@ -711,10 +725,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseAdditiveExpression(partStrings[2]);
-		tempXpe.operator = partStrings[1][0];
-		tempXpe.leftExpression = parseAdditiveExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseAdditiveExpression(partStrings[2]);
+		tempGpe.operator = partStrings[1][0];
+		tempGpe.leftExpression = parseAdditiveExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathExpression parseAdditiveExpression(String[] expressionTokens) {
@@ -805,17 +819,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseMultiplicativeExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseMultiplicativeExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 2) {
-			tempXpe.rightExpression = parseMultiplicativeExpression(partStrings[i]);
-			tempXpe.operator = partStrings[i - 1][0];
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseMultiplicativeExpression(partStrings[i]);
+			tempGpe.operator = partStrings[i - 1][0];
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i -= 2;
 		}
 		
@@ -826,10 +842,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseMultiplicativeExpression(partStrings[2]);
-		tempXpe.operator = partStrings[1][0];
-		tempXpe.leftExpression = parseMultiplicativeExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseMultiplicativeExpression(partStrings[2]);
+		tempGpe.operator = partStrings[1][0];
+		tempGpe.leftExpression = parseMultiplicativeExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathExpression parseMultiplicativeExpression(String[] expressionTokens) {
@@ -909,17 +925,19 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
-		if (partStrings.length == 1) return parseUnaryExpression(partStrings[0]);
+		if (partStrings.length == 0)
+			return null;
+		if (partStrings.length == 1)
+			return parseUnaryExpression(partStrings[0]);
 		
-		GPathBinaryExpression xpe = new GPathBinaryExpression();
-		GPathBinaryExpression tempXpe = xpe;
+		GPathBinaryExpression gpe = new GPathBinaryExpression();
+		GPathBinaryExpression tempGpe = gpe;
 		int i = partStrings.length - 1;
 		while (i > 2) {
-			tempXpe.rightExpression = parseUnaryExpression(partStrings[i]);
-			tempXpe.operator = partStrings[i - 1][0];
-			tempXpe.leftExpression = new GPathBinaryExpression();
-			tempXpe = ((GPathBinaryExpression) tempXpe.leftExpression);
+			tempGpe.rightExpression = parseUnaryExpression(partStrings[i]);
+			tempGpe.operator = partStrings[i - 1][0];
+			tempGpe.leftExpression = new GPathBinaryExpression();
+			tempGpe = ((GPathBinaryExpression) tempGpe.leftExpression);
 			i -= 2;
 		}
 		
@@ -930,10 +948,10 @@ public class GPathParser {
 			throw new GPathSyntaxException("Incomplete expression:" + sb.toString());
 		}
 		
-		tempXpe.rightExpression = parseUnaryExpression(partStrings[2]);
-		tempXpe.operator = partStrings[1][0];
-		tempXpe.leftExpression = parseUnaryExpression(partStrings[0]);
-		return xpe;
+		tempGpe.rightExpression = parseUnaryExpression(partStrings[2]);
+		tempGpe.operator = partStrings[1][0];
+		tempGpe.leftExpression = parseUnaryExpression(partStrings[0]);
+		return gpe;
 	}
 	
 	private static GPathUnaryExpression parseUnaryExpression(String[] expressionTokens) {
@@ -999,22 +1017,23 @@ public class GPathParser {
 		
 		String[][] partStrings = ((String[][]) parts.toArray(new String[parts.size()][]));
 		
-		if (partStrings.length == 0) return null;
+		if (partStrings.length == 0)
+			return null;
 		
-		GPathUnaryExpression xpue;
+		GPathUnaryExpression gpue;
 		if (partStrings.length == 1) {
-			xpue = parsePathExpression(partStrings[0]);
-			xpue.isNegative = (start == 1);
-			return xpue;
+			gpue = parsePathExpression(partStrings[0]);
+			gpue.isNegative = (start == 1);
+			return gpue;
 		}
 		
-		xpue = new GPathUnaryExpression();
-		xpue.isNegative = (start == 1);
-		xpue.partExpressions = new GPathUnaryExpression[partStrings.length];
+		gpue = new GPathUnaryExpression();
+		gpue.isNegative = (start == 1);
+		gpue.partExpressions = new GPathUnaryExpression[partStrings.length];
 		for (int p = 0; p < partStrings.length; p++)
-			xpue.partExpressions[p] = parsePathExpression(partStrings[p]);
+			gpue.partExpressions[p] = parsePathExpression(partStrings[p]);
 		
-		return xpue;
+		return gpue;
 	}
 	
 	private static GPathUnaryExpression parsePathExpression(String[] expressionTokens) {
@@ -1094,13 +1113,14 @@ public class GPathParser {
 			}
 			
 			//	get filter expression
-			if (filterLength == -1) return parseFilterExpression(expressionTokens);
+			if (filterLength == -1)
+				return parseFilterExpression(expressionTokens);
 			
 			String[] filterTokens = new String[filterLength];
 			for (int f = 0; f < filterLength; f++) 
 				filterTokens[f] = expressionTokens[f];
 			
-			GPathUnaryExpression xpue = parseFilterExpression(filterTokens);
+			GPathUnaryExpression gpue = parseFilterExpression(filterTokens);
 			
 			//	get path
 			int pathLength = expressionTokens.length - filterLength - 1;
@@ -1108,9 +1128,9 @@ public class GPathParser {
 			for (int p = 0; p < pathLength; p++) 
 				pathTokens[p] = expressionTokens[p + filterLength + 1];
 			
-			xpue.pathExpression = parsePath(pathTokens);
+			gpue.pathExpression = parsePath(pathTokens);
 			
-			return xpue;
+			return gpue;
 		}
 		
 		//	function call or annotation test
@@ -1118,14 +1138,14 @@ public class GPathParser {
 			
 			//	annotation test (beginning of path)
 			if (("annotation".equals(expressionTokens[0]) || "text".equals(expressionTokens[0]) || "comment".equals(expressionTokens[0])) && ")".equals(expressionTokens[2])) {
-				GPathUnaryExpression xpue = new GPathUnaryExpression();
-				xpue.pathExpression = parsePath(expressionTokens);
-				return xpue;
+				GPathUnaryExpression gpue = new GPathUnaryExpression();
+				gpue.pathExpression = parsePath(expressionTokens);
+				return gpue;
 			}
 			else if ("procession-instruction".equals(expressionTokens[0]) && (")".equals(expressionTokens[2]) || ((expressionTokens.length > 3) && ")".equals(expressionTokens[3])))) {
-				GPathUnaryExpression xpue = new GPathUnaryExpression();
-				xpue.pathExpression = parsePath(expressionTokens);
-				return xpue;
+				GPathUnaryExpression gpue = new GPathUnaryExpression();
+				gpue.pathExpression = parsePath(expressionTokens);
+				return gpue;
 			}
 			
 			//	function call
@@ -1168,13 +1188,14 @@ public class GPathParser {
 				}
 				
 				//	get filter expression
-				if (filterLength == -1) return parseFilterExpression(expressionTokens);
+				if (filterLength == -1)
+					return parseFilterExpression(expressionTokens);
 				
 				String[] filterTokens = new String[filterLength];
 				for (int f = 0; f < filterLength; f++) 
 					filterTokens[f] = expressionTokens[f];
 				
-				GPathUnaryExpression xpue = parseFilterExpression(filterTokens);
+				GPathUnaryExpression gpue = parseFilterExpression(filterTokens);
 				
 				//	get path
 				int pathLength = expressionTokens.length - filterLength - 1;
@@ -1182,15 +1203,15 @@ public class GPathParser {
 				for (int p = 0; p < pathLength; p++) 
 					pathTokens[p] = expressionTokens[p + filterLength + 1];
 				
-				xpue.pathExpression = parsePath(pathTokens);
+				gpue.pathExpression = parsePath(pathTokens);
 				
-				return xpue;
+				return gpue;
 			}
 		}
 		else {
-			GPathUnaryExpression xpue = new GPathUnaryExpression();
-			xpue.pathExpression = parsePath(expressionTokens);
-			return xpue;
+			GPathUnaryExpression gpue = new GPathUnaryExpression();
+			gpue.pathExpression = parsePath(expressionTokens);
+			return gpue;
 		}
 	}
 	
@@ -1255,19 +1276,19 @@ public class GPathParser {
 			predicates.add(collector.toArray(new String[collector.size()]));
 		}
 		
-		GPathUnaryExpression xpue = new GPathUnaryExpression();
+		GPathUnaryExpression gpue = new GPathUnaryExpression();
 		
 		//	get eventual predicates
 		if (!predicates.isEmpty()) {
 			String[][] predicateStrings = ((String[][]) predicates.toArray(new String[predicates.size()][]));
 			
-			xpue.predicates = new GPathPredicate[predicateStrings.length];
+			gpue.predicates = new GPathPredicate[predicateStrings.length];
 			for (int p = 0; p < predicateStrings.length; p++) {
-				xpue.predicates[p] = new GPathPredicate();
+				gpue.predicates[p] = new GPathPredicate();
 				String[] predicateTokens = new String[predicateStrings[p].length - 2];
 				for (int pt = 0; pt < predicateTokens.length; pt++) 
 					predicateTokens[pt] = predicateStrings[p][pt + 1];
-				xpue.predicates[p].expression = parseOrExpression(predicateTokens);
+				gpue.predicates[p].expression = parseOrExpression(predicateTokens);
 			}
 		}
 		
@@ -1278,15 +1299,15 @@ public class GPathParser {
 			String[] enclosedExpressionTokens = new String[primaryExpressionLength - 1];
 			for (int f = 0; f < (primaryExpressionLength - 1); f++)
 				enclosedExpressionTokens[f] = expressionTokens[f + 1];
-			xpue.enclosedExpression = parseOrExpression(enclosedExpressionTokens);
+			gpue.enclosedExpression = parseOrExpression(enclosedExpressionTokens);
 			
-			return xpue;
+			return gpue;
 		}
 		
 		//	function call
 		else if ((expressionTokens.length > 2) && "(".equals(expressionTokens[1])) {
 			
-			xpue.functionName = expressionTokens[0];
+			gpue.functionName = expressionTokens[0];
 			
 			//	parse arguments
 			ArrayList arguments = new ArrayList();
@@ -1344,12 +1365,12 @@ public class GPathParser {
 			}
 			
 			String[][] argumentStrings = ((String[][]) arguments.toArray(new String[predicates.size()][]));
-			xpue.functionArgs = new GPathExpression[argumentStrings.length];
+			gpue.functionArgs = new GPathExpression[argumentStrings.length];
 			for (int a = 0; a < argumentStrings.length; a++)
-				xpue.functionArgs[a] = parseOrExpression(argumentStrings[a]);
+				gpue.functionArgs[a] = parseOrExpression(argumentStrings[a]);
 		}
 		
-		return xpue;
+		return gpue;
 	}
 	
 	/**	tokenize a gPath expression
@@ -1564,9 +1585,6 @@ public class GPathParser {
 		return null;
 	}
 	
-	private static final String LETTERS 	= "aäáâàbcdeéêèfghiíîìjklmnoöóôòpqrstuüúûùvwxyzßAÄÁÂÀBCDEÉÊÈFGHIÍîÌJKLMNOÖÓÔÒPQRSTUÜÚÛÙVWXYZ";
-	private static final String DIGITS		= "0123456789";
-	
 	private static final String INVALID_BEFORE_OPERATORS 		= " :: + = != < <= > >= ( [ ";
 	private static final String OPERATORS 						= " + = != < <= > >= ";
 	private static final String INVALID_AFTER_OPERATORS 		= " ) ] + = != < <= > >= ";
@@ -1575,11 +1593,11 @@ public class GPathParser {
 	private static final String CONDITIONAL_OPERATOR_KILLERS	= " and or mod div * ";
 	
 	private static boolean isDigit(char c) {
-		return (DIGITS.indexOf(c) != -1);
+		return ((c < 127) && Character.isDigit(c));
 	}
 	
 	private static boolean isNameStartChar(char c) {
-		return ((c == '_') || (LETTERS.indexOf(c) != -1));
+		return ((c == '_') || Character.isLetter(c));
 	}
 	
 	private static boolean isNameChar(char c) {
