@@ -1174,37 +1174,35 @@ public class GPathEngine implements GPathConstants {
 		return ((GPathFunction) this.customFunctions.remove(functionName));
 	}
 	
-	//	!!! TEST ONLY !!!
-	public static void main(String[] args) throws Exception {
-		MutableAnnotation doc = Gamta.newDocument(Gamta.newTokenSequence("A B C D E F G", null));
-		doc.addAnnotation("a", 0, 3);
-		doc.addAnnotation("b", 1, 3);
-		doc.addAnnotation("a", 2, 3);
-		doc.addAnnotation("a", 0, 5);
-		doc.addAnnotation("b", 0, 6);
-		Annotation[] res;
-		res = GPath.evaluatePath(doc, "a/interleaving-sibling::b", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("1 - " + res[r].toXML());
-		res = GPath.evaluatePath(doc, "a/interleaving-sibling::a", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("2 - " + res[r].toXML());
-		res = GPath.evaluatePath(doc, "a/interleaving-left::a", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("2a - " + res[r].toXML());
-		res = GPath.evaluatePath(doc, "a/interleaving-right::a", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("2b - " + res[r].toXML());
-		res = GPath.evaluatePath(doc, "b/interleaving-sibling::b", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("3 - " + res[r].toXML());
-		res = GPath.evaluatePath(doc, "b/interleaving-sibling::a", null);
-		for (int r = 0; r < res.length; r++)
-			System.out.println("4 - " + res[r].toXML());
-		
-		//	TODO test interleaving axis
-	}
-	
+//	//	!!! TEST ONLY !!!
+//	public static void main(String[] args) throws Exception {
+//		MutableAnnotation doc = Gamta.newDocument(Gamta.newTokenSequence("A B C D E F G", null));
+//		doc.addAnnotation("a", 0, 3);
+//		doc.addAnnotation("b", 1, 3);
+//		doc.addAnnotation("a", 2, 3);
+//		doc.addAnnotation("a", 0, 5);
+//		doc.addAnnotation("b", 0, 6);
+//		Annotation[] res;
+//		res = GPath.evaluatePath(doc, "a/interleaving-sibling::b", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("1 - " + res[r].toXML());
+//		res = GPath.evaluatePath(doc, "a/interleaving-sibling::a", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("2 - " + res[r].toXML());
+//		res = GPath.evaluatePath(doc, "a/interleaving-left::a", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("2a - " + res[r].toXML());
+//		res = GPath.evaluatePath(doc, "a/interleaving-right::a", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("2b - " + res[r].toXML());
+//		res = GPath.evaluatePath(doc, "b/interleaving-sibling::b", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("3 - " + res[r].toXML());
+//		res = GPath.evaluatePath(doc, "b/interleaving-sibling::a", null);
+//		for (int r = 0; r < res.length; r++)
+//			System.out.println("4 - " + res[r].toXML());
+//	}
+//	
 	private static abstract class GPathAnnotation implements QueriableAnnotation {
 		
 		protected QueriableAnnotation source;
