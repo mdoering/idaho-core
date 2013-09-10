@@ -143,12 +143,6 @@ public class PeekReader extends FilterReader {
 		int end = Math.min(r, (off+len));
 		this.lookaheadCache.getChars(off, end, cbuf, off);
 		return (end-off);
-//		this.in.mark(len);
-//		int r = super.read(cbuf, off, len);
-//		if (r != -1)
-//			this.lookaheadCache = new String(cbuf, off, r);
-//		this.in.reset();
-//		return r;
 	}
 	
 	/**
@@ -168,24 +162,10 @@ public class PeekReader extends FilterReader {
 		if (caseSensitive)
 			return this.lookaheadCache.startsWith(prefix);
 		else return this.lookaheadCache.toLowerCase().startsWith(prefix.toLowerCase());
-//		char[] start = new char[prefix.length()];
-//		if (this.peek(start) < prefix.length())
-//			return false;
-//		for (int c = 0; c < start.length; c++) {
-//			if (caseSensitive) {
-//				if (start[c] != prefix.charAt(c))
-//					return false;
-//			}
-//			else {
-//				if (Character.toLowerCase(start[c]) != Character.toLowerCase(prefix.charAt(c)))
-//					return false;
-//			}
-//		}
-//		return true;
 	}
 	
 	/**
-	 * Find the offset of the next character equalling the argument one. This
+	 * Find the offset of the next character equaling the argument one. This
 	 * method checks at most the lookahead length of characters, and thus the
 	 * offset returned is always less than the lookahead. If the character is
 	 * not found within this range, this method returns -1.
@@ -200,7 +180,7 @@ public class PeekReader extends FilterReader {
 	}
 	
 	/**
-	 * Find the offset of the next character equalling the argument one. This
+	 * Find the offset of the next character equaling the argument one. This
 	 * method checks at most the lookahead length of characters, and thus the
 	 * offset returned is always less than the lookahead. If the character is
 	 * not found within this range, this method returns -1.

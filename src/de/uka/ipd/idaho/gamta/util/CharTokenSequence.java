@@ -14,7 +14,7 @@ import de.uka.ipd.idaho.gamta.defaultImplementation.AbstractAttributed;
  * This class is a simple wrapper that allows a char sequence to act as a token
  * sequence. The tokens form a simple overlay over the wrapped char sequence. If
  * the char sequence is modified after being passed to the constructor, this
- * does not reflect in the tokenization an may result in undesired behavior.<br>
+ * does not reflect in the tokenization and may result in undesired behavior.<br>
  * The <code>toString()</code> method loops through to the wrapped char
  * sequence. The same applies to the tokens returned by any of the respective
  * methods.

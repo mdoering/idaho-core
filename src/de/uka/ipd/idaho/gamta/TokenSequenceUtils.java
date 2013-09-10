@@ -147,6 +147,58 @@ public class TokenSequenceUtils {
 	}
 
 	/**
+	 * Test if a token sequence starts with a specific sub sequence.
+	 * @param ts the TokenSequence to test
+	 * @param tokens the TokenSequence to search for
+	 * @return true if ts starts with tokens, false otherwise
+	 */
+	public static boolean startsWith(TokenSequence ts, TokenSequence tokens) {
+		return startsWith(ts, tokens, 0, true);
+	}
+	
+	/**
+	 * Test if a token sequence starts with a specific sub sequence.
+	 * @param ts the TokenSequence to test
+	 * @param tokens the TokenSequence to search for
+	 * @param caseSensitive do case sensitive comparison?
+	 * @return true if ts starts with tokens, false otherwise
+	 */
+	public static boolean startsWith(TokenSequence ts, TokenSequence tokens, boolean caseSensitive) {
+		return startsWith(ts, tokens, 0, caseSensitive);
+	}
+	
+	/**
+	 * Test if a token sequence contains a specific sub sequence at a specific
+	 * index.
+	 * @param ts the TokenSequence to test
+	 * @param tokens the TokenSequence to search for
+	 * @param from the index to test from
+	 * @return true if ts starts with tokens, false otherwise
+	 */
+	public static boolean startsWith(TokenSequence ts, TokenSequence tokens, int from) {
+		return startsWith(ts, tokens, from, true);
+	}
+	
+	/**
+	 * Test if a token sequence contains a specific sub sequence at a specific
+	 * index.
+	 * @param ts the TokenSequence to test
+	 * @param tokens the TokenSequence to search for
+	 * @param from the index to test from
+	 * @param caseSensitive do case sensitive comparison?
+	 * @return true if ts starts with tokens, false otherwise
+	 */
+	public static boolean startsWith(TokenSequence ts, TokenSequence tokens, int from, boolean caseSensitive) {
+		for (int t = 0; t < tokens.size(); t++) {
+			if ((from + t) >= ts.size())
+				return false;
+			if (!(caseSensitive ? ts.valueAt(from + t).equals(tokens.valueAt(t)) : ts.valueAt(from + t).equalsIgnoreCase(tokens.valueAt(t))))
+				return false;
+		}
+		return true;
+	}
+	
+	/**
 	 * get the start index of a subsequence of a TokenSequence
 	 * @param ts the TokenSequence to search through
 	 * @param tokens the TokenSequence to search for

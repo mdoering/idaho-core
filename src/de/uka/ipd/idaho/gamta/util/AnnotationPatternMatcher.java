@@ -28,15 +28,15 @@
 package de.uka.ipd.idaho.gamta.util;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.PatternSyntaxException;
 
+import de.uka.ipd.idaho.easyIO.streams.PeekReader;
 import de.uka.ipd.idaho.gamta.Annotation;
 import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.Gamta;
@@ -45,8 +45,6 @@ import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.TokenSequenceUtils;
 import de.uka.ipd.idaho.gamta.Tokenizer;
-import de.uka.ipd.idaho.htmlXmlUtil.Parser;
-import de.uka.ipd.idaho.htmlXmlUtil.TokenReceiver;
 import de.uka.ipd.idaho.htmlXmlUtil.TreeNodeAttributeSet;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
@@ -61,7 +59,7 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * Furthermore, the first part of a match cannot be a literal; this can be
  * substituted, however, by annotating occurrences of the literal before
  * invoking the matcher.<br>
- * The pattern syntax is XML based:<br>
+ * The pattern syntax is partially XML based:<br>
  * <ul>
  * <li><code>&lt;<i>type</i>&gt;</code>: matches an annotation of the specified
  * type</li>
@@ -104,21 +102,54 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  */
 public class AnnotationPatternMatcher {
 	
-	//	TODO facilitate parts in brackets
+	/* TODO update documentation to reflect all this:
+'...' -> literal: ends a next non-escaped high comma
+<...> -> annotation: ends at next closing angle bracket
+(...|...) disjunction: ends at next closing bracket, elements separated by pipes
+(...) -> sub pattern: ends at next closing bracket not part of annotation or literal
+{m,n} -> quantifier: ends at next closing curly bracket
+?,*,+ -> short quantifier: single chars
+	 */
 	
-	//	TODO facilitate quantifiers
+	/**
+	 * Normalize an annotation pattern, i.e, remove line breaks and indents.
+	 * @param pattern the annotation pattern to normalize
+	 * @return the argument annotation pattern in its flattened out form
+	 */
+	public static String normalizePattern(String pattern) {
+		AnnotationPattern ap = getPattern(Gamta.INNER_PUNCTUATION_TOKENIZER, pattern);
+		return ap.toString(null);
+	}
 	
-	//	TODO facilitate starting with literals
-	
-	//	TODO create manager plugin in goldengate-plugins
+	/**
+	 * Explode an annotation pattern, i.e., add line breaks and indents to
+	 * improve readability.
+	 * @param pattern the annotation pattern to explode
+	 * @return the argument annotation pattern in a form readable for users
+	 */
+	public static String explodePattern(String pattern) {
+		AnnotationPattern ap = getPattern(Gamta.INNER_PUNCTUATION_TOKENIZER, pattern);
+		return ap.toString("");
+	}
 	
 	private static Grammar grammar = new StandardGrammar();
-	private static Parser parser = new Parser(grammar);
 	
 	private static class AnnotationPattern {
 		AnnotationPatternElement[] elements;
 		AnnotationPattern(AnnotationPatternElement[] elements) {
 			this.elements = elements;
+		}
+		public String toString() {
+			return this.toString("");
+		}
+		public String toString(String indent) {
+			StringBuffer sea = new StringBuffer();
+			for (int e = 0; e < this.elements.length; e++) {
+				if (e != 0)
+					sea.append((indent == null) ? " " : "\r\n");
+				sea.append(this.elements[e].toString(indent));
+			}
+			return sea.toString();
 		}
 	}
 	
@@ -126,13 +157,205 @@ public class AnnotationPatternMatcher {
 		String annotationType = null;
 		TreeNodeAttributeSet annotationAttributes = null;
 		TokenSequence tokens = null;
-		boolean isOptional = false;
+		AnnotationPatternElement[] sequenceElements = null;
+		AnnotationPatternElement[] alternativeElements = null;
+		int minCount = 1;
+		int maxCount = 1;
 		AnnotationPatternElement(TokenSequence tokens) {
 			this.tokens = tokens;
 		}
 		AnnotationPatternElement(String annotationType, TreeNodeAttributeSet annotationAttributes) {
 			this.annotationType = annotationType;
 			this.annotationAttributes = ((annotationAttributes.size() > 0) ? annotationAttributes : null);
+		}
+		AnnotationPatternElement(AnnotationPatternElement[] subElements, boolean isSequence) {
+			if (isSequence)
+				this.sequenceElements = subElements;
+			else this.alternativeElements = subElements;
+		}
+		public String toString(String indent) {
+			
+			//	assemble quantifier
+			String quantifier;
+			if (this.minCount == 0) {
+				if (this.maxCount == 1)
+					quantifier = "?";
+				else if (this.maxCount == 0xFFFF)
+					quantifier = "*";
+				else quantifier = ("{0," + this.maxCount + "}");
+			}
+			else if (this.minCount == 1) {
+				if (this.maxCount == 1)
+					quantifier = "";
+				else if (this.maxCount == 0xFFFF)
+					quantifier = "+";
+				else quantifier = ("{1," + this.maxCount + "}");
+			}
+			else {
+				if (this.minCount == this.maxCount)
+					quantifier = ("{" + this.minCount + "}");
+				else if (this.maxCount == 0xFFFF)
+					quantifier = ("{" + this.minCount + ",}");
+				else quantifier = ("{" + this.minCount + "," + this.maxCount + "}");
+			}
+			
+			//	literal
+			if (this.tokens != null) {
+				String tokens = this.tokens.toString();
+				StringBuffer escapedTokens = new StringBuffer();
+				for (int c = 0; c < tokens.length(); c++) {
+					char ch = tokens.charAt(c);
+					if ((ch == '\\') || (ch == '\''))
+						escapedTokens.append('\\');
+					escapedTokens.append(ch);
+				}
+				if (indent == null)
+					return ("'" + escapedTokens.toString() + "'" + quantifier);
+				else return (indent + "'" + escapedTokens.toString() + "'" + quantifier);
+			}
+			
+			//	annotation
+			if (this.annotationType != null) {
+				if (indent == null)
+					return ("<" + this.annotationType + ((this.annotationAttributes == null) ? "" : (" " + this.annotationAttributes.getAttributeValueString(grammar))) + ">" + quantifier);
+				else return (indent + "<" + this.annotationType + ((this.annotationAttributes == null) ? "" : (" " + this.annotationAttributes.getAttributeValueString(grammar))) + ">" + quantifier);
+			}
+			
+			//	sequence sub pattern
+			if (this.sequenceElements != null) {
+				StringBuffer sea = new StringBuffer();
+				if (indent == null) {
+					sea.append("(");
+					for (int e = 0; e < this.sequenceElements.length; e++) {
+						if (e != 0)
+							sea.append(" ");
+						sea.append(this.sequenceElements[e].toString(null));
+					}
+					sea.append(")");
+				}
+				else {
+					sea.append(indent + "(");
+					if ((this.sequenceElements.length == 1) && ((this.sequenceElements[0].tokens != null) || (this.sequenceElements[0].annotationType != null))) {
+						sea.append(this.sequenceElements[0].toString(""));
+						sea.append(")");
+					}
+					else {
+						for (int e = 0; e < this.sequenceElements.length; e++) {
+							sea.append("\r\n");
+							sea.append(this.sequenceElements[e].toString(indent + "  "));
+						}
+						sea.append("\r\n" + indent + ")");
+					}
+				}
+				sea.append(quantifier);
+				return sea.toString();
+			}
+			
+			//	disjunction sub pattern
+			if (this.alternativeElements != null) {
+				StringBuffer sea = new StringBuffer();
+				if (indent == null) {
+					sea.append("(");
+					for (int e = 0; e < this.alternativeElements.length; e++) {
+						if (e != 0)
+							sea.append("|");
+						sea.append(this.alternativeElements[e].toString(null));
+					}
+					sea.append(")");
+				}
+				else {
+					sea.append(indent + "(");
+					for (int e = 0; e < this.alternativeElements.length; e++) {
+						sea.append("\r\n");
+						if (e != 0)
+							sea.append(indent + "  " + "|\r\n");
+						sea.append(this.alternativeElements[e].toString(indent + "  "));
+					}
+					sea.append("\r\n" + indent + ")");
+				}
+				sea.append(quantifier);
+				return sea.toString();
+			}
+			
+			//	whatever else ...
+			return "";
+		}
+	}
+	
+	/**
+	 * A node of a match tree, detailing on matching result in debug mode.
+	 * 
+	 * @author sautter
+	 */
+	public static class MatchTreeNode {
+		AnnotationPatternElement matched;
+		Annotation match;
+		LinkedList children = null;
+		MatchTreeNode(AnnotationPatternElement matched, Annotation match) {
+			this.matched = matched;
+			this.match = match;
+		}
+		public String getPattern() {
+			return this.matched.toString(null);
+		}
+		public Annotation getMatch() {
+			return this.match;
+		}
+		void addChild(MatchTreeNode child) {
+			if (this.children == null)
+				this.children = new LinkedList();
+			this.children.addLast(child);
+		}
+		public MatchTreeNode[] getChildren() {
+			return ((MatchTreeNode[]) this.children.toArray(new MatchTreeNode[this.children.size()]));
+		}
+		public String toString() {
+			return this.toString("");
+		}
+		public String toString(String indent) {
+			StringBuffer sb = new StringBuffer(indent + this.matched.toString(null) + " ==> " + this.match.toXML());
+			for (Iterator cit = this.children.iterator(); cit.hasNext();) {
+				sb.append("\r\n");
+				sb.append(((MatchTreeNode) cit.next()).toString(indent + "  "));
+			}
+			return sb.toString();
+		}
+	}
+	
+	/**
+	 * A leaf of a match tree, detailing on matching result in debug mode.
+	 * 
+	 * @author sautter
+	 */
+	public static class MatchTreeLeaf extends MatchTreeNode {
+		MatchTreeLeaf(AnnotationPatternElement matched, Annotation match) {
+			super(matched, match);
+		}
+		void addChild(MatchTreeNode child) {}
+		public MatchTreeNode[] getChildren() {
+			return null;
+		}
+		public String toString(String indent) {
+			return (indent + this.matched.toString(null) + " ==> " + this.match.toXML());
+		}
+	}
+	
+	/**
+	 * Root node of a match tree, detailing on matching result in debug mode.
+	 * 
+	 * @author sautter
+	 */
+	public static class MatchTree extends MatchTreeNode {
+		MatchTree(Annotation match) {
+			super(null, match);
+		}
+		public String toString(String indent) {
+			StringBuffer sb = new StringBuffer(this.match.toXML());
+			for (Iterator cit = this.children.iterator(); cit.hasNext();) {
+				sb.append("\r\n");
+				sb.append(((MatchTreeNode) cit.next()).toString(indent + "  "));
+			}
+			return sb.toString();
 		}
 	}
 	
@@ -218,7 +441,19 @@ public class AnnotationPatternMatcher {
 	 * @return an array holding the matches of the pattern
 	 */
 	public static Annotation[] getMatches(QueriableAnnotation data, String pattern) {
-		return getMatches(data, null, pattern); 
+		return getMatches(data, null, pattern);
+	}
+	
+	/**
+	 * Attempt to match an annotation pattern against a queriable annotation.
+	 * The children of the argument queriable annotation will be indexed
+	 * automatically.
+	 * @param data the queriable annotation to match against
+	 * @param pattern the pattern to match
+	 * @return an array holding the matches of the pattern
+	 */
+	public static MatchTree[] getMatchTrees(QueriableAnnotation data, String pattern) {
+		return getMatchTrees(data, null, pattern);
 	}
 	
 	/**
@@ -238,6 +473,22 @@ public class AnnotationPatternMatcher {
 	}
 	
 	/**
+	 * Attempt to match an annotation pattern against a queriable annotation.
+	 * The children of the argument queriable annotation will be indexed
+	 * automatically. The argument annotation index can contain further
+	 * annotation.
+	 * @param data the queriable annotation to match against
+	 * @param annotationIndex an index holding additional annotations belonging
+	 *            to the token sequence underneith the argument queriable
+	 *            annotation
+	 * @param pattern the pattern to match
+	 * @return an array holding the matches of the pattern
+	 */
+	public static MatchTree[] getMatchTrees(QueriableAnnotation data, AnnotationIndex annotationIndex, String pattern) {
+		return getMatchTrees(((TokenSequence) data), new AnnotationIndex(data, annotationIndex), pattern);
+	}
+	
+	/**
 	 * Attempt to match an annotation pattern against a token sequence with
 	 * existing annotations.
 	 * @param tokens the token sequence to match against
@@ -247,95 +498,154 @@ public class AnnotationPatternMatcher {
 	 * @return an array holding the matches of the pattern
 	 */
 	public static Annotation[] getMatches(TokenSequence tokens, AnnotationIndex annotationIndex, String pattern) {
-		AnnotationPattern ap = getPattern(tokens.getTokenizer(), pattern);
-		Annotation[] match = new Annotation[ap.elements.length];
-		Arrays.fill(match, null);
-		ArrayList matches = new ArrayList();
-		for (int s = 0; s < tokens.size(); s++)
-			step(tokens, ap, 0, match, s, annotationIndex, matches);
-		return ((Annotation[]) matches.toArray(new Annotation[matches.size()]));
+		MatchTree[] matchTrees = getMatchTrees(tokens, annotationIndex, pattern);
+		Annotation[] matches = new Annotation[matchTrees.length];
+		for (int m = 0; m < matchTrees.length; m++)
+			matches[m] = matchTrees[m].getMatch();
+		return matches;
 	}
 	
-	private static void step(TokenSequence tokens, AnnotationPattern pattern, int elementIndex, Annotation[] match, int matchFromIndex, AnnotationIndex annotationIndex, ArrayList matches) {
+	/**
+	 * Attempt to match an annotation pattern against a token sequence with
+	 * existing annotations.
+	 * @param tokens the token sequence to match against
+	 * @param annotationIndex an index holding the annotations belonging to the
+	 *            token sequence
+	 * @param pattern the pattern to match
+	 * @return an array holding the matches of the pattern
+	 */
+	public static MatchTree[] getMatchTrees(TokenSequence tokens, AnnotationIndex annotationIndex, String pattern) {
+		AnnotationPattern ap = getPattern(tokens.getTokenizer(), pattern);
+		LinkedList matches = new LinkedList();
+		LinkedList matchTree = new LinkedList();
+		for (int s = 0; s < tokens.size(); s++) {
+			step(tokens, s, s, ap.elements, 0, 0, annotationIndex, matches, 0, matchTree);
+			matchTree.clear();
+		}
+		return ((MatchTree[]) matches.toArray(new MatchTree[matches.size()]));
+	}
+	
+	private static void step(TokenSequence tokens, int matchStart, int matchFrom, AnnotationPatternElement[] pattern, int elementIndex, int elementMatchCount, AnnotationIndex annotationIndex, LinkedList matches, int matchDepth, LinkedList matchTree) {
 		
 		//	end of pattern reached, we have a match
-		if (pattern.elements.length == elementIndex) {
-			int matchStart = -1;
-			for (int m = 0; m < match.length; m++)
-				if (match[m] != null) {
-					matchStart = match[m].getStartIndex();
-					break;
-				}
-			if ((matchStart != -1) && (matchStart < matchFromIndex)) {
-				Annotation m = Gamta.newAnnotation(tokens, null, matchStart, (matchFromIndex-matchStart));
-				matches.add(m);
-				return;
+		if (pattern.length == elementIndex) {
+			if (matchStart < matchFrom) {
+				Annotation match = Gamta.newAnnotation(tokens, null, matchStart, (matchFrom-matchStart));
+				MatchTree mt = new MatchTree(match);
+				for (Iterator mtit = matchTree.iterator(); mtit.hasNext();)
+					mt.addChild((MatchTreeNode) mtit.next());
+				matches.add(mt);
 			}
+			return;
 		}
 		
+		//	we can do without (further) matches of current element
+		if (pattern[elementIndex].minCount <= elementMatchCount)
+			step(tokens, matchStart, matchFrom, pattern, (elementIndex+1), 0, annotationIndex, matches, matchDepth, matchTree);
+		
+		//	we cannot do with any further matches of current element
+		if (pattern[elementIndex].maxCount <= elementMatchCount)
+			return;
+		
 		//	literal
-		if (pattern.elements[elementIndex].tokens != null) {
-			if (TokenSequenceUtils.indexOf(tokens, pattern.elements[elementIndex].tokens, matchFromIndex) == matchFromIndex) {
-				match[elementIndex] = null;
-				step(tokens, pattern, (elementIndex+1), match, (matchFromIndex + pattern.elements[elementIndex].tokens.size()), annotationIndex, matches);
-			}
-			if (pattern.elements[elementIndex].isOptional) {
-				match[elementIndex] = null;
-				step(tokens, pattern, (elementIndex+1), match, matchFromIndex, annotationIndex, matches);
+		if (pattern[elementIndex].tokens != null) {
+			if (TokenSequenceUtils.startsWith(tokens, pattern[elementIndex].tokens, matchFrom)) {
+				matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], Gamta.newAnnotation(tokens, "literal", matchFrom, pattern[elementIndex].tokens.size())));
+				step(tokens, matchStart, (matchFrom + pattern[elementIndex].tokens.size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, matches, matchDepth, matchTree);
+				matchTree.removeLast();
 			}
 			return;
 		}
 		
 		//	pattern
-		if (pattern.elements[elementIndex].annotationType != null) {
-			Annotation[] annots = annotationIndex.getAnnotations(pattern.elements[elementIndex].annotationType, matchFromIndex);
+		if (pattern[elementIndex].annotationType != null) {
+			Annotation[] annots = annotationIndex.getAnnotations(pattern[elementIndex].annotationType, matchFrom);
 			for (int a = 0; a < annots.length; a++) {
 				boolean attribMatch = true;
-				if (pattern.elements[elementIndex].annotationAttributes != null) {
-					System.out.println("Testing attributes of annotation " + AnnotationUtils.produceStartTag(annots[a]));
-					String[] attribNames = pattern.elements[elementIndex].annotationAttributes.getAttributeNames();
+				if (pattern[elementIndex].annotationAttributes != null) {
+					String[] attribNames = pattern[elementIndex].annotationAttributes.getAttributeNames();
 					for (int n = 0; n < attribNames.length; n++) {
 						System.out.println(" - " + attribNames[n]);
 						Object attribValueObj = annots[a].getAttribute(attribNames[n]);
 						if (attribValueObj == null) {
 							attribMatch = false;
-							System.out.println(" --> absent");
 							break;
 						}
-						String attribTest = pattern.elements[elementIndex].annotationAttributes.getAttribute(attribNames[n]);
-						System.out.println(" - test is " + attribTest);
-						if ("*".equals(attribTest)) {
-							System.out.println(" --> wildcard match");
+						String attribTest = pattern[elementIndex].annotationAttributes.getAttribute(attribNames[n]);
+						System.out.println(getIndent(matchDepth) + " - test is " + attribTest);
+						if ("*".equals(attribTest))
 							continue;
-						}
 						String attribValue = attribValueObj.toString();
 						if (attribTest.startsWith("(") && attribTest.endsWith(")")) {
 							if (!attribValue.matches(attribTest)) {
 								attribMatch = false;
-								System.out.println(" --> pattern match failed");
+								System.out.println(getIndent(matchDepth) + " --> pattern match failed");
 								break;
 							}
-							System.out.println(" --> pattern match");
 						}
 						else if (!attribTest.equalsIgnoreCase(attribValue)) {
 							attribMatch = false;
-							System.out.println(" --> value match failed");
+							System.out.println(getIndent(matchDepth) + " --> value match failed");
 							break;
 						}
-						else System.out.println(" --> value match");
 					}
 				}
 				if (attribMatch) {
-					match[elementIndex] = annots[a];
-					step(tokens, pattern, (elementIndex+1), match, (matchFromIndex + annots[a].size()), annotationIndex, matches);
+					matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], annots[a]));
+					step(tokens, matchStart, (matchFrom + annots[a].size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, matches, matchDepth, matchTree);
+					matchTree.removeLast();
 				}
-			}
-			if (pattern.elements[elementIndex].isOptional) {
-				match[elementIndex] = null;
-				step(tokens, pattern, (elementIndex+1), match, matchFromIndex, annotationIndex, matches);
 			}
 			return;
 		}
+		
+		//	sequence sub pattern
+		if (pattern[elementIndex].sequenceElements != null) {
+			LinkedList subMatches = new LinkedList();
+			LinkedList subMatchTree = new LinkedList();
+			step(tokens, matchFrom, matchFrom, pattern[elementIndex].sequenceElements, 0, 0, annotationIndex, subMatches, (matchDepth + 1), subMatchTree);
+			for (Iterator smtit = subMatches.iterator(); smtit.hasNext();) {
+				MatchTree smt = ((MatchTree) smtit.next());
+				smt.getMatch().changeTypeTo("sequence");
+				MatchTreeNode mtn = new MatchTreeNode(pattern[elementIndex], smt.getMatch());
+				for (Iterator cit = smt.children.iterator(); cit.hasNext();)
+					mtn.addChild((MatchTreeNode) cit.next());
+				matchTree.addLast(mtn);
+				step(tokens, matchStart, (matchFrom + smt.getMatch().size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, matches, matchDepth, matchTree);
+				matchTree.removeLast();
+			}
+		}
+		
+		//	disjunction sub pattern
+		if (pattern[elementIndex].alternativeElements != null) {
+			AnnotationPatternElement[] subPattern = {null};
+			LinkedList subMatches = new LinkedList();
+			LinkedList subMatchTree = new LinkedList();
+			for (int a = 0; a < pattern[elementIndex].alternativeElements.length; a++) {
+				subPattern[0] = pattern[elementIndex].alternativeElements[a];
+				step(tokens, matchFrom, matchFrom, subPattern, 0, 0, annotationIndex, subMatches, (matchDepth + 1), subMatchTree);
+				for (Iterator smtit = subMatches.iterator(); smtit.hasNext();) {
+					MatchTree smt = ((MatchTree) smtit.next());
+					smt.getMatch().changeTypeTo("alternative");
+					MatchTreeNode mtn = new MatchTreeNode(pattern[elementIndex], smt.getMatch());
+					for (Iterator cit = smt.children.iterator(); cit.hasNext();)
+						mtn.addChild((MatchTreeNode) cit.next());
+					matchTree.addLast(mtn);
+					step(tokens, matchStart, (matchFrom + smt.getMatch().size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, matches, matchDepth, matchTree);
+					matchTree.removeLast();
+				}
+				subMatches.clear();
+			}
+		}
+	}
+	
+	private static ArrayList indents = new ArrayList();
+	private static String getIndent(int depth) {
+		if (indents.isEmpty())
+			indents.add("");
+		while (indents.size() <= depth)
+			indents.add(((String) indents.get(indents.size()-1)) + "  ");
+		return ((String) indents.get(depth));
 	}
 	
 	private static HashMap patternCache = new HashMap();
@@ -354,77 +664,182 @@ public class AnnotationPatternMatcher {
 	}
 	
 	private static AnnotationPattern parsePattern(final Tokenizer tokenizer, String pattern) throws IOException {
-		final LinkedList elements = new LinkedList();
-		StringReader pr = new StringReader(pattern);
-		parser.stream(pr, new TokenReceiver() {
-			private int index = 0;
-			public void close() throws IOException {}
-			public void storeToken(String token, int treeDepth) throws IOException {
-				if (grammar.isTag(token)) {
-					elements.add(new AnnotationPatternElement(grammar.getType(token), TreeNodeAttributeSet.getTagAttributes(token, grammar)));
-					this.index += token.length();
-					return;
-				}
-				while ((token = this.trimStart(token)).length() != 0) {
-					
-					//	make last part optional
-					if (token.startsWith("?")) {
-						if (elements.isEmpty())
-							throw new AnnotationPatternParseException("Optional element marker before first element.", this.index);
-						else ((AnnotationPatternElement) elements.getLast()).isOptional = true;
-						token = token.substring(1);
-						this.index++;
-						continue;
-					}
-					
-					//	get quoted part
-					if (token.startsWith("'")) {
-						token = token.substring(1).trim();
-						this.index++;
-						token = this.trimStart(token);
-						int quoteEnd = token.indexOf('\'');
-						if (quoteEnd < 1)
-							throw new AnnotationPatternParseException(((quoteEnd == -1) ? "Missing closing quote." : "Empty literal."), this.index);
-						elements.add(new AnnotationPatternElement(Gamta.newTokenSequence(token.substring(0, quoteEnd).trim(), tokenizer)));
-						token = token.substring(quoteEnd+1);
-						this.index += (quoteEnd+1);
-						continue;
-					}
-					
-					//	get (unquoted) rest
-					elements.add(new AnnotationPatternElement(Gamta.newTokenSequence(token.trim(), tokenizer)));
-					this.index += token.length();
-					break;
-				}
-			}
-			private String trimStart(String token) {
-				while ((token.length() != 0) && (token.charAt(0) < 33)) {
-					token = token.substring(1);
-					this.index++;
-				}
-				return token;
-			}
-		});
-		
-//		System.out.println("Got annotation pattern from '" + pattern + "':");
-//		for (int e = 0; e < elements.size(); e++) {
-//			AnnotationPatternElement ape = ((AnnotationPatternElement) elements.get(e));
-//			if (ape.annotationType != null) {
-//				System.out.println(" - '" + ape.annotationType + "' annotation" + (ape.isOptional ? " (optional)": ""));
-//				if (ape.annotationAttributes != null) {
-//					String[] attribNames = ape.annotationAttributes.getAttributeNames();
-//					for (int n = 0; n < attribNames.length; n++) {
-//						String attribTest = ape.annotationAttributes.getAttribute(attribNames[n]);
-//						System.out.println("   - '" + attribNames[n] + "' attribute with value " + attribTest);
-//					}
-//				}
-//			}
-//			if (ape.tokens != null)
-//				System.out.println(" - '" + TokenSequenceUtils.concatTokens(ape.tokens) + "' tokens" + (ape.isOptional ? " (optional)": ""));
-//		}
-		
+		PatternReader pr = new PatternReader(pattern);
+		LinkedList elements = new LinkedList();
+		for (AnnotationPatternElement ape; ((ape = cropNext(tokenizer, pr)) != null);)
+			elements.add(ape);
 		return new AnnotationPattern(((AnnotationPatternElement[]) elements.toArray(new AnnotationPatternElement[elements.size()])));
 	}
+	
+	private static AnnotationPatternElement cropNext(Tokenizer tokenizer, PatternReader pr) throws IOException {
+		pr.skipSpace();
+		int ch = pr.peek();
+		if (ch == -1)
+			return null;
+		
+		//	crop next element on this nesting level
+		AnnotationPatternElement ape;
+		if (ch == '\'')
+			ape = cropLiteral(tokenizer, pr);
+		else if (ch == '<')
+			ape = cropAnnotation(pr);
+		else if (ch == '(') {
+			LinkedList spes = new LinkedList();
+			boolean isSequence = cropSubPattern(tokenizer, pr, spes);
+			ape = new AnnotationPatternElement(((AnnotationPatternElement[]) spes.toArray(new AnnotationPatternElement[spes.size()])), isSequence);
+		}
+		else throw new AnnotationPatternParseException(("Unexpected character: " + ((char) ch)), pr.readSoFar());
+		
+		//	crop associated quantifier, if any
+		pr.skipSpace();
+		int quantifierStart = pr.readSoFar();
+		if ("?*+{".indexOf(pr.peek()) != -1) {
+			int quantifier = cropQuantifier(pr);
+			ape.minCount = quantifier >>> 16;
+			ape.maxCount = quantifier & 0x0000FFFF;
+			if (ape.minCount < 0)
+				throw new AnnotationPatternParseException("Invalid quantifier (min less than 0)", quantifierStart);
+			if (ape.maxCount < 1)
+				throw new AnnotationPatternParseException("Invalid quantifier (max less than 1)", quantifierStart);
+			if (ape.maxCount < ape.minCount)
+				throw new AnnotationPatternParseException("Invalid quantifier (max less than min)", quantifierStart);
+		}
+		
+		//	finally
+		return ape;
+	}
+	
+	private static AnnotationPatternElement cropLiteral(Tokenizer tokenizer, PatternReader pr) throws IOException {
+		pr.read(); // consume leading high comma
+		pr.skipSpace();
+		
+		//	read string
+		StringBuffer literalBuffer = new StringBuffer();
+		boolean escaped = false;
+		while (true) {
+			int ch = pr.read();
+			if (ch == -1)
+				throw new AnnotationPatternParseException("Expected closing high comma", pr.readSoFar());
+			if (escaped) {
+				literalBuffer.append((char) ch);
+				escaped = false;
+			}
+			else if (ch == '\\')
+				escaped = true;
+			else if (ch == '\'')
+				break;
+			else literalBuffer.append((char) ch);
+		}
+		
+		//	tokenize and wrap literal
+		return new AnnotationPatternElement(new CharTokenSequence(literalBuffer.toString(), tokenizer));
+	}
+	
+	private static AnnotationPatternElement cropAnnotation(PatternReader pr) throws IOException {
+		StringBuffer annotBuffer = new StringBuffer();
+		
+		//	read XML tag
+		while (pr.peek() != -1) {
+			int ch = pr.read();
+			annotBuffer.append((char) ch);
+			if (ch == '>')
+				break;
+		}
+		
+		//	parse and return XML tag
+		String annotString = annotBuffer.toString();
+		if (!annotString.endsWith(">"))
+			throw new AnnotationPatternParseException("Expected closing angle bracket", (pr.readSoFar() - annotString.length()));
+		String annotType = grammar.getType(annotString);
+		if (!AnnotationUtils.isValidAnnotationType(annotType))
+			throw new AnnotationPatternParseException(("Invalid annotation type: " + annotType), (pr.readSoFar() - annotString.length()));
+		return new AnnotationPatternElement(annotType, TreeNodeAttributeSet.getTagAttributes(annotString, grammar));
+	}
+	
+	private static boolean cropSubPattern(Tokenizer tokenizer, PatternReader pr, LinkedList subPatternElements) throws IOException {
+		pr.read(); // consume leading bracket
+		pr.skipSpace();
+		
+		//	read sub pattern recursively
+		boolean isSequence = true;
+		while (true) {
+			int ch = pr.peek();
+			if (ch == -1)
+				throw new AnnotationPatternParseException("Expected closing bracket", pr.readSoFar());
+			if (ch == ')') {
+				pr.read();
+				break;
+			}
+			else if (ch == '|') {
+				pr.read();
+				isSequence = false;
+			}
+			else {
+				AnnotationPatternElement ape = cropNext(tokenizer, pr);
+				if (ape != null)
+					subPatternElements.add(ape);
+				pr.skipSpace();
+			}
+		}
+		return isSequence;
+	}
+	
+	private static int cropQuantifier(PatternReader pr) throws IOException {
+		pr.skipSpace();
+		int ch = pr.read();
+		if (ch == '?')
+			return 0x00000001;
+		else if (ch == '*')
+			return 0x0000FFFF;
+		else if (ch == '+')
+			return 0x0001FFFF;
+		
+		StringBuffer quantifierBuffer = new StringBuffer();
+		while (true) {
+			ch = pr.read();
+			if (ch == -1)
+				throw new AnnotationPatternParseException("Expected closing curly bracket", pr.readSoFar());
+			if (ch == '}')
+				break;
+			else quantifierBuffer.append((char) ch);
+		}
+		
+		String quantifier = quantifierBuffer.toString().trim();
+		String[] quantifierParts = quantifier.split("\\s*\\,\\s*", 2);
+		if ((quantifierParts.length == 1) || (quantifierParts.length == 2)) try {
+			int min = Integer.parseInt(quantifierParts[0]);
+			int max = ((quantifierParts.length == 1) ? min : ((quantifierParts[1].length() == 0) ? 0xFFFF : Integer.parseInt(quantifierParts[1])));
+			return ((min << 16) + max);
+		} catch (NumberFormatException nfe) {}
+		throw new AnnotationPatternParseException(("Invalid quantifier: " + quantifier), (pr.readSoFar() - quantifierBuffer.length()));
+	}
+	
+	private static class PatternReader extends PeekReader {
+		int readSoFar;
+		PatternReader(String pattern) throws IOException {
+			super(new StringReader(pattern), 1);
+		}
+		public int read() throws IOException {
+			int r = super.read();
+			if (r != -1)
+				this.readSoFar++;
+			return r;
+		}
+		public int read(char[] cbuf, int off, int len) throws IOException {
+			int r = super.read(cbuf, off, len);
+			if (r != -1)
+				this.readSoFar += r;
+			return r;
+		}
+		void skipSpace() throws IOException {
+			while ((this.peek() < 33) && (this.peek() != -1))
+				this.read();
+		}
+		int readSoFar() {
+			return this.readSoFar;
+		}
+	}
+	
 	private static class AnnotationPatternParseException extends IOException {
 		private int index;
 		AnnotationPatternParseException(String message, int index) {
@@ -436,31 +851,31 @@ public class AnnotationPatternMatcher {
 		}
 	}
 	
-//	AnnotationPattern(String[] elementDefs, Tokenizer tokenizer) {
-//		ArrayList elements = new ArrayList();
-//		for (int e = 0; e < elementDefs.length; e++) {
-//			String elementDef = elementDefs[e];
-//			boolean isOptional = false;
-//			if (elementDef.endsWith("?")) {
-//				isOptional = true;
-//				elementDef = elementDef.substring(0, (elementDef.length()-1));
-//			}
-//			if (grammar.isTag(elementDef))
-//				elements.add(new AnnotationPatternElement(grammar.getType(elementDef), TreeNodeAttributeSet.getTagAttributes(elementDef, grammar), isOptional));
-//			else elements.add(new AnnotationPatternElement(Gamta.newTokenSequence(elementDef, tokenizer), isOptional));
-//		}
-//		this.elements = ((AnnotationPatternElement[]) elements.toArray(new AnnotationPatternElement[elements.size()]));
-//	}
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		MutableAnnotation doc = SgmlDocumentReader.readDocument(new StringReader("<d>n. <l a=\"y\"><l>ln-a</l> <l a=\"x\">ln-b</l></l>, <i>i-i</i>, <l><l>ln-a</l> ln-b</l> <i>i-i</i>, Jr. n 2345.</d>"));
-		AnnotationUtils.writeXML(doc, new OutputStreamWriter(System.out));
-//		Annotation[] ans = getMatches(doc, "<l> ','? <i> ', Jr'?");
-		Annotation[] ans = getMatches(doc, "<l a=\"(a|b|x)\"> ','? <i> ', Jr'?");
-		for (int a = 0; a < ans.length; a++) {
+		String pattern;
+		pattern = "<stopWord>* <lastName> ','? <firstName>";
+		pattern = "(<stopWord>* <lastName>{1,2}){2,} ','? <firstName>";
+		pattern = "(<a>{1,3}|(<b><c>{2,4})){2,} ','? <d> (','? <e>)?";
+		pattern = "'Mr.'? (<fn>|<in>)+ (<i>* <ln>)+ (','? <a>)?";
+		AnnotationPattern ap = getPattern(Gamta.INNER_PUNCTUATION_TOKENIZER, pattern);
+		System.out.println(ap.toString());
+		MutableAnnotation doc = SgmlDocumentReader.readDocument(new StringReader("Mr. <fn>Tommy</fn> <in>F.</in> <ln><fn>Lee</fn></ln> <i>van</i> <ln>Jones</ln>, <a>Jr.</a>"));
+		MatchTree[] mts = getMatchTrees(doc, ap.toString());
+		for (int a = 0; a < mts.length; a++)
+			System.out.println(mts[a].toString());
+		Annotation[] ans = getMatches(doc, ap.toString());
+		for (int a = 0; a < ans.length; a++)
 			System.out.println(ans[a].toXML());
-		}
+//		AnnotationUtils.writeXML(doc, new OutputStreamWriter(System.out));
+//		System.out.println();
+//		MutableAnnotation doc = SgmlDocumentReader.readDocument(new StringReader("<d>n. <l a=\"y\"><l>ln-a</l> <l a=\"x\">ln-b</l></l>, <i>i-i</i>, <l><l>ln-a</l> ln-b</l> <i>i-i</i>, Jr. n 2345.</d>"));
+//		AnnotationUtils.writeXML(doc, new OutputStreamWriter(System.out));
+//		Annotation[] ans = getMatches(doc, "<l a=\"(a|b|x)\"> ','? <i> ', Jr'?");
+//		for (int a = 0; a < ans.length; a++) {
+//			System.out.println(ans[a].toXML());
+//		}
 	}
 }
