@@ -27,6 +27,7 @@
  */
 package de.uka.ipd.idaho.gamta.util;
 
+import java.io.FilterReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.regex.PatternSyntaxException;
 
-import de.uka.ipd.idaho.easyIO.streams.PeekReader;
 import de.uka.ipd.idaho.gamta.Annotation;
 import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.Gamta;
@@ -814,22 +814,33 @@ public class AnnotationPatternMatcher {
 		throw new AnnotationPatternParseException(("Invalid quantifier: " + quantifier), (pr.readSoFar() - quantifierBuffer.length()));
 	}
 	
-	private static class PatternReader extends PeekReader {
+	private static class PatternReader extends FilterReader {
+		private int lookaheadChar = -1;
 		int readSoFar;
 		PatternReader(String pattern) throws IOException {
-			super(new StringReader(pattern), 1);
+			super(new StringReader(pattern));
 		}
 		public int read() throws IOException {
+			this.lookaheadChar = -1;
 			int r = super.read();
 			if (r != -1)
 				this.readSoFar++;
 			return r;
 		}
 		public int read(char[] cbuf, int off, int len) throws IOException {
+			this.lookaheadChar = -1;
 			int r = super.read(cbuf, off, len);
 			if (r != -1)
 				this.readSoFar += r;
 			return r;
+		}
+		int peek() throws IOException {
+			if (this.lookaheadChar != -1)
+				return this.lookaheadChar;
+			this.in.mark(1);
+			this.lookaheadChar = this.in.read();
+			this.in.reset();
+			return this.lookaheadChar;
 		}
 		void skipSpace() throws IOException {
 			while ((this.peek() < 33) && (this.peek() != -1))
