@@ -35,5 +35,22 @@ package de.uka.ipd.idaho.easyIO.web;
  * @author sautter
  */
 public class OAuthConnectorServlet extends WebServlet {
-	//	TODO implement as http://developers.google.com/accounts/docs/OAuth2WebServer
+	
+	/* TODO:
+	 * - include local token LT in login fields (128 bit random string)
+	 * - onclick of login button:
+	 *   - use embedded iframe to ask servlet to authenticate LT (using GET, with LT last part of path info)
+	 *   - open OAuth provider login form window, including LT in state parameter
+	 *   - servlet waits to respond to LT authentication request until: (a) callback from OAuth provider come in or (b) some timeout expires
+	 *     - in case (a), if OAuth provider indicates approval, start session
+	 *     - otherwise, send error message
+	 * - read login result from embedded iframe, and
+	 *   - on approval, submit login form (backend has session by now)
+	 *   - otherwise, display error message (indicating timeout or whatever error was sent from OAuth provider to backend)
+	 * - close OAuth provider login form window
+	 */
+	
+	//	TODO implement as http://developers.google.com/accounts/docs/OAuth2Login
+	
+	//	TODO use this for tests: http://developers.google.com/oauthplayground/
 }

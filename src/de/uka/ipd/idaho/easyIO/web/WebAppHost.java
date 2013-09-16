@@ -309,7 +309,7 @@ public class WebAppHost {
 		}
 		
 		/**
-		 * Retrieve the JavaScript function call to execute for when the account
+		 * Retrieve the JavaScript function call to execute when the account
 		 * manager becomes visible. This default implementation returns null.
 		 * Sub classes are welcome to overwrite it as needed.
 		 * @return the JavaScript call to execute when the account manager
@@ -320,7 +320,7 @@ public class WebAppHost {
 		}
 		
 		/**
-		 * Retrieve the JavaScript function call to execute for when the account
+		 * Retrieve the JavaScript function call to execute when the account
 		 * manager becomes invisible. This default implementation returns null.
 		 * Sub classes are welcome to overwrite it as needed.
 		 * @return the JavaScript call to execute when the account manager
@@ -339,7 +339,7 @@ public class WebAppHost {
 		 * authentication provider. This default implementation simply returns
 		 * false, sub classes are welcome to overwrite it as needed.
 		 * @param request the HTTP request to handle
-		 * @param response the HTTP resonse to write to
+		 * @param response the HTTP response to write to
 		 * @return true if the request has been handled, false otherwise
 		 * @throws IOException
 		 */
@@ -370,7 +370,8 @@ public class WebAppHost {
 	 * @param ap the authentication provider to add
 	 */
 	public void addAuthenticationProvider(AuthenticationProvider ap) {
-		if (ap != null) this.authenticationProvidersByName.put(ap.getName(), ap);
+		if (ap != null)
+			this.authenticationProvidersByName.put(ap.getName(), ap);
 	}
 	
 	/**
@@ -379,7 +380,8 @@ public class WebAppHost {
 	 * @param ap the authentication provider to remove
 	 */
 	public void removeAuthenticationProvider(AuthenticationProvider ap) {
-		if (ap != null) this.authenticationProvidersByName.remove(ap.getName());
+		if (ap != null)
+			this.authenticationProvidersByName.remove(ap.getName());
 	}
 	
 	/**
@@ -459,7 +461,7 @@ public class WebAppHost {
 	 * forward URL will redirect to the same servlet path the login was
 	 * submitted to.
 	 * @param pageBuilderHost the HTML page builder host to use (usually, but
-	 *            not neccessarily the very servlet calling this method)
+	 *            not necessarily the very servlet calling this method)
 	 * @param request the HTTP request to create a login page builder for
 	 * @param response the HTTP response to send the login page to
 	 * @param markerTag the marker tag to include the login for for
@@ -517,7 +519,7 @@ public class WebAppHost {
 				
 				this.writeLine("<tr>");
 				this.writeLine("<td class=\"webAppHost_loginTableCell loginTableCell\" id=\"webAppHost_loginButtonCell\">");
-				this.writeLine("<input type=\"submit\" value=\"Login\" id=\"webAppHost_button\" id=\"webAppHost_loginButton\" />");
+				this.writeLine("<input type=\"submit\" value=\"Login\" class=\"webAppHost_button\" id=\"webAppHost_loginButton\" />");
 				this.writeLine("</td>");
 				this.writeLine("</tr>");
 				
@@ -540,6 +542,9 @@ public class WebAppHost {
 					this.writeLine("  apnfs = document.getElementById('" + ap.getName() + "_fields');");
 					this.writeLine("  if (apnfs != null)");
 					this.writeLine("    apnfs.style.display = ((apn == '" + ap.getName() + "') ? '' : 'none');");
+					//	TODO add calls to auth provider specific selected() and deselected() functions (check if existing before call)
+					//	TODO add onclick listener to login button, calling auth provider specific prepareLogin() function
+					//	TODO add onsubmit listener to login form, calling auth provider specific onLogin() function
 				}
 				this.writeLine("}");
 				this.writeLine("function getAuthenticationProviderName() {");
@@ -649,7 +654,7 @@ public class WebAppHost {
 	 * directed here. Only if the latter applies, this method reads request
 	 * parameters.
 	 * @param request the HTTP request to handle
-	 * @param response the HTTP resonse to write to
+	 * @param response the HTTP response to write to
 	 * @return true if the request has been handled, false otherwise
 	 * @throws IOException
 	 */
