@@ -52,7 +52,7 @@ import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder.HtmlPageBuilderH
  * most one instance for each webapp, distinguished by context path. This
  * instance is created when the first servlet attempts to retrieve it. In
  * particular, this class provides the following services:<br>
- * A registry allowing servlets to to obtain refernces to one another, e.g. to
+ * A registry allowing servlets to to obtain references to one another, e.g. to
  * facilitate communication via method invocations insetad of local HTTP
  * loopback. Note that servlet containers may instantiate servlets only when
  * they are first accessed via HTTP, so the absence of a servlet from the
@@ -275,21 +275,54 @@ public class WebAppHost {
 		public abstract void writeLoginFields(HtmlPageBuilder pageBuilder) throws IOException;
 		
 		/**
-		 * Retrieve the JavaScript function call to execute when the login form
-		 * is submitted with this authentication source being selected. This
-		 * default implementation returns null. Sub classes are welcome to
-		 * overwrite it as needed.
-		 * @return the JavaScript call to execute when the login form is
-		 *         submitted
+		 * Write the body of the JavaScript function executed when this
+		 * authentication source is selected. This default implementation
+		 * leaves the function body empty. Sub classes are welcome to overwrite
+		 * it as needed.
+		 * @param pageBuilder the page builder to write to
 		 */
-		public String getLoginFieldOnsubmitCall() {
-			return null;
+		public void writeOnSelectFunctionBody(HtmlPageBuilder pageBuilder) throws IOException {}
+		
+		/**
+		 * Write the body of the JavaScript function executed when this
+		 * authentication source is de-selected. This default implementation
+		 * leaves the function body empty. Sub classes are welcome to overwrite
+		 * it as needed.
+		 * @param pageBuilder the page builder to write to
+		 */
+		public void writeOnDeselectFunctionBody(HtmlPageBuilder pageBuilder) throws IOException {
+			pageBuilder.writeLine("  return true;");
+		}
+		
+		/**
+		 * Write the body of the JavaScript function executed when the login
+		 * button is clicked with this authentication source being selected.
+		 * This default implementation writes a function body that simply
+		 * returns true, approving the submission. Sub classes are welcome to
+		 * overwrite it as needed.
+		 * @param pageBuilder the page builder to write to
+		 */
+		public void writeOnLoggingInFunctionBody(HtmlPageBuilder pageBuilder) throws IOException {
+			pageBuilder.writeLine("  return true;");
+		}
+		
+		/**
+		 * Write the body of the JavaScript function executed when the login
+		 * form is submitted with this authentication source being selected.
+		 * This default implementation writes a function body that simply
+		 * returns true, approving the submission. Sub classes are welcome to
+		 * overwrite it as needed.
+		 * @param pageBuilder the page builder to write to
+		 */
+		public void writeOnLoginFunctionBody(HtmlPageBuilder pageBuilder) throws IOException {
+			pageBuilder.writeLine("  return true;");
 		}
 		
 		/**
 		 * Write HTML code providing authentication source specific
-		 * functionality to an HTML page builder. This default implementation
-		 * does nothing, sub classes are welcome to overwrite it as needed.
+		 * functionality to an HTML page builder, e.g. for allowing a user to
+		 * change his password. This default implementation does nothing, sub
+		 * classes are welcome to overwrite it as needed.
 		 * @param pageBuilder the page builder to write to
 		 * @throws IOException
 		 * @see de.uka.ipd.idaho.easyIO.web.WebAppHost.AuthenticationProvider#handleRequest(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
@@ -298,9 +331,11 @@ public class WebAppHost {
 		
 		/**
 		 * Retrieve the JavaScript function call to execute for a click directly
-		 * on the account manager (not on one of its child elements). This
-		 * default implementation returns null. Sub classes are welcome to
-		 * overwrite it as needed.
+		 * on the account manager (not on one of its child elements). The
+		 * returned function call can, for instance, manipulate HTML elements
+		 * created by the writeAccountManagerHtml() method. This default
+		 * implementation returns null. Sub classes are welcome to overwrite it
+		 * as needed.
 		 * @return the JavaScript call to execute for a click on the account
 		 *         manager
 		 */
@@ -310,8 +345,10 @@ public class WebAppHost {
 		
 		/**
 		 * Retrieve the JavaScript function call to execute when the account
-		 * manager becomes visible. This default implementation returns null.
-		 * Sub classes are welcome to overwrite it as needed.
+		 * manager becomes visible. The returned function call can, for
+		 * instance, manipulate HTML elements created by the writeAccountManagerHtml()
+		 * method. This default implementation returns null. Sub classes are
+		 * welcome to overwrite it as needed.
 		 * @return the JavaScript call to execute when the account manager
 		 *         becomes visible
 		 */
@@ -321,8 +358,10 @@ public class WebAppHost {
 		
 		/**
 		 * Retrieve the JavaScript function call to execute when the account
-		 * manager becomes invisible. This default implementation returns null.
-		 * Sub classes are welcome to overwrite it as needed.
+		 * manager becomes invisible. The returned function call can, for
+		 * instance, manipulate HTML elements created by the writeAccountManagerHtml()
+		 * method. This default implementation returns null. Sub classes are
+		 * welcome to overwrite it as needed.
 		 * @return the JavaScript call to execute when the account manager
 		 *         becomes invisible
 		 */
@@ -488,10 +527,11 @@ public class WebAppHost {
 			}
 			
 			private void includeLoginForm() throws IOException {
-				this.writeLine("<form id=\"webAppHost_loginForm\" method=\"POST\" action=\"" + this.request.getContextPath() + this.request.getServletPath() + "/webAppLogin\">");
+				this.writeLine("<form id=\"webAppHost_loginForm\" method=\"POST\" action=\"" + this.request.getContextPath() + this.request.getServletPath() + "/webAppLogin\" onsubmit=\"return webAppHost_onLogin();\">");
 				this.writeLine("<table class=\"webAppHost_loginTable loginTable\" id=\"webAppHost_loginTable\">");
 				String forwardUrl = loginForwardUrl;
-				if (forwardUrl == null) forwardUrl = this.request.getContextPath() + this.request.getServletPath();
+				if (forwardUrl == null)
+					forwardUrl = this.request.getContextPath() + this.request.getServletPath();
 				this.writeLine("<input type=\"hidden\" name=\"" + FORWARD_URL_PARAMETER + "\" value=\"" + forwardUrl + "\" />");
 				
 				this.writeLine("<tr>");
@@ -519,7 +559,7 @@ public class WebAppHost {
 				
 				this.writeLine("<tr>");
 				this.writeLine("<td class=\"webAppHost_loginTableCell loginTableCell\" id=\"webAppHost_loginButtonCell\">");
-				this.writeLine("<input type=\"submit\" value=\"Login\" class=\"webAppHost_button\" id=\"webAppHost_loginButton\" />");
+				this.writeLine("<input type=\"submit\" value=\"Login\" class=\"webAppHost_button\" id=\"webAppHost_loginButton\" onclick=\"return webAppHost_onLoggingIn();\" />");
 				this.writeLine("</td>");
 				this.writeLine("</tr>");
 				
@@ -534,23 +574,50 @@ public class WebAppHost {
 			
 			protected void writePageHeadExtensions() throws IOException {
 				this.writeLine("<script type=\"text/javascript\">");
+				this.writeLine("function getAuthenticationProviderName() {");
+				this.writeLine("  var apnf = document.getElementById('" + AUTHENTICATION_PROVIDER_NAME_PARAMETER + "_field');");
+				this.writeLine("  return ((apnf == null) ? '' : apnf.value);");
+				this.writeLine("}");
+				this.writeLine("var selectedAuthenticationProviderName = null;");
 				this.writeLine("function authenticationProviderNameChanged() {");
 				this.writeLine("  var apn = getAuthenticationProviderName();");
 				this.writeLine("  var apnfs;");
 				for (int p = 0; p < apList.size(); p++) {
 					AuthenticationProvider ap = ((AuthenticationProvider) apList.get(p));
-					this.writeLine("  apnfs = document.getElementById('" + ap.getName() + "_fields');");
+					this.writeLine("  apfs = document.getElementById('" + ap.getName() + "_fields');");
 					this.writeLine("  if (apnfs != null)");
-					this.writeLine("    apnfs.style.display = ((apn == '" + ap.getName() + "') ? '' : 'none');");
-					//	TODO add calls to auth provider specific selected() and deselected() functions (check if existing before call)
-					//	TODO add onclick listener to login button, calling auth provider specific prepareLogin() function
-					//	TODO add onsubmit listener to login form, calling auth provider specific onLogin() function
+					this.writeLine("    apfs.style.display = ((apn == '" + ap.getName() + "') ? '' : 'none');");
+					this.writeLine("  if (selectedAuthenticationProviderName == '" + ap.getName() + "')");
+					this.writeLine("    " + ap.getName() + "_deselected();");
+					this.writeLine("  if (apn == '" + ap.getName() + "') {");
+					this.writeLine("    " + ap.getName() + "_selected();");
+					this.writeLine("    window.webAppHost_onLoggingIn = window." + ap.getName() + "_onLoggingIn;");
+					this.writeLine("    window.webAppHost_onLogin = window." + ap.getName() + "_onLogin;");
+					this.writeLine("  }");
 				}
+				this.writeLine("  selectedAuthenticationProviderName = apn;");
 				this.writeLine("}");
-				this.writeLine("function getAuthenticationProviderName() {");
-				this.writeLine("  var apnf = document.getElementById('" + AUTHENTICATION_PROVIDER_NAME_PARAMETER + "_field');");
-				this.writeLine("  return ((apnf == null) ? '' : apnf.value);");
+				this.writeLine("function webAppHost_onLoggingIn() {");
+				this.writeLine("  return true;");
 				this.writeLine("}");
+				this.writeLine("function webAppHost_onLogin() {");
+				this.writeLine("  return true;");
+				this.writeLine("}");
+				for (int p = 0; p < apList.size(); p++) {
+					AuthenticationProvider ap = ((AuthenticationProvider) apList.get(p));
+					this.writeLine("function " + ap.getName() + "_selected() {");
+					ap.writeOnSelectFunctionBody(this);
+					this.writeLine("}");
+					this.writeLine("function " + ap.getName() + "_deselected() {");
+					ap.writeOnDeselectFunctionBody(this);
+					this.writeLine("}");
+					this.writeLine("function " + ap.getName() + "_onLoggingIn() {");
+					ap.writeOnLoggingInFunctionBody(this);
+					this.writeLine("}");
+					this.writeLine("function " + ap.getName() + "_onLogin() {");
+					ap.writeOnLoginFunctionBody(this);
+					this.writeLine("}");
+				}
 				this.writeLine("</script>");
 			}
 		};
@@ -572,7 +639,8 @@ public class WebAppHost {
 		//	fetch required data
 		String userName = this.getUserName(pageBuilder.request);
 		AuthenticationProvider authProv = this.getAuthenticationProvider(pageBuilder.request);
-		if ((userName == null) || (authProv == null)) return;
+		if ((userName == null) || (authProv == null))
+			return;
 		
 		//	open div
 		pageBuilder.writeLine("<div id=\"webAppHostAccountManager\" style=\"position: fixed; left: 0px; top: 0px; width: 100%; text-align: right; background-color: white; opacity: 0.3;\" onmouseover=\"webAppHostAccountManager_show(event);\" onmouseout=\"webAppHostAccountManager_hide(event);\" onclick=\"webAppHostAccountManager_onclick(event);\">");
@@ -587,7 +655,8 @@ public class WebAppHost {
 		
 		//	add logout button and associated JavaScript
 		String fwUrlQuery = "";
-		if (logoutForwardUrl != null) fwUrlQuery = ("?" + FORWARD_URL_PARAMETER + "=" + URLEncoder.encode(logoutForwardUrl, "UTF-8"));
+		if (logoutForwardUrl != null)
+			fwUrlQuery = ("?" + FORWARD_URL_PARAMETER + "=" + URLEncoder.encode(logoutForwardUrl, "UTF-8"));
 		pageBuilder.writeLine("<input type=\"button\" class=\"webAppHost_button\" id=\"webAppHost_logoutButton\" value=\"Logout\" onclick=\"webAppHost_doLogout();\" />");
 		pageBuilder.writeLine("<script type=\"text/javascript\">");
 		pageBuilder.writeLine("function webAppHost_doLogout() {");
@@ -662,12 +731,15 @@ public class WebAppHost {
 		
 		//	check path info
 		String pathInfo = request.getPathInfo();
-		if (pathInfo == null) return false;
+		if (pathInfo == null)
+			return false;
 		
 		//	login
 		if ("/webAppLogin".equals(pathInfo)) {
 			String apn = request.getParameter(AUTHENTICATION_PROVIDER_NAME_PARAMETER);
 			String fwUrl = request.getParameter(FORWARD_URL_PARAMETER);
+			if (fwUrl == null)
+				fwUrl = request.getContextPath() + request.getServletPath();
 			HttpSession session = request.getSession(false);
 			if (session != null) {
 				response.sendRedirect(fwUrl);

@@ -77,7 +77,7 @@ public class AuthenticationServlet extends HtmlServlet {
 	protected void doInit() throws ServletException {
 		super.doInit();
 		
-		//	connect to host for
+		//	connect to host
 		this.webAppHost = WebAppHost.getInstance(this.getServletContext());
 		
 		//	get name and label
