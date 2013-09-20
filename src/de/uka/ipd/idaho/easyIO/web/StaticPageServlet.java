@@ -48,8 +48,8 @@ import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder;
 
 /**
  * Centralized servlet responsible for delivering static content HTML pages that
- * are stored in servlet's data paths below the surrounding wep-app's WEB-INF
- * folder and are thus invisible via HTTP. This alllows for static content, e.g.
+ * are stored in servlet's data paths below the surrounding web-app's WEB-INF
+ * folder and are thus invisible via HTTP. This allows for static content, e.g.
  * description pages, to be delivered with a web application's custom layout.
  * 
  * This servlet has to be mapped to '/static/*' and '/staticPopup/*' in the
@@ -62,12 +62,13 @@ public class StaticPageServlet extends HtmlServlet {
 	private HashSet includeTags = new HashSet();
 	
 	/* (non-Javadoc)
-	 * @see de.uka.ipd.idaho.easyIO.web.HtmlServlet#doInit()
+	 * @see de.uka.ipd.idaho.easyIO.web.HtmlServlet#reInit()
 	 */
-	protected void doInit() throws ServletException {
-		super.doInit();
+	public void reInit() throws ServletException {
+		super.reInit();
 		
-		//	load include tags to react to
+		//	reload include tags to react to
+		this.includeTags.clear();
 		this.includeTags.add("includeBody");
 		String includeTags = this.getSetting("includeTags");
 		if (includeTags != null)

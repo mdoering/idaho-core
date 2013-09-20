@@ -137,12 +137,14 @@ public abstract class HtmlServlet extends WebServlet implements HtmlPageBuilderH
 	private String iconFileName = null;
 	
 	/**
-	 * Initialize the HTML servlet. This implementation reads the basePage,
-	 * cssNames, javaStriptNames, and iconFileName parameters from the settings.
-	 * Sub classes overwriting this method thus have to make the super call.
-	 * @see de.uka.ipd.idaho.easyIO.web.WebServlet#doInit()
+	 * (Re-)initialize the layout settings of the HTML servlet. This reads the
+	 * <code>basePage</code>, <code>popupBasePage</code>, <code>cssNames</code>,
+	 * <code>javaStriptNames</code>, and <code>iconFileName</code> parameters
+	 * from the settings. Sub classes overwriting this method thus have to make
+	 * the super call.
+	 * @see de.uka.ipd.idaho.easyIO.web.WebServlet#reInit()
 	 */
-	protected void doInit() throws ServletException {
+	protected void reInit() throws ServletException {
 		this.basePage = this.getSetting("basePage", this.basePage);
 		this.popupBasePage = this.getSetting("popupBasePage", this.popupBasePage);
 		

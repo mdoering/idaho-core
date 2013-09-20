@@ -44,10 +44,9 @@ import java.util.Properties;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
+import de.uka.ipd.idaho.easyIO.util.JsonParser;
 import de.uka.ipd.idaho.easyIO.util.RandomByteSource;
 import de.uka.ipd.idaho.easyIO.web.WebAppHost.AuthenticationProvider;
 import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder;
@@ -64,8 +63,6 @@ public class OAuthConnectorServlet extends WebServlet {
 	//	implemented as http://developers.google.com/accounts/docs/OAuth2Login
 	
 	//	useful for tests: http://developers.google.com/oauthplayground/
-	
-	private WebAppHost webAppHost;
 	
 	private String authProviderName = "OAuthService";
 	private String authProviderLabel = "Open Authentication Service";
@@ -85,10 +82,6 @@ public class OAuthConnectorServlet extends WebServlet {
 	 * @see de.uka.ipd.idaho.easyIO.web.WebServlet#doInit()
 	 */
 	protected void doInit() throws ServletException {
-		super.doInit();
-		
-		//	connect to host for
-		this.webAppHost = WebAppHost.getInstance(this.getServletContext());
 		
 		//	get name and label
 		this.authProviderName = this.getSetting("authProviderName", this.authProviderName);
@@ -141,87 +134,58 @@ public class OAuthConnectorServlet extends WebServlet {
 		
 		//	try and get authorization from OAuth provider
 		String authorization = null;
-		URL atOAuthCallbackUrl = new URL(this.oAuthProviderAuthorizationCallbackUrl);
-		HttpURLConnection atCon = ((HttpURLConnection) atOAuthCallbackUrl.openConnection());
-		atCon.setDoOutput(true);
-		atCon.setDoInput(true);
-		atCon.setRequestMethod("POST");
-		BufferedWriter atBw = new BufferedWriter(new OutputStreamWriter(atCon.getOutputStream(), "UTF-8"));
-		atBw.write("code=" + URLEncoder.encode(code, "UTF-8"));
-		atBw.write("&client_id=" + URLEncoder.encode(this.oAuthProviderClientId, "UTF-8"));
-		atBw.write("&client_secret=" + URLEncoder.encode(this.oAuthProviderClientSecret, "UTF-8"));
-		atBw.write("&redirect_uri=" + URLEncoder.encode(this.oAuthCallbackUrl, "UTF-8"));
-		atBw.write("&grant_type=" + URLEncoder.encode("authorization_code", "UTF-8"));
-		atBw.flush();
 		try {
-			JSONParser atJp = new JSONParser();
-			Object atOAuthCallbackResponseObj = atJp.parse(new BufferedReader(new InputStreamReader(atCon.getInputStream(), "UTF-8")));
-			if (atOAuthCallbackResponseObj instanceof Map) {
-				Map atOAuthCallbackResponse = ((Map) atOAuthCallbackResponseObj);
-				Object accessToken = atOAuthCallbackResponse.get("access_token");
-				Object idToken = atOAuthCallbackResponse.get("id_token");
-				Object expiresIn = atOAuthCallbackResponse.get("expires_in");
-				Object tokenType = atOAuthCallbackResponse.get("token_type");
-				if ((accessToken == null) || (idToken == null) || (tokenType == null))
-					disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-				else authorization = (tokenType.toString() + " " + accessToken.toString());
-			}
-			else {
-				errorLoginTokens.put(state, new Long(System.currentTimeMillis()));
-				errorLoginTokensToErrors.setProperty(state, ("Unreadable auth provider response: " + ((atOAuthCallbackResponseObj == null) ? "null" : atOAuthCallbackResponseObj.getClass().getName())));
-			}
+			URL atOAuthCallbackUrl = new URL(this.oAuthProviderAuthorizationCallbackUrl);
+			HttpURLConnection atCon = ((HttpURLConnection) atOAuthCallbackUrl.openConnection());
+			atCon.setDoOutput(true);
+			atCon.setDoInput(true);
+			atCon.setRequestMethod("POST");
+			BufferedWriter atBw = new BufferedWriter(new OutputStreamWriter(atCon.getOutputStream(), "UTF-8"));
+			atBw.write("code=" + URLEncoder.encode(code, "UTF-8"));
+			atBw.write("&client_id=" + URLEncoder.encode(this.oAuthProviderClientId, "UTF-8"));
+			atBw.write("&client_secret=" + URLEncoder.encode(this.oAuthProviderClientSecret, "UTF-8"));
+			atBw.write("&redirect_uri=" + URLEncoder.encode(this.oAuthCallbackUrl, "UTF-8"));
+			atBw.write("&grant_type=" + URLEncoder.encode("authorization_code", "UTF-8"));
+			atBw.flush();
+			Map atOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(atCon.getInputStream(), "UTF-8")));
+			Object accessToken = atOAuthCallbackResponse.get("access_token");
+			Object idToken = atOAuthCallbackResponse.get("id_token");
+			Object expiresIn = atOAuthCallbackResponse.get("expires_in");
+			Object tokenType = atOAuthCallbackResponse.get("token_type");
+			if ((accessToken == null) || (idToken == null) || (tokenType == null))
+				disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
+			else authorization = (tokenType.toString() + " " + accessToken.toString());
 		}
-		catch (ParseException pe) {
+		catch (IOException ioe) {
 			errorLoginTokens.put(state, new Long(System.currentTimeMillis()));
-			errorLoginTokensToErrors.setProperty(state, ("Error reading auth provider response: " + pe.getMessage()));
+			errorLoginTokensToErrors.setProperty(state, ("Could not get authorization from OAuth rovider: " + ioe.getMessage()));
 		}
 		if (authorization == null)
 			return;
 		
 		//	get user name
-		URL unOAuthCallbackUrl = new URL(this.oAuthProviderUserNameCallbackUrl);
-		HttpURLConnection unCon = ((HttpURLConnection) unOAuthCallbackUrl.openConnection());
-		unCon.setDoOutput(true);
-		unCon.setDoInput(true);
-		unCon.setRequestMethod("GET");
-		unCon.setRequestProperty("Authorization", authorization);
 		try {
-			JSONParser unJp = new JSONParser();
-			Object unOAuthCallbackResponseObj = unJp.parse(new BufferedReader(new InputStreamReader(unCon.getInputStream(), "UTF-8")));
-			if (unOAuthCallbackResponseObj instanceof Map) {
-				Map unOAuthCallbackResponse = ((Map) unOAuthCallbackResponseObj);
-				Object userName = unOAuthCallbackResponse.get(this.oAuthProviderUserNameResponseParameter);
-				if (userName == null)
-					disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-				else {
-					approvedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-					approvedLoginTokensToUserNames.setProperty(state, userName.toString());
-				}
-			}
+			URL unOAuthCallbackUrl = new URL(this.oAuthProviderUserNameCallbackUrl);
+			HttpURLConnection unCon = ((HttpURLConnection) unOAuthCallbackUrl.openConnection());
+			unCon.setDoOutput(true);
+			unCon.setDoInput(true);
+			unCon.setRequestMethod("GET");
+			unCon.setRequestProperty("Authorization", authorization);
+			Map unOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(unCon.getInputStream(), "UTF-8")));
+			Object userName = unOAuthCallbackResponse.get(this.oAuthProviderUserNameResponseParameter);
+			if (userName == null)
+				disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
 			else {
-				errorLoginTokens.put(state, new Long(System.currentTimeMillis()));
-				errorLoginTokensToErrors.setProperty(state, ("Unreadable auth provider response: " + ((unOAuthCallbackResponseObj == null) ? "null" : unOAuthCallbackResponseObj.getClass().getName())));
+				approvedLoginTokens.put(state, new Long(System.currentTimeMillis()));
+				approvedLoginTokensToUserNames.setProperty(state, userName.toString());
 			}
 		}
-		catch (ParseException pe) {
+		catch (IOException ioe) {
 			errorLoginTokens.put(state, new Long(System.currentTimeMillis()));
-			errorLoginTokensToErrors.setProperty(state, ("Error reading auth provider response: " + pe.getMessage()));
+			errorLoginTokensToErrors.setProperty(state, ("Could not get user name from OAuth rovider: " + ioe.getMessage()));
 		}
 	}
-	/*
-code 	The authorization code returned from the initial request
-client_id 	The client_id obtained during application registration
-client_secret 	The client secret obtained during application registration
-redirect_uri 	The URI registered with the application
-grant_type 	As defined in the OAuth 2.0 specification, this field must contain a value of authorization_code
-
-==>
-
-access_token 	A token that can be sent to a Google API
-id_token 	A JWT that contains identity information about the user that is digitally signed by Google
-expires_in 	The remaining lifetime on the Access Token
-token_type 	Indicates the type of token returned. At this time, this field will always have the value Bearer
-	 */
+	
 	private LinkedHashMap approvedLoginTokens = new LinkedHashMap(16, 0.9f, false) {
 		protected boolean removeEldestEntry(Entry eldest) {
 			return (((Long) eldest.getValue()).longValue() < (System.currentTimeMillis() - (1000 * 60 * 60)));
@@ -254,14 +218,26 @@ token_type 	Indicates the type of token returned. At this time, this field will 
 			if (loginToken == null)
 				return null;
 			
+			//	check session login token
+			HttpSession session = request.getSession(false);
+			if ((session == null) || !loginToken.equals(session.getAttribute(this.getName() + "_loginToken")))
+				return null;
+			
 			//	user name is only set login token is authenticated
 			return approvedLoginTokensToUserNames.getProperty(loginToken);
 		}
 		public boolean providesLoginFields() {
 			return true;
 		}
+		public void sessionLoggingOut(HttpSession session) {
+			session.removeAttribute(this.getName() + "_loginToken");
+		}
 		public void writeLoginFields(HtmlPageBuilder pageBuilder) throws IOException {
-			String loginToken = RandomByteSource.getGUID();
+			String loginToken = ((String) pageBuilder.request.getSession(true).getAttribute(this.getName() + "_loginToken"));
+			if (loginToken == null) {
+				loginToken = RandomByteSource.getGUID();
+				pageBuilder.request.getSession(true).setAttribute((this.getName() + "_loginToken"), loginToken);
+			}
 			pageBuilder.writeLine("<input type=\"hidden\" name=\"" + this.getName() + "_loginToken\" value=\"" + loginToken + "\">");
 			pageBuilder.writeLine("<iframe id=\"" + this.getName() + "_checkLoginFrame\" src=\"#\" style=\"width: 100%; height: 100%; border: 0px;\"></iframe>");
 			pageBuilder.writeLine("<script type=\"\">");
@@ -322,15 +298,7 @@ token_type 	Indicates the type of token returned. At this time, this field will 
 			pageBuilder.writeLine("}");
 			pageBuilder.writeLine("</script>");
 		}
-/*
-https://accounts.google.com/o/oauth2/auth?
-client_id=424911365001.apps.googleusercontent.com&
-response_type=code&
-scope=openid%20email&
-redirect_uri=https://oa2cb.example.com/&
-state=security_token%3D138r5719ru3e1%26url%3Dhttps://oa2cb.example.com/myHome&
-login_hint=jsmith@example.com
- */
+		
 		public void writeOnLoggingInFunctionBody(HtmlPageBuilder pageBuilder) throws IOException {
 			//	open OAuth provider login window
 			String oAuthProviderLoginWindowUrl = oAuthProviderLoginUrl +
@@ -411,14 +379,4 @@ login_hint=jsmith@example.com
 			return super.handleRequest(request, response);
 		}
 	}
-//	
-//	/**
-//	 * @param args
-//	 */
-//	public static void main(String[] args) throws Exception {
-//		URL url = new URL("https://www.google.com");
-//		BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
-//		for (String l; (l = br.readLine()) != null;)
-//			System.out.println(l);
-//	}
 }

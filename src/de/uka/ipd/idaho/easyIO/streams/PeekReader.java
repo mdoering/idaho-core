@@ -101,6 +101,18 @@ public class PeekReader extends FilterReader {
 	}
 	
 	/**
+	 * Skip all leading whitespace, i.e., all leading characters whose byte
+	 * value is 0x20 or less. This method only stops if either reaches the
+	 * first char with a byte value greater than 0x20, or the end of the
+	 * stream.
+	 * @throws IOException
+	 */
+	public void skipSpace() throws IOException {
+		while ((this.peek() < 33) && (this.peek() != -1))
+			this.read();
+	}
+	
+	/**
 	 * Retrieve the next character from this input stream, but without
 	 * consuming it.
 	 * @return the next character

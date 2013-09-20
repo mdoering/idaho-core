@@ -61,7 +61,6 @@ public class AuthenticationServlet extends HtmlServlet {
 	private static final String CREATE_TIME_PARAMETER = "CreateTime";
 	private static final String LAST_ACCESS_PARAMETER = "LastAccess";
 	
-	private WebAppHost webAppHost;
 	private IoProvider io;
 	
 	private String authProviderName = "SelfRegAuth";
@@ -75,10 +74,6 @@ public class AuthenticationServlet extends HtmlServlet {
 	 * @see de.uka.ipd.idaho.easyIO.web.HtmlServlet#doInit()
 	 */
 	protected void doInit() throws ServletException {
-		super.doInit();
-		
-		//	connect to host
-		this.webAppHost = WebAppHost.getInstance(this.getServletContext());
 		
 		//	get name and label
 		this.authProviderName = this.getSetting("authProviderName", this.authProviderName);

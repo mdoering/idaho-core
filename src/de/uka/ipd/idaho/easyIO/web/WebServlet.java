@@ -28,6 +28,9 @@
 package de.uka.ipd.idaho.easyIO.web;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -56,6 +59,9 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	/** the surrounding web-app's WEB-INF path */
 	protected File webInfFolder;
 	
+	/** the surrounding web-app's host object */
+	protected WebAppHost webAppHost;
+	
 	/**
 	 * the servlet's data folder, nested inside the surrounding web-app's
 	 * WEB-INF folder to protect files not explicitly exposed from read access;
@@ -67,40 +73,83 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	
 	/**
 	 * the servlet's logical data path as a string, relative to the root path,
-	 * as specified in the web.xml; this string is either empty, or it starts
-	 * with a '/', in accordance to the usual return values of the
-	 * getContextPath() and getServletPath() methods of HttpServletRequest)
+	 * as specified in the <code>web.xml</code>; this string is either empty,
+	 * or it starts with a '/', in accordance to the usual return values of the
+	 * <code>getContextPath()</code> and <code>getServletPath()</code> methods
+	 * of <code>HttpServletRequest</code>)
 	 */
 	protected String dataPath;
 	
 	/**
 	 * a settings object containing the settings from the servlet's
 	 * configuration file; this file is expected to be located in the servlet's
-	 * data path, and is named config.cnfg by default; sub classes should use
-	 * the getSetting(), setSetting(), and removeSetting() methods instead of
-	 * accessing this object directly to facilitate automated storage of
-	 * modified settings; if this object is manipulated directly, sub classes
-	 * should use the setConfigDirty() method to indicate so.
+	 * data path, and is named <code>config.cnfg</code> by default; sub classes
+	 * should use the <code>getSetting()</code>, <code>setSetting()</code>, and
+	 * <code>removeSetting()</code> methods instead of accessing this object
+	 * directly to facilitate automated storage of modified settings; if this
+	 * object is manipulated directly, sub classes should use the
+	 * <code>setConfigDirty()</code> method to indicate so.
 	 */
 	protected Settings config;
 	private boolean configDirty = false;
+	private HashSet unmodifiedSettingNames = new HashSet();
+	
+	/**
+	 * Load the servlet's configuration file. This file is expected to be
+	 * located in the servlet's data path, and is named <code>config.cnfg</code>
+	 * by default. The name can be overwritten by specifying an init
+	 * parameter named <code>configFile</code> in the <code>web.xml</code>
+	 * file of the web application. If the configuration is not loaded for the
+	 * first time (e.g. on re-initialization), all settings modified via the
+	 * <code>setSetting()</code> since the first invocation of this method are
+	 * retained in their current values. Re-initializable servlets should call
+	 * this method first thing in their implementation of the
+	 * <code>reInit()</code> method.
+	 */
+	protected void loadConfig() {
+		String configFile = this.getInitParameter("configFile");
+		if (configFile == null)
+			configFile = "config.cnfg";
+		Settings config = Settings.loadSettings(new File(this.dataFolder, configFile));
+		String[] settingNames = config.getFullKeys();
+		if (this.config == null) {
+			for (int n = 0; n < settingNames.length; n++)
+				this.unmodifiedSettingNames.add(settingNames[n]);
+			this.config = config;
+		}
+		else {
+			HashSet unmodifiedSettingNames = new HashSet(this.unmodifiedSettingNames);
+			HashSet existingSettingNames = new HashSet(Arrays.asList(this.config.getFullKeys()));
+			for (int n = 0; n < settingNames.length; n++)
+				if (unmodifiedSettingNames.remove(settingNames[n]) | existingSettingNames.add(settingNames[n])) {
+					this.config.setSetting(settingNames[n], config.getSetting(settingNames[n]));
+					this.unmodifiedSettingNames.add(settingNames[n]);
+				}
+			for (Iterator snit = unmodifiedSettingNames.iterator(); snit.hasNext();) {
+				String removedSettingName = ((String) snit.next());
+				this.config.removeSetting(removedSettingName);
+				this.unmodifiedSettingNames.remove(removedSettingName);
+			}
+		}
+	}
 	
 	/**
 	 * This implementation loads the config file and determined the root and
 	 * data paths. To prevent overwriting, it is final. Sub classes should
-	 * overwrite the init(Settings) method insted, which exists exactly for this
-	 * purpose.
+	 * overwrite the <code>doInit()</code> and/or <code>reInit()</code> methods
+	 * instead, which exist exactly for this purpose and are called by this
+	 * implementation.
 	 * @see javax.servlet.GenericServlet#init()
 	 */
 	public final void init() throws ServletException {
 		
 		//	link up to webapp host
-		WebAppHost host = WebAppHost.getInstance(this.getServletContext());
-		host.registerServlet(this);
+		this.webAppHost = WebAppHost.getInstance(this.getServletContext());
+		this.webAppHost.registerServlet(this);
 		
 		//	get local environment
-		this.rootFolder = host.getRootFolder();
-		this.webInfFolder = host.getWebInfFolder();
+		this.rootFolder = this.webAppHost.getRootFolder();
+		this.webInfFolder = this.webAppHost.getWebInfFolder();
 		
 		this.dataPath = this.getInitParameter("dataPath");
 		if (dataPath == null) {
@@ -118,21 +167,37 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		}
 		
 		//	load instance specific config file
-		String configFile = this.getInitParameter("configFile");
-		if (configFile == null)
-			configFile = "config.cnfg";
-		this.config = Settings.loadSettings(new File(this.dataFolder, configFile));
+		this.loadConfig();
 		
 		//	initialize sub class
 		this.doInit();
+		
+		//	initialize reloadable settings (if any)
+		this.reInit();
 	}
 	
 	/**
-	 * Do implementation specific initialization. This method does nothing by
-	 * default, sub classes are welcome to overwrite it as needed.
+	 * Do implementation specific one-off initialization. This method is called
+	 * once when the servlet is loaded. It is intended for those parts of the
+	 * initialization that are to persist throughout the lifetime of the
+	 * servlet instance, like establishing a database connection. For parts of
+	 * the initialization that can be modified at runtime, use the
+	 * <code>reInit()</code> method. This default implementation does nothing
+	 * by default, sub classes are welcome to overwrite it as needed.
 	 * @throws ServletException
 	 */
 	protected void doInit() throws ServletException {}
+	
+	/**
+	 * (Re-)initialize the servlet. This method is called when the servlet is
+	 * loaded, after the <code>doInit()</code> method. It is intended for those
+	 * parts of the initialization that can be modified during the lifetime of
+	 * the servlet instance, like layout settings. For parts of the
+	 * initialization that cannot be modified at runtime, use the
+	 * <code>reInit()</code> method. This default implementation does nothing
+	 * by default, sub classes are welcome to overwrite it as needed.
+	 */
+	protected void reInit() throws ServletException {}
 	
 	/**
 	 * Retrieve a setting from the servlet configuration. If the setting is not
@@ -146,7 +211,7 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 */
 	protected String getSetting(String key) {
 		String value = this.config.getSetting(key);
-		return ((value == null) ? WebAppHost.getInstance(this.getServletContext()).getSetting(key) : value);
+		return ((value == null) ? this.webAppHost.getSetting(key) : value);
 	}
 	
 	/**
@@ -163,7 +228,7 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 */
 	protected String getSetting(String key, String def) {
 		String value = this.config.getSetting(key);
-		return ((value == null) ? WebAppHost.getInstance(this.getServletContext()).getSetting(key, def) : value);
+		return ((value == null) ? this.webAppHost.getSetting(key, def) : value);
 	}
 	
 	/**
@@ -173,8 +238,13 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * @return the previous value of the setting
 	 */
 	protected String setSetting(String key, String value) {
+		if (value == null)
+			return this.removeSetting(key);
 		String oldValue = this.config.setSetting(key, value);
-		this.configDirty = (this.configDirty || !value.equals(oldValue));
+		if (!value.equals(oldValue)) {
+			this.unmodifiedSettingNames.remove(key);
+			this.configDirty = true;
+		}
 		return oldValue;
 	}
 	
@@ -184,9 +254,12 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * @return the value of the removed setting
 	 */
 	protected String removeSetting(String key) {
-		String value = this.config.removeSetting(key);
-		this.configDirty = (this.configDirty || (value != null));
-		return value;
+		String oldValue = this.config.removeSetting(key);
+		if (oldValue != null) {
+			this.unmodifiedSettingNames.remove(key);
+			this.configDirty = true;
+		}
+		return oldValue;
 	}
 	
 	/**
@@ -197,20 +270,35 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		this.configDirty = true;
 	}
 	
+	/**
+	 * Persist the configuration of the servlet. This automatically happens on
+	 * shutdown. This method facilitates to do so at any other point, e.g.
+	 * after extensive modifications that a sub class wants to persist right
+	 * away. This method also resets the <code>configDirty</code> flag if it
+	 * was set by the <code>setConfigDirty()</code> method.
+	 */
+	protected synchronized void storeConfig() {
+		if (!this.configDirty)
+			return;
+		String configFile = this.getInitParameter("configFile");
+		if (configFile == null)
+			configFile = "config.cnfg";
+		try {
+			Settings.storeSettingsAsText(new File(this.dataFolder, configFile), this.config);
+			this.configDirty = false;
+			this.unmodifiedSettingNames.clear();
+			String[] settingNames = config.getFullKeys();
+			for (int n = 0; n < settingNames.length; n++)
+				this.unmodifiedSettingNames.add(settingNames[n]);
+		} catch (Exception e) {}
+	}
+	
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#destroy()
 	 */
 	public final void destroy() {
 		this.exit();
-		if (this.configDirty) {
-			String configFile = this.getInitParameter("configFile");
-			if (configFile == null)
-				configFile = "config.cnfg";
-			try {
-				Settings.storeSettingsAsText(new File(this.dataFolder, configFile), this.config);
-				this.configDirty = false;
-			} catch (Exception e) {}
-		}
+		this.storeConfig();
 	}
 	
 	/**

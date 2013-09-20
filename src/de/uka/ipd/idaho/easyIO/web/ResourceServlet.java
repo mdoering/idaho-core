@@ -93,11 +93,9 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 	private HashSet accessibleFileNames = new HashSet();
 	
 	/* (non-Javadoc)
-	 * @see de.uka.ipd.idaho.easyIO.web.WebServlet#doInit()
+	 * @see de.uka.ipd.idaho.easyIO.web.WebServlet#reInit()
 	 */
-	protected void doInit() throws ServletException {
-		this.accessibleFileNames = ((HashSet) accessibleResourceSets.get(this.rootFolder.getAbsolutePath()));
-		
+	protected void reInit() throws ServletException {
 		String afeString = this.getSetting("accessibleFileExtensions");
 		if (afeString == null)
 			return;
@@ -115,7 +113,7 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		//	check if we have the resource filte yet (we need this to be independent of servlet loading order)
+		//	check if we have the resource filter yet (we need this to be independent of servlet loading order)
 		if (this.accessibleFileNames == null)
 			this.accessibleFileNames = ((HashSet) accessibleResourceSets.get(this.rootFolder.getAbsolutePath()));
 		

@@ -37,6 +37,7 @@ import java.util.TreeMap;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -105,6 +106,7 @@ public class WebAppHost {
 	private File webInfFolder;
 	private Settings settings;
 	private HashMap registry = new HashMap();
+	private TreeMap reinitializableServletsByName = new TreeMap();
 	
 	private WebAppHost(String path) {
 		System.out.println("WebAppHost created for path " + path);
@@ -170,12 +172,61 @@ public class WebAppHost {
 	/**
 	 * Register a servlet so it becomes accessible through the getServlet()
 	 * method.
-	 * @param s the servlet to register
+	 * @param servlet the servlet to register
 	 */
-	public synchronized void registerServlet(Servlet s) {
-		String sn = s.getServletConfig().getServletName();
-		this.registry.put(sn, s);
-		System.out.println("WebAppHost (" + this.path + "): registered servlet as '" + sn + "', class is " + s.getClass().getName());
+	public synchronized void registerServlet(Servlet servlet) {
+		String sn = servlet.getServletConfig().getServletName();
+		this.registry.put(sn, servlet);
+		if (servlet instanceof WebServlet)
+			this.reinitializableServletsByName.put(sn, servlet);
+		System.out.println("WebAppHost (" + this.path + "): registered servlet as '" + sn + "', class is " + servlet.getClass().getName());
+	}
+	
+	/**
+	 * Retrieve the names of all instances of sub classes of this class. The
+	 * returned array is sorted lexicographically.
+	 * @return an array holding the names of all instances of sub classes of
+	 *         this class.
+	 */
+	public String[] getReInitializableServletNames() {
+		return ((String[]) this.reinitializableServletsByName.keySet().toArray(new String[this.reinitializableServletsByName.size()]));
+	}
+	
+	/**
+	 * Re-initialize a specific servlet. This method is intended to facilitate
+	 * refreshing the configuration of individual servlets without having to
+	 * reload the entire web application or even restart the whole web server.
+	 * This is useful for ingesting modified configuration files, stylesheets,
+	 * etc. For security reasons, facilities invoking this method should be
+	 * protected by some sort of login mechanism.
+	 * @param servletName the name of the servlet to reinitialize
+	 */
+	public void reInitialize(String servletName) throws ServletException {
+		WebServlet ws = ((WebServlet) this.reinitializableServletsByName.get(servletName));
+		if (ws != null) {
+			ws.loadConfig();
+			ws.reInit();
+		}
+	}
+	
+	/**
+	 * Re-initialize the entire web application. This method is intended to
+	 * facilitate refreshing the configuration without having to completely
+	 * reload the web application or even restart the whole web server. This is
+	 * useful for ingesting modified configuration files, stylesheets, etc. For
+	 * security reasons, facilities invoking this method should be protected by
+	 * some sort of login mechanism.
+	 */
+	public void reInitialize() throws ServletException {
+		this.settings = Settings.loadSettings(new File(this.webInfFolder, "web.cnfg"));
+		for (Iterator snit = this.reinitializableServletsByName.keySet().iterator(); snit.hasNext();) {
+			String sn = ((String) snit.next());
+			WebServlet ws = ((WebServlet) this.reinitializableServletsByName.get(sn));
+			if (ws != null) {
+				ws.loadConfig();
+				ws.reInit();
+			}
+		}
 	}
 	
 	/**
@@ -229,28 +280,23 @@ public class WebAppHost {
 		public abstract String getLabel();
 		
 		/**
-		 * Authenticate the session associated with an HTTP request. The
-		 * argument request does not have an HTTP session yet, otherwise this
-		 * method would not be called at all. Implementations of this method
-		 * must return null to indicate that they could not authenticate the
-		 * argument HTTP request. Returning a non-null result indicates that the
-		 * authentication provider authenticates the HTTP session associated
-		 * with the argument HTTP request. Further, implementations may create
-		 * an HTTP session (call <code>request.getSession(true)</code>) only
-		 * after successful authentication.
+		 * Authenticate the session associated with an HTTP request.
+		 * Implementations of this method must return null to indicate that
+		 * they could not authenticate the HTTP session associated with the
+		 * argument HTTP request. Returning a non-null result indicates that
+		 * the authentication provider authenticates the HTTP session
+		 * associated with the argument HTTP request.
 		 * @param request the request the HTTP session belongs to
 		 * @return the user name belonging to the argument HTTP request
 		 */
 		public abstract String authenticate(HttpServletRequest request);
 		
 		/**
-		 * Receive notification that an HTTP session is about to be invalidated.
+		 * Receive notification that an HTTP session is about to be logged out.
 		 * This method exists to enable authentication providers to clean up
-		 * their internal data structures. The argument session is not
-		 * invalidated yet, so ID and attributes are still accessible.
-		 * Implementations of this method must not invalidate the session
-		 * themselves. This default implementation does nothing. Sub classes are
-		 * welcome to overwrite it as needed.
+		 * their internal data structures. The argument session is never null.
+		 * This default implementation does nothing. Sub classes are welcome to
+		 * overwrite it as needed.
 		 * @param session the HTTP session being invalidated
 		 */
 		public void sessionLoggingOut(HttpSession session) {}
@@ -424,6 +470,28 @@ public class WebAppHost {
 	}
 	
 	/**
+	 * Check whether or not an HTTP request is authenticated, i.e., has a
+	 * session associated with it that has been authenticated by one of the
+	 * registered authentication providers and has not yet been logged out.
+	 * @param request the HTTP request to check
+	 * @return true if the argument HTTP request is authenticated
+	 */
+	public boolean isAuthenticated(HttpServletRequest request) {
+		return this.isAuthenticated(request.getSession(false));
+	}
+	
+	/**
+	 * Check whether or not an HTTP session is authenticated, i.e., has been
+	 * authenticated by one of the registered authentication providers and has
+	 * not yet been logged out.
+	 * @param session the HTTP session to check
+	 * @return true if the argument HTTP session is authenticated
+	 */
+	public boolean isAuthenticated(HttpSession session) {
+		return ((session == null) ? false : ((session.getAttribute(this.authenticatedUserNameAttribute) != null) && (session.getAttribute(this.authenticationProviderAttribute) != null)));
+	}
+	
+	/**
 	 * Retrieve the user name associated with an HTTP request. If the argument
 	 * request is not yet authenticated, this method returns null.
 	 * @param request the HTTP request to obtain the user for
@@ -468,9 +536,11 @@ public class WebAppHost {
 	}
 	
 	/**
-	 * Log out the session associated with an HTTP request. The session is
-	 * invalidated, and before that, its authentication provider is notified of
-	 * the upcoming logout.
+	 * Log out the session associated with an HTTP request. The session is not
+	 * invalidated, only the authentication provider and user name attributes
+	 * are removed, so the isAuthenticated() methods recognize the session is
+	 * not authenticated. Before removing these attributes, the authentication
+	 * provider is notified of the upcoming logout.
 	 * @param session the HTTP request whose associated session to log out
 	 */
 	public void logout(HttpServletRequest request) {
@@ -478,17 +548,21 @@ public class WebAppHost {
 	}
 	
 	/**
-	 * Log out an HTTP session. The session is invalidated, and before that, its
-	 * authentication provider is notified of the upcoming logout.
+	 * Log out an HTTP session. The session is not invalidated, only the
+	 * authentication provider and user name attributes are removed, so the
+	 * isAuthenticated() methods recognize the session is not authenticated.
+	 * Before removing these attributes, the authentication provider is
+	 * notified of the upcoming logout.
 	 * @param session the HTTP session to log out
 	 */
 	public void logout(HttpSession session) {
-		if (session == null) return;
+		if (session == null)
+			return;
 		AuthenticationProvider ap = this.getAuthenticationProvider(session);
-		if (ap != null) ap.sessionLoggingOut(session);
+		if (ap != null)
+			ap.sessionLoggingOut(session);
 		session.removeAttribute(this.authenticationProviderAttribute);
 		session.removeAttribute(this.authenticatedUserNameAttribute);
-		session.invalidate();
 	}
 	
 	/**
