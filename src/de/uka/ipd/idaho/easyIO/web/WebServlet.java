@@ -113,8 +113,7 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		Settings config = Settings.loadSettings(new File(this.dataFolder, configFile));
 		String[] settingNames = config.getFullKeys();
 		if (this.config == null) {
-			for (int n = 0; n < settingNames.length; n++)
-				this.unmodifiedSettingNames.add(settingNames[n]);
+			this.unmodifiedSettingNames.addAll(Arrays.asList(settingNames));
 			this.config = config;
 		}
 		else {

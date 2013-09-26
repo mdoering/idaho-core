@@ -357,8 +357,8 @@ public class Settings {
 			return true;
 		
 		//	prefix of first level subset
-		if (prefix.indexOf(PREFIX_PART_SEPARATOR) == -1) return
-		produceKey(prefix).equals(produceKey(this.prefix));
+		if (prefix.indexOf(PREFIX_PART_SEPARATOR) == -1)
+			return produceKey(prefix).equals(produceKey(this.prefix));
 		
 		//	prefix of some deeper level subset
 		if ((PREFIX_PART_SEPARATOR + produceKey(prefix)).endsWith(PREFIX_PART_SEPARATOR + produceKey(this.prefix))) 
@@ -459,7 +459,8 @@ public class Settings {
 		String unifiedPrefix = ((prefix == null) ? "" : (prefix + (prefix.endsWith("" + PREFIX_PART_SEPARATOR) ? "" : ("" + PREFIX_PART_SEPARATOR))));
 		String[] keys = this.getSubsetFor(unifiedPrefix).getKeys();
 		String[] prefixedKeys = new String[keys.length];
-		for (int k = 0; k < keys.length; k++) prefixedKeys[k] = unifiedPrefix + keys[k];
+		for (int k = 0; k < keys.length; k++)
+			prefixedKeys[k] = unifiedPrefix + keys[k];
 		return prefixedKeys;
 	}
 	
@@ -472,6 +473,8 @@ public class Settings {
 	public String[] getFullKeys() {
 		String[] keys = this.getKeys(true);
 		String prefix = this.getFullPrefix();
+		if (prefix == null)
+			return keys;
 		String[] prefixedKeys = new String[keys.length];
 		for (int k = 0; k < keys.length; k++)
 			prefixedKeys[k] = prefix + PREFIX_PART_SEPARATOR + keys[k];
