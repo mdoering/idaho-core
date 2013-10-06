@@ -152,7 +152,7 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 		this.charData.removeCharSequenceListener(this.adjuster);
 	}
 	
-	/**
+	/*
 	 * Char sequence listener for adopting the token overlay to changes in the
 	 * underlaying char sequence.
 	 * 
@@ -359,8 +359,10 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 	 */
 	public CharSequence setValueAt(CharSequence value, int index) throws IllegalArgumentException {
 		Token tok = this.tokenAt(index);
-		if (this.needsPadding(this.charData, tok.getStartOffset(), value, 0)) value = (" " + value);
-		if (this.needsPadding(value, value.length(), this.charData, tok.getEndOffset())) value = (value + " ");
+		if (this.needsPadding(this.charData, tok.getStartOffset(), value, 0))
+			value = (" " + value);
+		if (this.needsPadding(value, value.length(), this.charData, tok.getEndOffset()))
+			value = (value + " ");
 		this.charData.setChars(value, tok.getStartOffset(), tok.length());
 		return value;
 	}
@@ -386,24 +388,29 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 		if (DEBUG) System.out.println("BC: '" + bc + "' AC: '" + ac + "'");
 		boolean insertPad = false;
 		if (bc == StringUtils.NULLCHAR) {
-			if ((ac != StringUtils.NULLCHAR) && (ac < 33)) endOffset++;
-		} else if (ac == StringUtils.NULLCHAR) {
-			if ((bc != StringUtils.NULLCHAR) && (bc < 33)) startOffset--;
-		} else if (bc == 32) {
+			if ((ac != StringUtils.NULLCHAR) && (ac < 33))
+				endOffset++;
+		}
+		else if (ac == StringUtils.NULLCHAR) {
+			if ((bc != StringUtils.NULLCHAR) && (bc < 33))
+				startOffset--;
+		}
+		else if (bc == 32) {
 			if ((ac < 33) || !this.needsPadding(this.charData, (startOffset - 1), this.charData, endOffset))
 				startOffset--;
 			if ((ac < 33) && !this.needsPadding(this.charData, startOffset, this.charData, (endOffset + 1)))
 				endOffset++;
-		} else if (ac == 32) {
+		} 
+		else if (ac == 32) {
 			if ((bc < 33) || !this.needsPadding(this.charData, startOffset, this.charData, (endOffset + 1)))
 				endOffset++;
 			if ((bc < 33) && !this.needsPadding(this.charData, (startOffset - 1), this.charData, endOffset))
 				startOffset--;
-		} else if ((bc < 33) && (ac < 33)) {
-			endOffset++;
-		} else if (this.needsPadding(this.charData, startOffset, this.charData, endOffset)) {
-			insertPad = true;
 		}
+		else if ((bc < 33) && (ac < 33))
+			endOffset++;
+		else if (this.needsPadding(this.charData, startOffset, this.charData, endOffset))
+			insertPad = true;
 		
 		//	TODO: decide on char sequence implementation based on argument char sequence length later on
 		return new PlainTokenSequence(this.charData.setChars((insertPad ? " " : ""), startOffset, (endOffset - startOffset)), this.getTokenizer());
@@ -415,7 +422,8 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 	public CharSequence insertTokensAt(CharSequence tokens, int index) {
 		
 		//	check parameter
-		if ((tokens == null) || (tokens.length() == 0)) return tokens;
+		if ((tokens == null) || (tokens.length() == 0))
+			return tokens;
 		
 		//	insert padding if necessary
 		int insertOffset = ((index == this.size()) ? this.charData.length() : this.tokenAt(index).getStartOffset());
@@ -446,7 +454,7 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 		return tokens;
 	}
 	
-	/** determine if two char sequences need padding in order not to hamper tokenization
+	/* determine if two char sequences need padding in order not to hamper tokenization
 	 * @param	cs1		the first char sequence
 	 * @param	o1		the offset before which to check the first char sequence backward (exclusive, thus 1 to length())
 	 * @param	cs2		the second char sequence
@@ -517,9 +525,11 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 		MutableCharSequence chars;
 		try {
 			chars = ((MutableCharSequence) this.charData.getClass().newInstance());
-		} catch (InstantiationException e) {
+		}
+		catch (InstantiationException e) {
 			chars = new StringBufferCharSequence();
-		} catch (IllegalAccessException e) {
+		}
+		catch (IllegalAccessException e) {
 			chars = new StringBufferCharSequence();
 		}
 		
@@ -588,8 +598,10 @@ public class GamtaTokenSequence extends AbstractMutableTokenSequence {
 	 * @see de.gamta.TokenSequence#getWhitespaceAfter(int)
 	 */
 	public String getWhitespaceAfter(int index) {
-		if (this.size() == 0) return this.charData.toString();
-		else if (index == (this.size() - 1)) this.charData.subSequence(this.lastToken().getEndOffset(), this.charData.length()).toString();
+		if (this.size() == 0)
+			return this.charData.toString();
+		else if (index == (this.size() - 1))
+			return this.charData.subSequence(this.lastToken().getEndOffset(), this.charData.length()).toString();
 		return this.charData.subSequence(this.tokenAt(index).getEndOffset(), this.tokenAt(index + 1).getStartOffset()).toString();
 	}
 	

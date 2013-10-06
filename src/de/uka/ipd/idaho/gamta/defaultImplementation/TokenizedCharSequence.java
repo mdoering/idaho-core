@@ -105,25 +105,6 @@ public class TokenizedCharSequence implements TokenSequence {
 				this.length = charData.length();
 			}
 		}
-//		
-//		//	generate token overlay
-//		Tokenizer.TokenIterator ti = this.tokenizer.getTokenIterator(charData);
-//		int lastEnd = -1;
-//		while (ti.hasMoreTokens()) {
-//			Tokenizer.CharSequenceToken cst = ti.getNextToken();
-//			if (lastEnd == -1) this.leadingWhitespace.append(charData.subSequence(0, cst.startOffset).toString());
-//			else this.getLastToken().whitespace.append(charData.subSequence(lastEnd, cst.startOffset).toString());
-//			GamtaToken gt = new GamtaToken(charData.subSequence(cst.startOffset, cst.endOffset));
-//			gt.startOffset = cst.startOffset;
-//			this.tokens.addElement(gt);
-//			lastEnd = cst.endOffset;
-//		}
-//		
-//		//	add last whitespace
-//		if (lastEnd < charData.length()) {
-//			if (lastEnd == -1) this.leadingWhitespace.append(charData.toString());
-//			else this.getLastToken().whitespace.append(charData.subSequence(lastEnd, charData.length()).toString());
-//		}
 	}
 	
 	/** package visible constructor used by TokenizedMutableCharSequence
@@ -352,7 +333,8 @@ public class TokenizedCharSequence implements TokenSequence {
 			tIndex = ((left + right) / 2);
 			gt = this.tcsTokenAt(tIndex);
 			if (DEBUG_OFFSET_INDEX_CACHE) System.out.println("   - tIndex is " + tIndex + ", startOffset is " + gt.startOffset + ", endOffset is " + gt.gtEndOffset());
-			if (gt.gtEndOffset() <= offset) left = tIndex;
+			if (gt.gtEndOffset() <= offset)
+				left = tIndex;
 			else if (gt.startOffset <= offset) {
 				this.lastOffsetTokenIndex = tIndex;
 				return tIndex;

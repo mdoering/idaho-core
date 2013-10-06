@@ -84,7 +84,7 @@ public class RegExTokenizer implements Tokenizer {
 			Matcher matcher = RegExTokenizer.this.pattern.matcher(chars);
 			while (matcher.find()) {
 				/*
-				 * extens offset array by one on overflow. while this approach
+				 * extends offset array by one on overflow. while this approach
 				 * incurs an array extension for every single token from the
 				 * second on, more than one token in a whitespace-free block
 				 * seldom occurs (~20%, for punctuation), and more than two are

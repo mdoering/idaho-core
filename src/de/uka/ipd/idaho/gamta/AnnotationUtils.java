@@ -628,7 +628,7 @@ public class AnnotationUtils {
 			else if (ch == '&')
 				escapedString.append("&amp;");
 			else if (((ch < 32) || (ch == 127)) && escapeControl)
-				escapedString.append("&x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
+				escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
 			else escapedString.append(ch);
 		}
 		return escapedString.toString();
@@ -661,10 +661,19 @@ public class AnnotationUtils {
 					string.append('"');
 					c+=6;
 				}
-				else if (escapedString.startsWith("x", (c+1))) {
+				else if (escapedString.startsWith("#x", (c+1))) {
+					int sci = escapedString.indexOf(';', (c+2));
+					if ((sci != -1) && (sci <= (c+4))) try {
+						ch = ((char) Integer.parseInt(escapedString.substring((c+3), sci), 16));
+						c = sci;
+					} catch (Exception e) {}
+					string.append(ch);
+					c++;
+				}
+				else if (escapedString.startsWith("#", (c+1))) {
 					int sci = escapedString.indexOf(';', (c+1));
 					if ((sci != -1) && (sci <= (c+4))) try {
-						ch = ((char) Integer.parseInt(escapedString.substring((c+2), sci), 16));
+						ch = ((char) Integer.parseInt(escapedString.substring((c+2), sci)));
 						c = sci;
 					} catch (Exception e) {}
 					string.append(ch);
