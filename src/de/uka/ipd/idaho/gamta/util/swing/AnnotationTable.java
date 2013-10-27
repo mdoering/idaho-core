@@ -125,7 +125,7 @@ public class AnnotationTable extends JPanel {
 	 * addition, 'Ctrl-Shift' in combination with a number key (0-9) may also be
 	 * mapped to operation system functions on some platforms and thus may not
 	 * be able to invoke a shortcut on the AnnotationTable.<br>
-	 * If shiftDown() returns false, the invokation of this shortcut is
+	 * If shiftDown() returns false, the invocation of this shortcut is
 	 * insensitive to the 'Shift' key, and the argument boolean of the
 	 * performAction() method can be true or false. Consequently, the actual
 	 * action can react dynamically to the state of the 'Shift' key. If the
@@ -191,7 +191,7 @@ public class AnnotationTable extends JPanel {
 			String ctrl = (this.controlDown() ? CONTROL_KEY_PREFIX : "");
 			String alt = (this.altDown() ? ALT_KEY_PREFIX : "");
 			
-			//	catch shortcuts using both of 'Ctrl' alt 'Alt', and ones using neither if text is editable
+			//	catch shortcuts using both of 'Ctrl' and 'Alt', and ones using neither if text is editable
 			int ctrlAltLen = (ctrl.length() + alt.length());
 			if (ctrlAltLen > Math.max(ctrl.length(), alt.length())) return null;
 			
@@ -213,7 +213,7 @@ public class AnnotationTable extends JPanel {
 		 *            'Shift' key dynamically)
 		 * @param data the content of the editor, thus the annotation to work
 		 *            on.
-		 * @param selection the Annotation focussed in the table (always null here)
+		 * @param selection the Annotation focused in the table (always null here)
 		 * @param selected an array holding the Annotations currently selected
 		 *            in the annotation table
 		 * @return the annotation action to perform on behalf of the shortcut,
@@ -238,7 +238,7 @@ public class AnnotationTable extends JPanel {
 		 * Obtain an annotation last clicked in the annotation table (if this
 		 * action is not in the process of being executed in an invocation of
 		 * AnnotationTable.performAction(), this method returns null). If the
-		 * AnnotationTable is constructed with an arry of MutableAnnotations,
+		 * AnnotationTable is constructed with an array of MutableAnnotations,
 		 * this method returns a MutableAnnotation.
 		 * @return an Annotation last clicked in the annotation table (if this
 		 *         AnnotationAction is invoked on behalf of a Shortcut, this
@@ -253,7 +253,7 @@ public class AnnotationTable extends JPanel {
 		 * Obtain the annotations currently selected in the annotation table (if
 		 * this action is not in the process of being executed in an invocation
 		 * of AnnotationTable.performAction(), this method returns null). If the
-		 * AnnotationTable is constructed with an arry of MutableAnnotations,
+		 * AnnotationTable is constructed with an array of MutableAnnotations,
 		 * this method returns an array of MutableAnnotations.
 		 * @return an array holding the Annotations currently selected in the
 		 *         annotation table
@@ -424,7 +424,7 @@ public class AnnotationTable extends JPanel {
 	
 	private void storeStatusForKeyStroke() {
 		
-		//	no annottation clicked for keystroke
+		//	no annotation clicked for keystroke
 		this.clicked = null;
 		
 		//	get annotations selected in the table

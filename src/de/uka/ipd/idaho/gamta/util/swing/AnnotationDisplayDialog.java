@@ -36,6 +36,8 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -156,17 +158,34 @@ public class AnnotationDisplayDialog extends JDialog {
 		this.setLocationRelativeTo(host);
 	}
 	
-	/**	@return true if and only if the dialog was committed
+	/**
+	 * Check if the dialog was committed. If the <code>showOnly</code> argument
+	 * was true, this method always returns false.
+	 * @return true if and only if the dialog was committed
 	 */
 	public boolean isCommitted() {
 		return this.isCommitted;
 	}
 	
-	/**	@return	the selected Annotation
+	/**
+	 * Retrieve the annotations selected in the table. If the
+	 * <code>showOnly</code> argument was true, this method always returns
+	 * an empty array.
+	 * @return an array holding the selected annotations
 	 */
 	public Annotation[] getSelectedAnnotations() {
 		return this.annotationDisplay.getSelectedAnnotations();
 	}
+	
+	/**
+	 * React to a mouse click on an annotation displayed in the dialog. This
+	 * default implementation does nothing, sub classes are welcome to
+	 * overwrite it as needed.
+	 * @param rowIndex the index of the clicked row
+	 * @param clickCount the number of clicks
+	 */
+	protected void annotationClicked(int rowIndex, int clickCount) {}
+	
 	private class AnnotationDisplayPanel extends JPanel {
 		private Annotation[] annotations;
 		private boolean[] selectors;
@@ -179,7 +198,8 @@ public class AnnotationDisplayDialog extends JDialog {
 			
 			this.annotations = annotations;
 			this.selectors = new boolean[annotations.length];
-			for (int s = 0; s < this.selectors.length; s++) this.selectors[s] = true;
+			for (int s = 0; s < this.selectors.length; s++)
+				this.selectors[s] = selectable;
 			
 			this.annotationTable = new JTable();
 			
@@ -211,8 +231,8 @@ public class AnnotationDisplayDialog extends JDialog {
 				});
 				buttonPanel.add(selectNoneButton);
 				this.add(buttonPanel, BorderLayout.SOUTH);
-				
-			} else {
+			}
+			else {
 				this.annotationTable.setDefaultRenderer(Object.class, new TooltipAwareTableRenderer(3));
 				this.annotationTable.setModel(new AnnotationTableModel(annotations));
 				this.annotationTable.getColumnModel().getColumn(0).setMaxWidth(120);
@@ -220,26 +240,40 @@ public class AnnotationDisplayDialog extends JDialog {
 				this.annotationTable.getColumnModel().getColumn(2).setMaxWidth(60);
 			}
 			
+			this.annotationTable.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent me) {
+					int rowIndex = annotationTable.getSelectedRow();
+					if (rowIndex != -1)
+						annotationClicked(rowIndex, me.getClickCount());
+				}
+			});
+			
 			JScrollPane annotationTableBox = new JScrollPane(this.annotationTable);
+			annotationTableBox.getVerticalScrollBar().setUnitIncrement(50);
+			annotationTableBox.getVerticalScrollBar().setBlockIncrement(50);
 			this.add(annotationTableBox, BorderLayout.CENTER);
 		}
 		
 		private void selectAll() {
-			for (int s = 0; s < this.selectors.length; s++) this.selectors[s] = true;
+			for (int s = 0; s < this.selectors.length; s++)
+				this.selectors[s] = true;
 			this.annotationTable.repaint();
 			this.validate();
 		}
 		
 		private void selectNone() {
-			for (int s = 0; s < this.selectors.length; s++) this.selectors[s] = false;
+			for (int s = 0; s < this.selectors.length; s++)
+				this.selectors[s] = false;
 			this.annotationTable.repaint();
 			this.validate();
 		}
 		
 		private Annotation[] getSelectedAnnotations() {
 			ArrayList collector = new ArrayList();
-			for (int a = 0; a < this.annotations.length; a++)
-				if (this.selectors[a]) collector.add(this.annotations[a]);
+			for (int a = 0; a < this.annotations.length; a++) {
+				if (this.selectors[a])
+					collector.add(this.annotations[a]);
+			}
 			return ((Annotation[]) collector.toArray(new Annotation[collector.size()]));
 		}
 		
@@ -265,11 +299,15 @@ public class AnnotationDisplayDialog extends JDialog {
 			/** @see javax.swing.table.TableModel#getColumnName(int)
 			 */
 			public String getColumnName(int columnIndex) {
-				if (columnIndex == 0) return "Type";
-				if (columnIndex == 1) return "Start";
-				if (columnIndex == 2) return "Size";
-				if (columnIndex == 3) return "Value";
-				return null;
+				if (columnIndex == 0)
+					return "Type";
+				else if (columnIndex == 1)
+					return "Start";
+				else if (columnIndex == 2)
+					return "Size";
+				else if (columnIndex == 3)
+					return "Value";
+				else return null;
 			}
 			
 			/** @see javax.swing.table.TableModel#getRowCount()
@@ -282,11 +320,15 @@ public class AnnotationDisplayDialog extends JDialog {
 			 */
 			public Object getValueAt(int rowIndex, int columnIndex) {
 				Annotation a = this.annotations[rowIndex];
-				if (columnIndex == 0) return a.getType();
-				if (columnIndex == 1) return "" + a.getStartIndex();
-				if (columnIndex == 2) return "" + a.size();
-				if (columnIndex == 3) return a.getValue();
-				return null;
+				if (columnIndex == 0)
+					return a.getType();
+				else if (columnIndex == 1)
+					return ("" + a.getStartIndex());
+				else if (columnIndex == 2)
+					return ("" + a.size());
+				else if (columnIndex == 3)
+					return a.getValue();
+				else return null;
 			}
 			
 			/** @see javax.swing.table.TableModel#isCellEditable(int, int)
@@ -324,8 +366,7 @@ public class AnnotationDisplayDialog extends JDialog {
 			/** @see javax.swing.table.TableModel#getColumnClass(int)
 			 */
 			public Class getColumnClass(int columnIndex) {
-				if (columnIndex == 0) return Boolean.class;
-				else return String.class;
+				return ((columnIndex == 0) ? Boolean.class : String.class);
 			}
 			
 			/** @see javax.swing.table.TableModel#getColumnCount()
@@ -337,12 +378,17 @@ public class AnnotationDisplayDialog extends JDialog {
 			/** @see javax.swing.table.TableModel#getColumnName(int)
 			 */
 			public String getColumnName(int columnIndex) {
-				if (columnIndex == 0) return "Select";
-				if (columnIndex == 1) return "Type";
-				if (columnIndex == 2) return "Start";
-				if (columnIndex == 3) return "Size";
-				if (columnIndex == 4) return "Value";
-				return null;
+				if (columnIndex == 0)
+					return "Select";
+				else if (columnIndex == 1)
+					return "Type";
+				else if (columnIndex == 2)
+					return "Start";
+				else if (columnIndex == 3)
+					return "Size";
+				else if (columnIndex == 4)
+					return "Value";
+				else return null;
 			}
 			
 			/** @see javax.swing.table.TableModel#getRowCount()
@@ -354,13 +400,18 @@ public class AnnotationDisplayDialog extends JDialog {
 			/** @see javax.swing.table.TableModel#getValueAt(int, int)
 			 */
 			public Object getValueAt(int rowIndex, int columnIndex) {
-				if (columnIndex == 0) return new Boolean(this.selectors[rowIndex]);
+				if (columnIndex == 0)
+					return new Boolean(this.selectors[rowIndex]);
 				Annotation a = this.annotations[rowIndex];
-				if (columnIndex == 1) return a.getType();
-				if (columnIndex == 2) return "" + a.getStartIndex();
-				if (columnIndex == 3) return "" + a.size();
-				if (columnIndex == 4) return a.getValue();
-				return null;
+				if (columnIndex == 1)
+					return a.getType();
+				else if (columnIndex == 2)
+					return ("" + a.getStartIndex());
+				else if (columnIndex == 3)
+					return ("" + a.size());
+				else if (columnIndex == 4)
+					return a.getValue();
+				else return null;
 			}
 			
 			/** @see javax.swing.table.TableModel#isCellEditable(int, int)
@@ -376,7 +427,8 @@ public class AnnotationDisplayDialog extends JDialog {
 			/** @see javax.swing.table.TableModel#setValueAt(java.lang.Object, int, int)
 			 */
 			public void setValueAt(Object newValue, int rowIndex, int columnIndex) {
-				if (columnIndex == 0) this.selectors[rowIndex] = ((Boolean) newValue).booleanValue();
+				if (columnIndex == 0)
+					this.selectors[rowIndex] = ((Boolean) newValue).booleanValue();
 			}
 		}
 
@@ -410,7 +462,9 @@ public class AnnotationDisplayDialog extends JDialog {
 						lines.addElement(tokens.getSubsequence(startToken, (t - startToken + 1)).toString());
 						startToken = (t + 1);
 						lineLength = 0;
-					} else if (Gamta.insertSpace(lastToken, token)) lineLength++;
+					}
+					else if (Gamta.insertSpace(lastToken, token))
+						lineLength++;
 				}
 				if (startToken < tokens.size())
 					lines.addElement(tokens.getSubsequence(startToken, (tokens.size() - startToken)).toString());
