@@ -627,8 +627,13 @@ public class AnnotationUtils {
 				escapedString.append("&quot;");
 			else if (ch == '&')
 				escapedString.append("&amp;");
-			else if (((ch < 32) || (ch == 127)) && escapeControl)
-				escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
+//			else if (((ch < 32) || (ch == 127)) && escapeControl)
+//				escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
+			else if ((ch < 32) || (ch == 127) || (ch == 129) || (ch == 141) || (ch == 143) || (ch == 144) || (ch == 157)) {
+				if (escapeControl && ((ch == '\t') || (ch == '\n') || (ch == '\r')))
+					escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
+				else escapedString.append(' ');
+			}
 			else escapedString.append(ch);
 		}
 		return escapedString.toString();
@@ -674,6 +679,15 @@ public class AnnotationUtils {
 					int sci = escapedString.indexOf(';', (c+1));
 					if ((sci != -1) && (sci <= (c+4))) try {
 						ch = ((char) Integer.parseInt(escapedString.substring((c+2), sci)));
+						c = sci;
+					} catch (Exception e) {}
+					string.append(ch);
+					c++;
+				}
+				else if (escapedString.startsWith("x", (c+1))) {
+					int sci = escapedString.indexOf(';', (c+1));
+					if ((sci != -1) && (sci <= (c+4))) try {
+						ch = ((char) Integer.parseInt(escapedString.substring((c+2), sci), 16));
 						c = sci;
 					} catch (Exception e) {}
 					string.append(ch);
@@ -777,4 +791,11 @@ public class AnnotationUtils {
 		//	no errors found, report success
 		return true;
 	}
+//	
+//	public static void main(String[] args) {
+//		String str = "new line\ncarriage return\rtab\tdel\u007fweird\u0013end";
+//		System.out.println(escapeForXml(str, false));
+//		System.out.println(escapeForXml(str, true));
+//		System.out.println(unescapeFromXml(escapeForXml(str, true)));
+//	}
 }
