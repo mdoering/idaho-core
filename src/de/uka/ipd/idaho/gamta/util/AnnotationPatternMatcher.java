@@ -332,11 +332,25 @@ public class AnnotationPatternMatcher {
 			return this.toString("");
 		}
 		public String toString(String indent) {
-			StringBuffer sb = new StringBuffer(indent + this.matched.toString(null) + " ==> " + this.match.toXML());
-			for (Iterator cit = this.children.iterator(); cit.hasNext();) {
-				sb.append("\r\n");
-				sb.append(((MatchTreeNode) cit.next()).toString(indent + "  "));
+			StringBuffer sb = new StringBuffer(indent + this.matched.toString(null) + " ==> ");
+			sb.append(AnnotationUtils.produceStartTag(this.match, new HashSet() {
+				public boolean contains(Object o) {
+					return ((matched.annotationAttributes != null) && matched.annotationAttributes.containsAttribute(o.toString()));
+				}
+			}, true));
+			if (this.match.size() <= 15)
+				sb.append(TokenSequenceUtils.concatTokens(this.match, true, true));
+			else {
+				sb.append(TokenSequenceUtils.concatTokens(this.match, 0, 7, true, true));
+				sb.append(" ... ");
+				sb.append(TokenSequenceUtils.concatTokens(this.match, (this.match.size() - 7), 7, true, true));
 			}
+			sb.append(AnnotationUtils.produceEndTag(this.match));
+			if (this.children != null)
+				for (Iterator cit = this.children.iterator(); cit.hasNext();) {
+					sb.append("\r\n");
+					sb.append(((MatchTreeNode) cit.next()).toString(indent + "  "));
+				}
 			return sb.toString();
 		}
 	}
@@ -353,9 +367,6 @@ public class AnnotationPatternMatcher {
 		void addChild(MatchTreeNode child) {}
 		public MatchTreeNode[] getChildren() {
 			return null;
-		}
-		public String toString(String indent) {
-			return (indent + this.matched.toString(null) + " ==> " + this.match.toXML());
 		}
 	}
 	
@@ -969,7 +980,7 @@ public class AnnotationPatternMatcher {
 //		pattern = "<bibRefCitation>\n')'?\n<number>";
 		AnnotationPattern ap = getPattern(Gamta.INNER_PUNCTUATION_TOKENIZER, pattern);
 		System.out.println(ap.toString());
-		MutableAnnotation doc = SgmlDocumentReader.readDocument(new StringReader("Mr. <fn>Tommy</fn> <in>F.</in> <ln><fn>Lee</fn></ln> <i>van</i> <i>den</i> <ln>Jones</ln>, <a>Jr.</a>"));
+		MutableAnnotation doc = SgmlDocumentReader.readDocument(new StringReader("Mr. <fn test=\"test\">Tommy</fn> <in>F.</in> <ln><fn>Lee</fn></ln> <i>van</i> <i>den</i> <ln>Jones</ln>, <a>Jr.</a>"));
 		MatchTree[] mts = getMatchTrees(doc, ap.toString());
 		for (int a = 0; a < mts.length; a++)
 			System.out.println(mts[a].toString());
