@@ -52,17 +52,11 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
 /**
  * Matcher for patterns over annotations and intermediate literals. Annotations
  * can be filtered based on attributes and attribute values, also using regular
- * expression patterns. Individual parts of patterns can be optional or
- * required, but other quantifiers currently do not work; this can be
- * substituted, however, by repeating pattern elements, or by first using a
- * helper pattern to aggregate sequences of annotations of a specific type.
- * Furthermore, the first part of a match cannot be a literal; this can be
- * substituted, however, by annotating occurrences of the literal before
- * invoking the matcher.<br>
+ * expression patterns.<br>
  * The pattern syntax is partially XML based:<br>
  * <ul>
  * <li><code>&lt;<i>type</i>&gt;</code>: matches an annotation of the specified
- * type</li>
+ * type. Further, there are attribute based filters:<ul>
  * <li>
  * <code>&lt;<i>type</i> <i>attribute</i>=&quot;*&quot;&gt;</code>: matches an
  * annotation of the specified type if it has the specified attribute</li>
@@ -74,11 +68,32 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * <code>&lt;<i>type</i> <i>attribute</i>=&quot;(<i>regex</i>)&quot;&gt;</code>:
  * matches an annotation of the specified type if it has the specified attribute
  * with a value matching the regular expression pattern between the parentheses</li>
+ * </ul></li>
  * <li>
  * <code>'<i>literal</i>'</code>: matches the literal between the high commas</li>
  * <li>
- * <code>?</code>: marks the annotation or literal immediately preceding it as
- * optional</li>
+ * <code>&quot;<i>pattern</i>&quot;</code>: matches any sequence of tokens
+ * matched by the regular expression pattern between the double quotes</li>
+ * <li>
+ * <code>(<i>A</i>|<i>B</i>)</code>: matches any one match of sub pattern <i>A</i>
+ * or <i>B</i></li>
+ * <li>Each atomic part of an annotation pattern (annotation matchers, literals,
+ * and pattern literals) can have a quantifier attached to it, akin to Java
+ * regular expression patterns:<ul>
+ * <li>
+ * <code>{<i>m</i>,<i>n</i>}</code>: indicates that the atom immediately
+ * preceding the opening curly bracket has to occur at least <i>m</i> times in
+ * a match and can occur at most <i>n</i> times.</li>
+ * <li>
+ * <code>*</code>: equivalent to <code>{0,inf}</code>, where <code>inf</code>
+ * indicates infinity</li>
+ * <li>
+ * <code>+</code>: equivalent to <code>{1,inf}</code>, where <code>inf</code>
+ * indicates infinity</li>
+ * <li>
+ * <code>?</code>: equivalent to <code>{0,1}</code>, where <code>inf</code>
+ * indicates infinity</li>
+ * </ul></li>
  * </ul>
  * <br>
  * Examples:<br>
@@ -101,16 +116,6 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class AnnotationPatternMatcher {
-	
-	/* TODO update documentation to reflect all this:
-'...' -> literal: ends a next non-escaped high comma not part of pattern literal
-"..." -> regular expression pattern literal: ends a next non-escaped double quote not part of literal or annotation
-<...> -> annotation: ends at next closing angle bracket
-(...|...) -> disjunction: ends at next closing bracket, elements separated by pipes
-(...) -> sub pattern: ends at next closing bracket not part of annotation or literal
-{m,n} -> quantifier: ends at next closing curly bracket
-?,*,+ -> short quantifier: single chars
-	 */
 	
 	/**
 	 * Normalize an annotation pattern, i.e, remove line breaks and indents.
