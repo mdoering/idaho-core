@@ -171,8 +171,8 @@ public class AnnotationAttributeEditor extends JPanel {
 		this.resetAttributeValueField();
 		
 		this.attributeValueField.getEditor().getEditorComponent().addFocusListener(new FocusAdapter() {
-			public void focusGained(FocusEvent e) {
-				if (DUMMY_ATTRIBUTE_NAME.equals(attributeValueField.getSelectedItem())) {
+			public void focusGained(FocusEvent fe) {
+				if (DUMMY_ATTRIBUTE_VALUE.equals(attributeValueField.getSelectedItem())) {
 					attributeValueField.setSelectedItem("");
 				}
 			}
@@ -196,7 +196,7 @@ public class AnnotationAttributeEditor extends JPanel {
 		JButton setAttributeButton = new JButton("Add / Set Attribute");
 		setAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		setAttributeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				setAttribute();
 			}
 		});
@@ -204,7 +204,7 @@ public class AnnotationAttributeEditor extends JPanel {
 		JButton removeAttributeButton = new JButton("Remove Attribute");
 		removeAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		removeAttributeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				removeAttribute();
 			}
 		});
@@ -212,7 +212,7 @@ public class AnnotationAttributeEditor extends JPanel {
 		JButton clearAttributesButton = new JButton("Clear Attributes");
 		clearAttributesButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		clearAttributesButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				clearAttributes();
 			}
 		});
@@ -280,7 +280,8 @@ public class AnnotationAttributeEditor extends JPanel {
 			public void mouseClicked(MouseEvent me) {
 				if (me.getClickCount() > 1) {
 					int rowIndex = attributeTable.getSelectedRow();
-					if (rowIndex != -1) attributeNameField.setSelectedItem(annotationAttributeNames.get(rowIndex));
+					if (rowIndex != -1)
+						attributeNameField.setSelectedItem(annotationAttributeNames.get(rowIndex));
 				}
 			}
 		});

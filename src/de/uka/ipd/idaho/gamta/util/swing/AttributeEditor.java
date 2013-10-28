@@ -108,7 +108,7 @@ public class AttributeEditor extends JPanel {
 	/**
 	 * Constructor
 	 * @param annotation the Annotation whose attributes to edit
-	 * @param context the context annotation, eg the document the annotation
+	 * @param context the context annotation, e.g. the document the annotation
 	 *            refers to (will be used to provide attribute name and value
 	 *            suggestions)
 	 */
@@ -169,19 +169,6 @@ public class AttributeEditor extends JPanel {
 				}
 			}
 		}
-//		//	get and index attributes and values of all annotations of same type as the edited one (for offering suggestions)
-//		Annotation[] annotations = ((context == null) ? new Annotation[0] : context.getAnnotations(this.attributed.getType()));
-//		for (int a = 0; a < annotations.length; a++) {
-//			attributeNames = annotations[a].getAttributeNames();
-//			for (int n = 0; n < attributeNames.length; n++) {
-//				this.contextAttributeNames.addElementIgnoreDuplicates(attributeNames[n]);
-//				Object attributeValue = annotations[a].getAttribute(attributeNames[n]);
-//				if (attributeValue != null) {
-//					this.getValueList(attributeNames[n]).addElementIgnoreDuplicates(attributeValue.toString());
-//					this.getValueFrequencyIndex(attributeNames[n]).add(attributeValue.toString());
-//				}
-//			}
-//		}
 		
 		//	initialize attribute editor fields
 		this.attributeNameField.setBorder(BorderFactory.createLoweredBevelBorder());
@@ -220,8 +207,8 @@ public class AttributeEditor extends JPanel {
 		this.resetAttributeValueField();
 		
 		this.attributeValueField.getEditor().getEditorComponent().addFocusListener(new FocusAdapter() {
-			public void focusGained(FocusEvent e) {
-				if (DUMMY_ATTRIBUTE_NAME.equals(attributeValueField.getSelectedItem())) {
+			public void focusGained(FocusEvent fe) {
+				if (DUMMY_ATTRIBUTE_VALUE.equals(attributeValueField.getSelectedItem())) {
 					attributeValueField.setSelectedItem("");
 				}
 			}
@@ -245,7 +232,7 @@ public class AttributeEditor extends JPanel {
 		JButton setAttributeButton = new JButton("Add / Set Attribute");
 		setAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		setAttributeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				setAttribute();
 			}
 		});
@@ -253,7 +240,7 @@ public class AttributeEditor extends JPanel {
 		JButton removeAttributeButton = new JButton("Remove Attribute");
 		removeAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		removeAttributeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				removeAttribute();
 			}
 		});
@@ -261,7 +248,7 @@ public class AttributeEditor extends JPanel {
 		JButton clearAttributesButton = new JButton("Clear Attributes");
 		clearAttributesButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		clearAttributesButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				clearAttributes();
 			}
 		});
