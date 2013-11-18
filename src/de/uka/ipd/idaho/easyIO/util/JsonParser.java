@@ -47,17 +47,191 @@ import de.uka.ipd.idaho.easyIO.streams.PeekReader;
 public class JsonParser {
 	
 	/**
+	 * Get a Map representing a JSON object from a List representing a JSON
+	 * array. If the object at the argument index is not a Map, this method
+	 * returns null.
+	 * @param array the JSON array to retrieve the object from
+	 * @param index the index of the sought object
+	 * @return the Map at the argument index
+	 */
+	public static Map getObject(List array, int index) {
+		Object map = array.get(index);
+		return ((map instanceof Map) ? ((Map) map) : null);
+	}
+	
+	/**
+	 * Get a List representing a JSON array from another List representing a
+	 * JSON array. If the object at the argument index is not a List, this
+	 * method returns null.
+	 * @param array the JSON array to retrieve the array from
+	 * @param index the index of the sought array
+	 * @return the List at the argument index
+	 */
+	public static List getArray(List array, int index) {
+		Object list = array.get(index);
+		return ((list instanceof List) ? ((List) list) : null);
+	}
+	
+	/**
+	 * Get a String from a list representing a JSON array. If the object at the
+	 * argument index is not a String, but a Number or Boolean, it is converted
+	 * to a String. If it belongs to another class, this method returns null.
+	 * @param array the JSON array to retrieve the string from
+	 * @param index the index of the sought string
+	 * @return the String at the argument index
+	 */
+	public static String getString(List array, int index) {
+		Object string = array.get(index);
+		if (string instanceof String)
+			return ((String) string);
+		else if (string instanceof Number)
+			return ((Number) string).toString();
+		else if (string instanceof Boolean)
+			return ((Boolean) string).toString();
+		else return null;
+	}
+	
+	/**
+	 * Get a Number from a list representing a JSON array. If the object at the
+	 * argument index is not a Number, but a String, this method attempts to
+	 * convert it into a Number. If the latter fails, or the object belongs to
+	 * another class, this method returns null.
+	 * @param array the JSON array to retrieve the number from
+	 * @param index the index of the sought number
+	 * @return the Number at the argument index
+	 */
+	public static Number getNumber(List array, int index) {
+		Object number = array.get(index);
+		if (number instanceof Number)
+			return ((Number) number);
+		else if (number instanceof String) {
+			try {
+				return new Long((String) number);
+			} catch (NumberFormatException nfe) {}
+			try {
+				return new Double((String) number);
+			} catch (NumberFormatException nfe) {}
+			return null;
+		}
+		else return null;
+	}
+	
+	/**
+	 * Get a Boolean from a list representing a JSON array. If the object at
+	 * the argument index is not a Boolean, but a String, this method attempts
+	 * to convert it into a boolean. If the latter fails, or the object belongs
+	 * to another class, this method returns null.
+	 * @param array the JSON array to retrieve the boolean from
+	 * @param index the index of the sought boolean
+	 * @return the Boolean at the argument index
+	 */
+	public static Boolean getBoolean(List array, int index) {
+		Object bool = array.get(index);
+		if (bool instanceof Boolean)
+			return ((Boolean) bool);
+		else if (bool instanceof String)
+			return new Boolean((String) bool);
+		else return null;
+	}
+	
+	/**
+	 * Get a Map representing a JSON object from another Map representing a
+	 * JSON object. If the argument name is not mapped to a Map, this method
+	 * returns null.
+	 * @param object the JSON object to retrieve the object from
+	 * @param name the name of the sought object
+	 * @return the Map the argument name maps to
+	 */
+	public static Map getObject(Map object, String name) {
+		Object map = object.get(name);
+		return ((map instanceof Map) ? ((Map) map) : null);
+	}
+	
+	/**
+	 * Get a List representing a JSON array from a Map representing a JSON
+	 * object. If the argument name is not mapped to a List, this method
+	 * returns null.
+	 * @param object the JSON object to retrieve the array from
+	 * @param name the name of the sought array
+	 * @return the List the argument name maps to
+	 */
+	public static List getArray(Map object, String name) {
+		Object list = object.get(name);
+		return ((list instanceof List) ? ((List) list) : null);
+	}
+	
+	/**
+	 * Get a String from a Map representing a JSON object. If the argument name
+	 * is not mapped to a String, but a Number or Boolean, it is converted to a
+	 * String. If it belongs to another class, this method returns null.
+	 * @param object the JSON object to retrieve the string from
+	 * @param name the name of the sought string
+	 * @return the String the argument name maps to
+	 */
+	public static String getString(Map object, String name) {
+		Object string = object.get(name);
+		if (string instanceof String)
+			return ((String) string);
+		else if (string instanceof Number)
+			return ((Number) string).toString();
+		else if (string instanceof Boolean)
+			return ((Boolean) string).toString();
+		else return null;
+	}
+	
+	/**
+	 * Get a Number from a Map representing a JSON object. If the argument name
+	 * is not mapped to a Number, but a String, this method attempts to convert
+	 * it into a Number. If the latter fails, or the object belongs to another
+	 * class, this method returns null.
+	 * @param object the JSON object to retrieve the number from
+	 * @param name the name of the sought number
+	 * @return the Number the argument name maps to
+	 */
+	public static Number getNumber(Map object, String name) {
+		Object number = object.get(name);
+		if (number instanceof Number)
+			return ((Number) number);
+		else if (number instanceof String) {
+			try {
+				return new Long((String) number);
+			} catch (NumberFormatException nfe) {}
+			try {
+				return new Double((String) number);
+			} catch (NumberFormatException nfe) {}
+			return null;
+		}
+		else return null;
+	}
+	
+	/**
+	 * Get a Boolean from a Map representing a JSON object. If the argument
+	 * name is not mapped to a Boolean, but a String, this method attempts to
+	 * convert it into a boolean. If the latter fails, or the object belongs to
+	 * another class, this method returns null.
+	 * @param object the JSON object to retrieve the boolean from
+	 * @param name the name of the sought boolean
+	 * @return the Boolean the argument name maps to
+	 */
+	public static Boolean getBoolean(Map object, String name) {
+		Object bool = object.get(name);
+		if (bool instanceof Boolean)
+			return ((Boolean) bool);
+		else if (bool instanceof String)
+			return new Boolean((String) bool);
+		else return null;
+	}
+	
+	/**
 	 * Parse JSON data from a character stream.
 	 * @param in the reader to read from
 	 * @return the de-serialized object
 	 * @throws IOException
 	 */
-	public static Map parseJson(Reader in) throws IOException {
+	public static Object parseJson(Reader in) throws IOException {
 		PeekReader pr = new PeekReader(in, 5);
 		pr.skipSpace();
-		if (pr.peek() != '{')
-			throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
-		else return cropObject(pr);
+		return cropNext(pr);
 	}
 	
 	private static Object cropNext(PeekReader pr) throws IOException {
