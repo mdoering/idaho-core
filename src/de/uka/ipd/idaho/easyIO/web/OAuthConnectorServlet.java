@@ -147,14 +147,17 @@ public class OAuthConnectorServlet extends WebServlet {
 			atBw.write("&redirect_uri=" + URLEncoder.encode(this.oAuthCallbackUrl, "UTF-8"));
 			atBw.write("&grant_type=" + URLEncoder.encode("authorization_code", "UTF-8"));
 			atBw.flush();
-			Map atOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(atCon.getInputStream(), "UTF-8")));
-			Object accessToken = atOAuthCallbackResponse.get("access_token");
-			Object idToken = atOAuthCallbackResponse.get("id_token");
-			Object expiresIn = atOAuthCallbackResponse.get("expires_in");
-			Object tokenType = atOAuthCallbackResponse.get("token_type");
-			if ((accessToken == null) || (idToken == null) || (tokenType == null))
-				disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-			else authorization = (tokenType.toString() + " " + accessToken.toString());
+			Object atOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(atCon.getInputStream(), "UTF-8")));
+			if (atOAuthCallbackResponse instanceof Map) {
+				Object accessToken = ((Map) atOAuthCallbackResponse).get("access_token");
+				Object idToken = ((Map) atOAuthCallbackResponse).get("id_token");
+				Object expiresIn = ((Map) atOAuthCallbackResponse).get("expires_in");
+				Object tokenType = ((Map) atOAuthCallbackResponse).get("token_type");
+				if ((accessToken == null) || (idToken == null) || (tokenType == null))
+					disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
+				else authorization = (tokenType.toString() + " " + accessToken.toString());
+			}
+			else disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
 		}
 		catch (IOException ioe) {
 			errorLoginTokens.put(state, new Long(System.currentTimeMillis()));
@@ -171,14 +174,17 @@ public class OAuthConnectorServlet extends WebServlet {
 			unCon.setDoInput(true);
 			unCon.setRequestMethod("GET");
 			unCon.setRequestProperty("Authorization", authorization);
-			Map unOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(unCon.getInputStream(), "UTF-8")));
-			Object userName = unOAuthCallbackResponse.get(this.oAuthProviderUserNameResponseParameter);
-			if (userName == null)
-				disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-			else {
-				approvedLoginTokens.put(state, new Long(System.currentTimeMillis()));
-				approvedLoginTokensToUserNames.setProperty(state, userName.toString());
+			Object unOAuthCallbackResponse = JsonParser.parseJson(new BufferedReader(new InputStreamReader(unCon.getInputStream(), "UTF-8")));
+			if (unOAuthCallbackResponse instanceof Map) {
+				Object userName = ((Map) unOAuthCallbackResponse).get(this.oAuthProviderUserNameResponseParameter);
+				if (userName == null)
+					disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
+				else {
+					approvedLoginTokens.put(state, new Long(System.currentTimeMillis()));
+					approvedLoginTokensToUserNames.setProperty(state, userName.toString());
+				}
 			}
+			else disapprovedLoginTokens.put(state, new Long(System.currentTimeMillis()));
 		}
 		catch (IOException ioe) {
 			errorLoginTokens.put(state, new Long(System.currentTimeMillis()));

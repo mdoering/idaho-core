@@ -416,7 +416,7 @@ public class EasyIO {
 		
 		/**
 		 * Wrapper for JDBC drivers that are loaded at runtime (DriverManager
-		 * reqires drivers to be loaded through system classloader for some
+		 * requires drivers to be loaded through system classloader for some
 		 * reason)
 		 * 
 		 * @author sautter

@@ -29,8 +29,8 @@ package de.uka.ipd.idaho.easyIO.web;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.Properties;
+import java.util.TreeSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -80,19 +80,119 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 */
 	protected String dataPath;
 	
+	private Settings configStatic;
+	private Settings configDynamic;
+	private boolean configDynamicDirty = false;
+	
 	/**
 	 * a settings object containing the settings from the servlet's
-	 * configuration file; this file is expected to be located in the servlet's
-	 * data path, and is named <code>config.cnfg</code> by default; sub classes
-	 * should use the <code>getSetting()</code>, <code>setSetting()</code>, and
-	 * <code>removeSetting()</code> methods instead of accessing this object
-	 * directly to facilitate automated storage of modified settings; if this
-	 * object is manipulated directly, sub classes should use the
-	 * <code>setConfigDirty()</code> method to indicate so.
+	 * configuration. Sub classes should use the <code>getSetting()</code>,
+	 * <code>setSetting()</code>, and <code>removeSetting()</code> methods
+	 * instead of accessing this object directly to facilitate automated
+	 * storage of modified settings.
 	 */
-	protected Settings config;
-	private boolean configDirty = false;
-	private HashSet unmodifiedSettingNames = new HashSet();
+	protected Settings config = new WebServletSettings(this.configStatic, this.configDynamic);
+	
+	private class WebServletSettings extends Settings {
+		private Settings ss;
+		private Settings ds;
+		WebServletSettings(Settings ss, Settings ds) {
+			this.ss = ss;
+			this.ds = ds;
+		}
+		public String setSetting(String key, String value) {
+			String oldValue = this.ds.setSetting(key, value);
+			configDynamicDirty = true;
+			return oldValue;
+		}
+		public void setSettings(Settings settings) {
+			this.ds.setSettings(settings);
+			configDynamicDirty = true;
+		}
+		public void setProperties(Properties prop) {
+			this.ds.setProperties(prop);
+			configDynamicDirty = true;
+		}
+		public String getSetting(String key) {
+			return this.ds.getSetting(key, this.ss.getSetting(key));
+		}
+		public String getSetting(String key, String def) {
+			return this.ds.getSetting(key, this.ss.getSetting(key, def));
+		}
+		public String removeSetting(String key) {
+			String oldValue = this.ds.removeSetting(key);
+			configDynamicDirty = true;
+			return oldValue;
+		}
+		public boolean containsKey(String key) {
+			return (this.ss.containsKey(key) || this.ds.containsKey(key));
+		}
+		public boolean containsValue(String value) {
+			return (this.ss.containsValue(value) || this.ds.containsValue(value));
+		}
+		public boolean hasPrefix(String prefix) {
+			return this.ds.hasPrefix(prefix);
+		}
+		public String getPrefix() {
+			return this.ds.getPrefix();
+		}
+		public String getFullPrefix() {
+			return this.ds.getFullPrefix();
+		}
+		public void setPrefix(String newPrefix) {
+			this.ds.setPrefix(newPrefix);
+			configDynamicDirty = true;
+		}
+		public boolean hasSubset(String prefix) {
+			return (this.ss.hasSubset(prefix) || this.ds.hasSubset(prefix));
+		}
+		public String[] getSubsetPrefixes() {
+			return this.unionArrays(this.ss.getSubsetPrefixes(), this.ds.getSubsetPrefixes());
+		}
+		public String[] getLocalKeys() {
+			return this.unionArrays(this.ss.getLocalKeys(), this.ds.getLocalKeys());
+		}
+		public String[] getKeys() {
+			return this.unionArrays(this.ss.getKeys(), this.ds.getKeys());
+		}
+		public String[] getKeys(String prefix) {
+			return this.unionArrays(this.ss.getKeys(prefix), this.ds.getKeys(prefix));
+		}
+		public String[] getFullKeys() {
+			return this.unionArrays(this.ss.getFullKeys(), this.ds.getFullKeys());
+		}
+		public String[] getValues() {
+			String[] ks = this.getFullKeys();
+			String[] values = new String[ks.length];
+			for (int k = 0; k < ks.length; k++)
+				values[k] = this.getSetting(ks[k]);
+			return values;
+		}
+		public int size() {
+			return this.getFullKeys().length;
+		}
+		public boolean isEmpty() {
+			return (this.ss.isEmpty() && this.ds.isEmpty());
+		}
+		public void clear() {
+			this.ds.clear();
+		}
+		public Settings getSubset(String prefix) {
+			Settings sss = this.ss.getSubset(prefix);
+			Settings dss = this.ds.getSubset(prefix);
+			return new WebServletSettings(sss, dss);
+		}
+		public void removeSubset(Settings subset) {
+			this.ds.removeSubset(subset);
+			configDynamicDirty = true;
+		}
+		String[] unionArrays(String[] strs1, String[] strs2) {
+			TreeSet strs = new TreeSet();
+			strs.addAll(Arrays.asList(strs1));
+			strs.addAll(Arrays.asList(strs2));
+			return ((String[]) strs.toArray(new String[strs.size()]));
+		}
+	}
 	
 	/**
 	 * Load the servlet's configuration file. This file is expected to be
@@ -110,25 +210,10 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		String configFile = this.getInitParameter("configFile");
 		if (configFile == null)
 			configFile = "config.cnfg";
-		Settings config = Settings.loadSettings(new File(this.dataFolder, configFile));
-		String[] settingNames = config.getFullKeys();
-		if (this.config == null) {
-			this.unmodifiedSettingNames.addAll(Arrays.asList(settingNames));
-			this.config = config;
-		}
-		else {
-			HashSet unmodifiedSettingNames = new HashSet(this.unmodifiedSettingNames);
-			HashSet existingSettingNames = new HashSet(Arrays.asList(this.config.getFullKeys()));
-			for (int n = 0; n < settingNames.length; n++)
-				if (unmodifiedSettingNames.remove(settingNames[n]) | existingSettingNames.add(settingNames[n])) {
-					this.config.setSetting(settingNames[n], config.getSetting(settingNames[n]));
-					this.unmodifiedSettingNames.add(settingNames[n]);
-				}
-			for (Iterator snit = unmodifiedSettingNames.iterator(); snit.hasNext();) {
-				String removedSettingName = ((String) snit.next());
-				this.config.removeSetting(removedSettingName);
-				this.unmodifiedSettingNames.remove(removedSettingName);
-			}
+		this.configStatic = Settings.loadSettings(new File(this.dataFolder, configFile));
+		if (this.configDynamic == null) {
+			configFile = (configFile + ".dynamic");
+			this.configDynamic = Settings.loadSettings(new File(this.dataFolder, configFile));
 		}
 	}
 	
@@ -193,8 +278,9 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * parts of the initialization that can be modified during the lifetime of
 	 * the servlet instance, like layout settings. For parts of the
 	 * initialization that cannot be modified at runtime, use the
-	 * <code>reInit()</code> method. This default implementation does nothing
+	 * <code>doInit()</code> method. This default implementation does nothing
 	 * by default, sub classes are welcome to overwrite it as needed.
+	 * @throws ServletException
 	 */
 	protected void reInit() throws ServletException {}
 	
@@ -209,7 +295,9 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * @return the setting with the specified name
 	 */
 	protected String getSetting(String key) {
-		String value = this.config.getSetting(key);
+		String value = this.configDynamic.getSetting(key);
+		if (value == null)
+			value = this.configStatic.getSetting(key);
 		return ((value == null) ? this.webAppHost.getSetting(key) : value);
 	}
 	
@@ -226,7 +314,9 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 *         value if the setting does not exist
 	 */
 	protected String getSetting(String key, String def) {
-		String value = this.config.getSetting(key);
+		String value = this.configDynamic.getSetting(key);
+		if (value == null)
+			value = this.configStatic.getSetting(key);
 		return ((value == null) ? this.webAppHost.getSetting(key, def) : value);
 	}
 	
@@ -239,11 +329,10 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	protected String setSetting(String key, String value) {
 		if (value == null)
 			return this.removeSetting(key);
-		String oldValue = this.config.setSetting(key, value);
-		if (!value.equals(oldValue)) {
-			this.unmodifiedSettingNames.remove(key);
-			this.configDirty = true;
-		}
+		String oldValue = this.getSetting(key);
+		this.configDynamic.setSetting(key, value);
+		if (!value.equals(oldValue))
+			this.configDynamicDirty = true;
 		return oldValue;
 	}
 	
@@ -253,20 +342,10 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * @return the value of the removed setting
 	 */
 	protected String removeSetting(String key) {
-		String oldValue = this.config.removeSetting(key);
-		if (oldValue != null) {
-			this.unmodifiedSettingNames.remove(key);
-			this.configDirty = true;
-		}
+		String oldValue = this.configDynamic.getSetting(key);
+		if (oldValue != null)
+			this.configDynamicDirty = true;
 		return oldValue;
-	}
-	
-	/**
-	 * Indicate that the config object has been manipulated and needs to be
-	 * stored on exit.
-	 */
-	protected void setConfigDirty() {
-		this.configDirty = true;
 	}
 	
 	/**
@@ -277,18 +356,15 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 * was set by the <code>setConfigDirty()</code> method.
 	 */
 	protected synchronized void storeConfig() {
-		if (!this.configDirty)
+		if (!this.configDynamicDirty)
 			return;
 		String configFile = this.getInitParameter("configFile");
 		if (configFile == null)
 			configFile = "config.cnfg";
+		configFile = (configFile + ".dynamic");
 		try {
-			Settings.storeSettingsAsText(new File(this.dataFolder, configFile), this.config);
-			this.configDirty = false;
-			this.unmodifiedSettingNames.clear();
-			String[] settingNames = config.getFullKeys();
-			for (int n = 0; n < settingNames.length; n++)
-				this.unmodifiedSettingNames.add(settingNames[n]);
+			Settings.storeSettingsAsText(new File(this.dataFolder, configFile), this.configDynamic);
+			this.configDynamicDirty = false;
 		} catch (Exception e) {}
 	}
 	

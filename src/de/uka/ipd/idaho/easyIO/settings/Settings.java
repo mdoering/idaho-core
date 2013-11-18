@@ -192,7 +192,8 @@ public class Settings {
 	public void setSettings(Settings settings) {
 		if (settings != null) {
 			String[] keys = settings.getKeys();
-			for (int k = 0; k < keys.length; k++) this.setSetting(keys[k], settings.getSetting(keys[k]));
+			for (int k = 0; k < keys.length; k++)
+				this.setSetting(keys[k], settings.getSetting(keys[k]));
 		}
 	}
 	
@@ -259,7 +260,7 @@ public class Settings {
 		//	no prefix
 		if ((key == null) || (key.indexOf(PREFIX_PART_SEPARATOR) == -1)) return this;
 		
-		//	find apppropriate subset
+		//	find appropriate subset
 		int split = key.indexOf(PREFIX_PART_SEPARATOR);
 		String prefix = key.substring(0, split);
 		return this.getSubset(prefix).getSubsetFor(key.substring(split + 1));
@@ -385,7 +386,7 @@ public class Settings {
 		return ((parentPrefix == null) ? this.prefix : (parentPrefix + PREFIX_PART_SEPARATOR + this.prefix));
 	}
 	
-	/**	change the prefix of this Settings (invoced on the root of a Settings hierarchy, this method has no effect)
+	/**	change the prefix of this Settings (invoked on the root of a Settings hierarchy, this method has no effect)
 	 * @param	newPrefix	the new prefix for this Settings
 	 */
 	public void setPrefix(String newPrefix) {
@@ -424,7 +425,8 @@ public class Settings {
 	public String[] getSubsetPrefixes() {
 		ArrayList subsets = new ArrayList(this.subSets.values());
 		ArrayList subsetPrefixes = new ArrayList();
-		for (int s = 0; s < subsets.size(); s++) subsetPrefixes.add(((Settings) subsets.get(s)).prefix);
+		for (int s = 0; s < subsets.size(); s++)
+			subsetPrefixes.add(((Settings) subsets.get(s)).prefix);
 		Collections.sort(subsetPrefixes);
 		return ((String[]) subsetPrefixes.toArray(new String[subsetPrefixes.size()]));
 	}
@@ -446,7 +448,7 @@ public class Settings {
 	 * @return all the keys contained in this Settings, packed in a String array
 	 */
 	public String[] getKeys() {
-		return getKeys(true);
+		return this.getKeys(true);
 	}
 	
 	/**
@@ -531,7 +533,8 @@ public class Settings {
 	public int size() {
 		int size = this.keyStore.size();
 		ArrayList list = new ArrayList(this.subSets.values());
-		for (int i = 0; i < list.size(); i++) size += ((Settings) list.get(i)).size();
+		for (int i = 0; i < list.size(); i++)
+			size += ((Settings) list.get(i)).size();
 		return size;
 	}
 	
@@ -562,7 +565,8 @@ public class Settings {
 	 */
 	public Settings getSubset(String prefix) {
 		//	check parameter
-		if ((prefix == null) || (prefix.length() == 0)) return this;
+		if ((prefix == null) || (prefix.length() == 0))
+			return this;
 		
 		//	produce first prefix part
 		int split = prefix.indexOf(PREFIX_PART_SEPARATOR);
@@ -570,7 +574,8 @@ public class Settings {
 		
 		//	check if subset exists
 		Object o = this.subSets.get(localPrefix);
-		if ((o != null) && (o instanceof Settings)) return ((split == -1) ? ((Settings) o) : ((Settings) o).getSubset(prefix.substring(split + 1)));
+		if ((o != null) && (o instanceof Settings))
+			return ((split == -1) ? ((Settings) o) : ((Settings) o).getSubset(prefix.substring(split + 1)));
 		
 		//	create new subset
 		Settings subset = new Settings(this, ((split == -1) ? prefix : prefix.substring(0, split)));
@@ -628,7 +633,7 @@ public class Settings {
 	
 	/**
 	 * Load settings from an input stream. This method will automatically
-	 * determin if the settings data is in text format or in XML format.
+	 * determine if the settings data is in text format or in XML format.
 	 * @param in the input stream to read from
 	 * @return a Settings object containing the key / value pairs loaded from
 	 *         the input stream

@@ -1712,7 +1712,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			else return super.setAttribute(name, value);
 		}
 
-		//	notify this annotation base of a change in the underlaying token sequence, so it can adjust itself
+		//	notify this annotation base of a change in the underlying token sequence, so it can adjust itself
 		private static final boolean DEBUG_CHANGE = false;
 		private final boolean printDebugInfo() {
 			return false;
