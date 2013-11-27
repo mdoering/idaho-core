@@ -80,8 +80,9 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 	 */
 	protected String dataPath;
 	
-	private Settings configStatic;
-	private Settings configDynamic;
+	private Settings configStatic = new Settings();
+	private Settings configDynamic = new Settings();
+	private boolean configDynamicToLoad = true;
 	private boolean configDynamicDirty = false;
 	
 	/**
@@ -210,10 +211,15 @@ public abstract class WebServlet extends HttpServlet implements WebConstants {
 		String configFile = this.getInitParameter("configFile");
 		if (configFile == null)
 			configFile = "config.cnfg";
-		this.configStatic = Settings.loadSettings(new File(this.dataFolder, configFile));
-		if (this.configDynamic == null) {
+		Settings configStatic = Settings.loadSettings(new File(this.dataFolder, configFile));
+		this.configStatic.clear();
+		this.configStatic.setSettings(configStatic);
+		if (this.configDynamicToLoad) {
 			configFile = (configFile + ".dynamic");
-			this.configDynamic = Settings.loadSettings(new File(this.dataFolder, configFile));
+			Settings configDynamic = Settings.loadSettings(new File(this.dataFolder, configFile));
+			this.configDynamic.clear();
+			this.configDynamic.setSettings(configDynamic);
+			this.configDynamicToLoad = false;
 		}
 	}
 	
