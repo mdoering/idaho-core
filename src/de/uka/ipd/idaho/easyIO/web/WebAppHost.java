@@ -815,7 +815,7 @@ public class WebAppHost {
 			if (fwUrl == null)
 				fwUrl = request.getContextPath() + request.getServletPath();
 			HttpSession session = request.getSession(false);
-			if (session != null) {
+			if ((session != null) && (session.getAttribute(this.authenticationProviderAttribute) != null) && (session.getAttribute(this.authenticatedUserNameAttribute) != null)) {
 				response.sendRedirect(fwUrl);
 				return true;
 			}
