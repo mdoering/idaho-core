@@ -655,11 +655,11 @@ public class WebAppHost {
 				this.writeLine("var selectedAuthenticationProviderName = null;");
 				this.writeLine("function authenticationProviderNameChanged() {");
 				this.writeLine("  var apn = getAuthenticationProviderName();");
-				this.writeLine("  var apnfs;");
+				this.writeLine("  var apfs;");
 				for (int p = 0; p < apList.size(); p++) {
 					AuthenticationProvider ap = ((AuthenticationProvider) apList.get(p));
 					this.writeLine("  apfs = document.getElementById('" + ap.getName() + "_fields');");
-					this.writeLine("  if (apnfs != null)");
+					this.writeLine("  if (apfs != null)");
 					this.writeLine("    apfs.style.display = ((apn == '" + ap.getName() + "') ? '' : 'none');");
 					this.writeLine("  if (selectedAuthenticationProviderName == '" + ap.getName() + "')");
 					this.writeLine("    " + ap.getName() + "_deselected();");
