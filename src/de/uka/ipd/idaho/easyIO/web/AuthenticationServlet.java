@@ -58,6 +58,7 @@ public class AuthenticationServlet extends HtmlServlet {
 	private static final String USER_NAME_PARAMETER = "UserName";
 	private static final String PSWD_PARAMETER = "Pswd";
 	private static final String PSWD_HASH_PARAMETER = "PswdHash";
+	private static final String PSWD_SALT_PARAMETER = "PswdSalt";
 	private static final String CREATE_TIME_PARAMETER = "CreateTime";
 	private static final String LAST_ACCESS_PARAMETER = "LastAccess";
 	
@@ -88,6 +89,7 @@ public class AuthenticationServlet extends HtmlServlet {
 		TableDefinition td = new TableDefinition(this.authProviderName + "Data");
 		td.addColumn(USER_NAME_PARAMETER, TableDefinition.VARCHAR_DATATYPE, 32);
 		td.addColumn(PSWD_HASH_PARAMETER, TableDefinition.INT_DATATYPE, 0);
+		td.addColumn(PSWD_SALT_PARAMETER, TableDefinition.INT_DATATYPE, 0);
 		td.addColumn(CREATE_TIME_PARAMETER, TableDefinition.BIGINT_DATATYPE, 0);
 		td.addColumn(LAST_ACCESS_PARAMETER, TableDefinition.BIGINT_DATATYPE, 0);
 		if (!this.io.ensureTable(td, true))
@@ -95,7 +97,6 @@ public class AuthenticationServlet extends HtmlServlet {
 		
 		//	index account table
 		this.io.indexColumn((this.authProviderName + "Data"), USER_NAME_PARAMETER);
-		this.io.indexColumn((this.authProviderName + "Data"), PSWD_HASH_PARAMETER);
 		
 		//	load reCAPTCHA keys
 		this.reCaptchaPublicKey = this.getSetting("reCaptchaPublicKey", this.reCaptchaPublicKey);
@@ -118,32 +119,52 @@ public class AuthenticationServlet extends HtmlServlet {
 			//	get login parameters
 			String userName = request.getParameter(this.getName() + "_" + USER_NAME_PARAMETER);
 			String password = request.getParameter(this.getName() + "_" + PSWD_PARAMETER);
-			System.out.println(" - username is " + userName);
-			System.out.println(" - password is " + password);
 			
 			//	not a login request, at least not for this authentication provider
 			if ((userName == null) || (password == null))
 				return null;
 			
-			//	update last access time for user/pswd pair ==> login successful if one row updated
-			String query = "UPDATE " + (authProviderName + "Data") + 
-					" SET " + LAST_ACCESS_PARAMETER + " = " + System.currentTimeMillis() + 
-					" WHERE " + PSWD_HASH_PARAMETER + " = " + password.hashCode() + 
-					" AND " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
+			//	read user data
+			String pswdHash;
+			String pswdSalt;
+			String hashSaltQuery = "SELECT " + PSWD_HASH_PARAMETER + ", " + PSWD_SALT_PARAMETER + ", " +
+					" FROM " + (authProviderName + "Data") + 
+					" WHERE " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
 					";";
 			try {
-				int updated = io.executeUpdateQuery(query);
-				if (updated == 1) {
-					request.getSession(true);
-					return userName;
+				SqlQueryResult sqr = io.executeSelectQuery(hashSaltQuery, true);
+				if (sqr.next()) {
+					pswdHash = sqr.getString(0);
+					pswdSalt = sqr.getString(1);
 				}
 				else return null;
 			}
 			catch (SQLException sqle) {
-				System.out.println("Could not authenticate user '" + userName + "' - database not accessible.");
-				System.out.println("  query was " + query);
+				System.out.println("Could not get authentication data for user '" + userName + "'.");
+				System.out.println("  query was " + hashSaltQuery);
 				return null;
 			}
+			
+			//	test credentials
+			if (!pswdHash.equals("" + (password + ("0".equals(pswdSalt) ? "" : pswdSalt)).hashCode()))
+				return null;
+			
+			//	update last access time for user/pswd pair ==> login successful if one row updated
+			String accessQuery = "UPDATE " + (authProviderName + "Data") + 
+					" SET " + LAST_ACCESS_PARAMETER + " = " + System.currentTimeMillis() + 
+					" WHERE " + PSWD_HASH_PARAMETER + " = " + (password + ("0".equals(pswdSalt) ? "" : pswdSalt)).hashCode() + 
+					" AND " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
+					";";
+			try {
+				io.executeUpdateQuery(accessQuery);
+			}
+			catch (SQLException sqle) {
+				System.out.println("Could not remember authenticating user '" + userName + "'.");
+				System.out.println("  query was " + accessQuery);
+			}
+			
+			//	finally ...
+			return userName;
 		}
 		public boolean providesLoginFields() {
 			return true;
@@ -522,29 +543,45 @@ public class AuthenticationServlet extends HtmlServlet {
 				String oldPassword = request.getParameter("oldPwd");
 				String newPassword = request.getParameter("newPwd");
 				String confirmPassword = request.getParameter("confirmPwd");
-				if (newPassword.equals(confirmPassword)) {
-					if (oldPassword.equals(newPassword))
-						message = "Old and new passwords are the same, please try again.";
-					else {
-						String query = "UPDATE " + (authProviderName + "Data") + 
-								" SET " + PSWD_HASH_PARAMETER + " = " + newPassword.hashCode() + 
-								" WHERE " + PSWD_HASH_PARAMETER + " = " + oldPassword.hashCode() + 
-								" AND " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
-								";";
-						try {
-							int updated = io.executeUpdateQuery(query);
-							if (updated == 1)
-								message = "Password changed successfully.";
-							else message = "Invalid password or unknown user.";
+				if (!newPassword.equals(confirmPassword))
+					message = "New password and confirmation do not match, please try again.";
+				if (oldPassword.equals(newPassword))
+					message = "Old and new passwords are the same, please try again.";
+				else {
+					String oldSaltQuery = "SELECT " + PSWD_SALT_PARAMETER + ", " +
+							" FROM " + (authProviderName + "Data") +
+							" WHERE " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
+							";";
+					try {
+						SqlQueryResult sqr = io.executeSelectQuery(oldSaltQuery, true);
+						if (sqr.next()) {
+							String oldPswdSalt = sqr.getString(0);
+							String newPswdSalt = ("" + ((int) (Math.random() * 65536)));
+							String updateQuery = "UPDATE " + (authProviderName + "Data") + 
+									" SET " + PSWD_HASH_PARAMETER + " = " + (newPassword + ("0".equals(newPswdSalt) ? "" : newPswdSalt)).hashCode() + ", " + PSWD_SALT_PARAMETER + " = " + newPswdSalt + 
+									" WHERE " + PSWD_HASH_PARAMETER + " = " + (oldPassword + ("0".equals(oldPswdSalt) ? "" : oldPswdSalt)).hashCode() + 
+									" AND " + USER_NAME_PARAMETER + " LIKE '" + EasyIO.sqlEscape(userName) + "'" +
+									";";
+							try {
+								int updated = io.executeUpdateQuery(updateQuery);
+								if (updated == 1)
+									message = "Password changed successfully.";
+								else message = "Invalid password or unknown user.";
+							}
+							catch (SQLException sqle) {
+								System.out.println("Could not change password of user '" + userName + "' - database not accessible.");
+								System.out.println("  query was " + updateQuery);
+								message = "Could not change password due to technical problems.";
+							}
 						}
-						catch (SQLException sqle) {
-							System.out.println("Could not change password of user '" + userName + "' - database not accessible.");
-							System.out.println("  query was " + query);
-							message = "Could not change password due to technical problems.";
-						}
+						else message = "Invalid password or unknown user.";
+					}
+					catch (SQLException sqle) {
+						System.out.println("Could not get authentication data for user '" + userName + "'.");
+						System.out.println("  query was " + oldSaltQuery);
+						message = "Could not change password due to technical problems.";
 					}
 				}
-				else message = "New password and confirmation do not match, please try again.";
 				
 				//	send result
 				response.setContentType("text/html");
@@ -584,7 +621,7 @@ public class AuthenticationServlet extends HtmlServlet {
 					if (userName == null)
 						error = "Invalid user name.";
 					else if (!userName.matches("[A-Za-z0-9\\-\\_\\.]+")) {
-						error = "Invalid user name, use letters and digits only.";
+						error = "Invalid user name, use Latin letters, digits, dashes, underscores, and dots only.";
 						userName = null;
 					}
 				}
@@ -596,7 +633,7 @@ public class AuthenticationServlet extends HtmlServlet {
 							";";
 					SqlQueryResult sqr = null;
 					try {
-						sqr = io.executeSelectQuery(query);
+						sqr = io.executeSelectQuery(query, true);
 						if (sqr.next()) {
 							error = "The selected user name already exists.";
 							userName = null;
@@ -606,10 +643,6 @@ public class AuthenticationServlet extends HtmlServlet {
 						System.out.println("Could not create account for user '" + userName + "' - database not accessible.");
 						System.out.println("  query was " + query);
 						error = "Could not create account due to technical problems.";
-					}
-					finally {
-						if (sqr != null)
-							sqr.close();
 					}
 				}
 				
@@ -623,11 +656,14 @@ public class AuthenticationServlet extends HtmlServlet {
 				
 				//	create account
 				if (error == null) {
+					String pswdSalt = ("" + ((int) (Math.random() * 65536)));
 					String query = "INSERT INTO " + (authProviderName + "Data") + 
 						" (" + 
 							USER_NAME_PARAMETER + 
 							", " + 
 							PSWD_HASH_PARAMETER + 
+							", " + 
+							PSWD_SALT_PARAMETER + 
 							", " + 
 							CREATE_TIME_PARAMETER + 
 							", " + 
@@ -635,7 +671,9 @@ public class AuthenticationServlet extends HtmlServlet {
 						") VALUES (" +
 							"'" + EasyIO.sqlEscape(userName) + "'" + 
 							", " + 
-							password.hashCode() + 
+							(password + pswdSalt).hashCode() + 
+							", " + 
+							pswdSalt + 
 							", " + 
 							System.currentTimeMillis() + 
 							", " + 

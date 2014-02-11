@@ -57,7 +57,7 @@ public class ReInitializerServlet extends HtmlServlet {
 		super.reInit();
 		
 		//	read pass key
-		this.passKey = this.getSetting("passKey");
+		this.passKey = this.getSetting("passKey", this.passKey);
 	}
 	
 	/* (non-Javadoc)
@@ -176,6 +176,10 @@ public class ReInitializerServlet extends HtmlServlet {
 			else this.sessions.remove(sessionId);
 		}
 		
-		return this.passKey.equals(request.getParameter("passKey"));
+		if (this.passKey.equals(request.getParameter("passKey"))) {
+			this.sessions.put(sessionId, new Long(currentTime));
+			return true;
+		}
+		else return false;
 	}
 }

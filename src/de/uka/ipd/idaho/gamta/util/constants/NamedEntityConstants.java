@@ -54,6 +54,12 @@ public interface NamedEntityConstants {
 	/** the attribute holding the numerical value of a number, quantity, or monetary amount in a respective annotation*/
 	public static final String VALUE_ATTRIBUTE = "value";
 	
+	/** the attribute holding the minimum numerical value of a range of numbers*/
+	public static final String VALUE_MIN_ATTRIBUTE = "valueMin";
+	
+	/** the attribute holding the maximum numerical value of a range of numbers*/
+	public static final String VALUE_MAX_ATTRIBUTE = "valueMax";
+	
 	/** the attribute holding the unit of a quantity or monetary amount in a respective annotation (e.g. 'mm', 'feet', 'sec', or 'USD')*/
 	public static final String UNIT_ATTRIBUTE = "unit";
 	
