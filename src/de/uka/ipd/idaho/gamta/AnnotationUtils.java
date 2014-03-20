@@ -339,13 +339,25 @@ public class AnnotationUtils {
 	
 	/**
 	 * Produce an XML start tag for an Annotation. This method includes all
-	 * attributes, escaping their values. For more fine-frained control, use the
-	 * three argument verison of this method.
+	 * attributes, escaping their values. For more fine-grained control, use the
+	 * three and four argument version of this method.
 	 * @param data the Annotation to produce a start tag for
 	 * @return an XML start tag for the specified Annotation
 	 */
 	public static String produceStartTag(Annotation data) {
 		return produceStartTag(data, null, true);
+	}
+	
+	/**
+	 * Produce an XML start tag for an Annotation. This method includes all
+	 * attributes, escaping their values. For more fine-grained control, use the
+	 * three and four argument version of this method.
+	 * @param data the Annotation to produce a start tag for
+	 * @param includeId include Annotation ID attribute?
+	 * @return an XML start tag for the specified Annotation
+	 */
+	public static String produceStartTag(Annotation data, boolean includeId) {
+		return produceStartTag(data, includeId, null, true);
 	}
 	
 	/**
@@ -364,25 +376,41 @@ public class AnnotationUtils {
 	 * @return an XML start tag for the specified Annotation
 	 */
 	public static String produceStartTag(Annotation data, Set attributeFilter, boolean escapeValues) {
+		return produceStartTag(data, false, attributeFilter, escapeValues);
+	}
+	
+	/**
+	 * Produce an XML start tag for an Annotation. The specified attribute
+	 * filter set (if any) is checked for the individual attribute names solely
+	 * by means of its contains() method; this facilitates filtering out
+	 * specific attributes by excluding them explicitly, returning true for all
+	 * other types.
+	 * @param data the Annotation to produce a start tag for
+	 * @param includeId include Annotation ID attribute?
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tag (specifying null will include all
+	 *            attributes)
+	 * @param escapeValues check and if necessary escape attribute values
+	 *            (transform '&amp;' to '&amp;amp;', '&quot;' to '&amp;quot;',
+	 *            etc.)
+	 * @return an XML start tag for the specified Annotation
+	 */
+	public static String produceStartTag(Annotation data, boolean includeId, Set attributeFilter, boolean escapeValues) {
 		StringBuffer tagAssembler = new StringBuffer("<");
 		tagAssembler.append(data.getType());
+		if (includeId)
+			tagAssembler.append(" id=\"" + data.getAnnotationID() + "\"");
 		String[] ans = data.getAttributeNames();
-		for (int a = 0; a < ans.length; a++) {
+		for (int a = 0; a < ans.length; a++)
 			if ((attributeFilter == null) || attributeFilter.contains(ans[a])) {
 				Object value = data.getAttribute(ans[a]);
 				if (value != null) {
 					String valueString = value.toString();
-					if (escapeValues) {
+					if (escapeValues)
 						valueString = escapeForXml(valueString, true);
-//						valueString = valueString.replaceAll("\\&", "\\&amp\\;");
-//						valueString = valueString.replaceAll("\\\"", "\\&quot\\;");
-//						valueString = valueString.replaceAll("\\<", "\\&lt\\;");
-//						valueString = valueString.replaceAll("\\>", "\\&gt\\;");
-					}
 					tagAssembler.append(" " + ans[a] + "=\"" + valueString + "\"");
 				}
 			}
-		}
 		tagAssembler.append(">");
 		return tagAssembler.toString();
 	}
@@ -447,6 +475,20 @@ public class AnnotationUtils {
 	
 	/**
 	 * Write the content of a Queriable Annotation marked up with XML to the
+	 * specified Writer. This method writes all annotations and includes all
+	 * attributes in the start tags, escaping their values. For more
+	 * fine-grained control, use the five argument version of this method.
+	 * @param data the Annotation to write
+	 * @param output the Writer to write to
+	 * @param writeIDs include annotation IDs in the output?
+	 * @return true if and only if the output was written successfully
+	 */
+	public static boolean writeXML(QueriableAnnotation data, Writer output, boolean writeIDs) throws IOException {
+		return writeXML(data, output, writeIDs, null);
+	}
+	
+	/**
+	 * Write the content of a Queriable Annotation marked up with XML to the
 	 * specified Writer. The specified annotation type set (if any) is checked
 	 * for the individual annotation types solely by means of its contains()
 	 * method; this facilitates filtering out specific annotation types by
@@ -469,6 +511,25 @@ public class AnnotationUtils {
 	 * specified Writer. The specified annotation type set (if any) is checked
 	 * for the individual annotation types solely by means of its contains()
 	 * method; this facilitates filtering out specific annotation types by
+	 * excluding them explicitly, returning true for all other types. This
+	 * method includes all attributes in the start tags, escaping their values.
+	 * For more fine-grained control, use the five argument version of this
+	 * method.
+	 * @param data the Annotation to write
+	 * @param output the Writer to write to
+	 * @param writeIDs include annotation IDs in the output?
+	 * @param annotationTypes a set containing the annotation types to restrict
+	 *            the output to (specifying null will write all annotations)
+	 * @return true if and only if the output was written successfully
+	 */
+	public static boolean writeXML(QueriableAnnotation data, Writer output, boolean writeIDs, Set annotationTypes) throws IOException {
+		return writeXML(data, output, writeIDs, annotationTypes, null, true);
+	}
+	/**
+	 * Write the content of a Queriable Annotation marked up with XML to the
+	 * specified Writer. The specified annotation type set (if any) is checked
+	 * for the individual annotation types solely by means of its contains()
+	 * method; this facilitates filtering out specific annotation types by
 	 * excluding them explicitly, returning true for all other types. The same
 	 * applies to the attribute filter set.
 	 * @param data the Annotation to write
@@ -484,6 +545,30 @@ public class AnnotationUtils {
 	 * @return true if and only if the output was written successfully
 	 */
 	public static boolean writeXML(QueriableAnnotation data, Writer output, Set annotationTypes, Set attributeFilter, boolean escape) throws IOException {
+		return writeXML(data, output, false, annotationTypes, attributeFilter, escape);
+	}
+	
+	/**
+	 * Write the content of a Queriable Annotation marked up with XML to the
+	 * specified Writer. The specified annotation type set (if any) is checked
+	 * for the individual annotation types solely by means of its contains()
+	 * method; this facilitates filtering out specific annotation types by
+	 * excluding them explicitly, returning true for all other types. The same
+	 * applies to the attribute filter set.
+	 * @param data the Annotation to write
+	 * @param output the Writer to write to
+	 * @param writeIDs include annotation IDs in the output?
+	 * @param annotationTypes a set containing the annotation types to restrict
+	 *            the output to (specifying null will write all annotations)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 * @param escape check and if necessary escape text data and attribute
+	 *            values (transform '&amp;' to '&amp;amp;', '&quot;' to
+	 *            '&amp;quot;', etc.)
+	 * @return true if and only if the output was written successfully
+	 */
+	public static boolean writeXML(QueriableAnnotation data, Writer output, boolean writeIDs, Set annotationTypes, Set attributeFilter, boolean escape) throws IOException {
 		BufferedWriter buf = ((output instanceof BufferedWriter) ? ((BufferedWriter) output) : new BufferedWriter(output));
 		
 		//	get annotations
@@ -560,7 +645,7 @@ public class AnnotationUtils {
 				if (!lastWasLineBreak) buf.newLine();
 				
 				//	add start tag
-				buf.write(produceStartTag(annotation, attributeFilter, escape));
+				buf.write(produceStartTag(annotation, writeIDs, attributeFilter, escape));
 				lastWasTag = true;
 				lastWasLineBreak = false;
 				
@@ -627,8 +712,6 @@ public class AnnotationUtils {
 				escapedString.append("&quot;");
 			else if (ch == '&')
 				escapedString.append("&amp;");
-//			else if (((ch < 32) || (ch == 127)) && escapeControl)
-//				escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");
 			else if ((ch < 32) || (ch == 127) || (ch == 129) || (ch == 141) || (ch == 143) || (ch == 144) || (ch == 157)) {
 				if (escapeControl && ((ch == '\t') || (ch == '\n') || (ch == '\r')))
 					escapedString.append("&#x" + Integer.toString(((int) ch), 16).toUpperCase() + ";");

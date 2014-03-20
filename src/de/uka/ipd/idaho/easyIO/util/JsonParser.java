@@ -230,7 +230,6 @@ public class JsonParser {
 	 */
 	public static Object parseJson(Reader in) throws IOException {
 		PeekReader pr = new PeekReader(in, 5);
-		pr.skipSpace();
 		return cropNext(pr);
 	}
 	
@@ -336,14 +335,11 @@ public class JsonParser {
 	
 	private static Number cropNumber(PeekReader pr) throws IOException {
 		StringBuffer numBuf = new StringBuffer();
-//		boolean intPos;
 		if (pr.peek() == '-') {
 			numBuf.append((char) pr.peek());
-//			intPos = false;
 			pr.read();
 			pr.skipSpace();
 		}
-//		else intPos = true;
 		StringBuffer intBuf = new StringBuffer();
 		while ("0123456789".indexOf(pr.peek()) != -1) {
 			numBuf.append((char) pr.peek());
@@ -359,22 +355,18 @@ public class JsonParser {
 		}
 		pr.skipSpace();
 		StringBuffer expBuf = new StringBuffer();
-//		boolean expPos;
 		if ((pr.peek() == 'e') || (pr.peek() == 'E')) {
 			numBuf.append('e');
 			pr.read();
 			if (pr.peek() == '-') {
-//				expPos = false;
 				numBuf.append((char) pr.peek());
 				pr.read();
 				pr.skipSpace();
 			}
 			else if (pr.peek() == '+') {
-//				expPos = true;
 				pr.read();
 				pr.skipSpace();
 			}
-//			else expPos = true;
 			while ("0123456789".indexOf(pr.peek()) != -1) {
 				numBuf.append((char) pr.peek());
 				expBuf.append((char) pr.read());

@@ -677,7 +677,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 		
 		bw.write("function getByName(name) {");bw.newLine();
 		bw.write("  var elements = document.getElementsByTagName(name);");bw.newLine();
-		bw.write("  return (((elements != null) && (elements.lenght != 0)) ? elements[0] : null);");bw.newLine();
+		bw.write("  return (((elements != null) && (elements.length != 0)) ? elements[0] : null);");bw.newLine();
 		bw.write("}");bw.newLine();
 		
 		bw.write("function newElement(type, id, cssClass, text) {");bw.newLine();

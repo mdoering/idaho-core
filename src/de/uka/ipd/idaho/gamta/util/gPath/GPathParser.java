@@ -43,6 +43,8 @@ import de.uka.ipd.idaho.gamta.util.gPath.types.GPathString;
  */
 public class GPathParser {
 	
+	//	TODO make this a linear parser ... now we know how that works ...
+	
 	private static final char NULLCHAR = '\u0000';
 	private static final boolean DEBUG = false;
 	

@@ -42,6 +42,8 @@ import de.uka.ipd.idaho.htmlXmlUtil.xPath.types.XPathString;
  */
 public class XPathParser {
 	
+	//	TODO make this a linear parser ... now we know how that works ...
+	
 	private static final char NULLCHAR = '\u0000';
 	private static final boolean DEBUG = false;
 	

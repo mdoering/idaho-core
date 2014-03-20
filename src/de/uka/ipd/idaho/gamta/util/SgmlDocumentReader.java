@@ -29,6 +29,7 @@ package de.uka.ipd.idaho.gamta.util;
 
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,8 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Stack;
 
+import de.uka.ipd.idaho.gamta.Annotation;
+import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.DocumentRoot;
 import de.uka.ipd.idaho.gamta.Gamta;
 import de.uka.ipd.idaho.gamta.MutableAnnotation;
@@ -73,6 +76,7 @@ public class SgmlDocumentReader extends TokenReceiver {
 	
 	private int maxTokens = 0;
 	private char lastChar = StringUtils.NULLCHAR;
+	private boolean inProlog = true;
 	
 	private Stack stack = new Stack();
 	private ArrayList annotations = new ArrayList();
@@ -99,7 +103,6 @@ public class SgmlDocumentReader extends TokenReceiver {
 	 * @throws IOException
 	 */
 	public SgmlDocumentReader(MutableAnnotation document, Grammar grammar, Properties tagMapping, StringVector ignoreTags, StringVector paragraphTags, int maxTokens) throws IOException {
-		super();
 		this.document = ((document == null) ? Gamta.newDocument(Gamta.INNER_PUNCTUATION_TOKENIZER) : document);
 		this.grammar = ((grammar == null) ? new StandardGrammar() : grammar);
 		this.tagMapping = ((tagMapping == null) ? new Properties() : tagMapping);
@@ -134,32 +137,41 @@ public class SgmlDocumentReader extends TokenReceiver {
 		//	write Annotations
 		for (int a = 0; a < this.annotations.size(); a++) {
 			AnnotationContainer ac = ((AnnotationContainer) this.annotations.get(a));
-			if (ac.size != 0) {
-				String aType = this.tagMapping.getProperty(ac.type, ac.type);
-				MutableAnnotation annotation;
-				
-				annotation = this.document.addAnnotation(aType, ac.start, ac.size);
-				
-				//	mark paragraph end if necessary
-				if (this.paragraphTags.containsIgnoreCase(aType))
-					annotation.lastToken().setAttribute(Token.PARAGRAPH_END_ATTRIBUTE, Token.PARAGRAPH_END_ATTRIBUTE);
-				
-				//	transfer attributes
-				String[] attributeNames = ac.attributes.getAttributeNames();
-				for (int n = 0; n < attributeNames.length; n++)
-//					annotation.setAttribute(attributeNames[n], IoTools.prepareForPlainText(ac.attributes.getAttribute(attributeNames[n])));
-					annotation.setAttribute(attributeNames[n], ac.attributes.getAttribute(attributeNames[n]));
+			if (ac.size == 0)
+				continue;
+			
+			//	add annotation
+			String annotationType = this.tagMapping.getProperty(ac.type, ac.type);
+			MutableAnnotation annotation = this.document.addAnnotation(annotationType, ac.start, ac.size);
+			
+			//	mark paragraph end if necessary
+			if (this.paragraphTags.containsIgnoreCase(annotationType))
+				annotation.lastToken().setAttribute(Token.PARAGRAPH_END_ATTRIBUTE, Token.PARAGRAPH_END_ATTRIBUTE);
+			
+			//	transfer attributes
+			String[] attributeNames = ac.attributes.getAttributeNames();
+			for (int n = 0; n < attributeNames.length; n++) {
+				if ("id".equalsIgnoreCase(attributeNames[n])) {
+					String id = ac.attributes.getAttribute(attributeNames[n]);
+					if (id.matches("[0-9A-Fa-f]{32}")) {
+						annotation.setAttribute(Annotation.ANNOTATION_ID_ATTRIBUTE, id);
+						continue;
+					}
+				}
+				annotation.setAttribute(attributeNames[n], ac.attributes.getAttribute(attributeNames[n]));
 			}
 		}
 	}
 	
-	/** @see de.uka.ipd.idaho.htmlXmlUtil.TokenReceiver#storeToken(java.lang.String, int)
+	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.htmlXmlUtil.TokenReceiver#storeToken(java.lang.String, int)
 	 */
 	public void storeToken(String token, int treeDepth) throws IOException {
 		if (DEBUG) System.out.println("SgmlDocumentReader: got token - " + token);
 		
 		//	tagging information, ignore processing instructions and !DOCTYPE, etc.
 		if (this.grammar.isTag(token) && !token.startsWith("<?") && !token.startsWith("<!")) {
+			this.inProlog = false;
 			String type = this.grammar.getType(token);
 			if (DEBUG) System.out.println("   it's a tag - type " + type);
 			
@@ -171,18 +183,15 @@ public class SgmlDocumentReader extends TokenReceiver {
 					
 					//	set document property
 					if ((this.document instanceof DocumentRoot) && (attributeNames[n].startsWith(DOCUMENT_PROPERTY_PREFIX)))
-//						((DocumentRoot) this.document).setDocumentProperty(attributeNames[n].substring(DOCUMENT_PROPERTY_PREFIX.length()), IoTools.prepareForPlainText(docAttributes.getAttribute(attributeNames[n])));
 						((DocumentRoot) this.document).setDocumentProperty(attributeNames[n].substring(DOCUMENT_PROPERTY_PREFIX.length()), docAttributes.getAttribute(attributeNames[n]));
 					
 					//	annotation nesting order
 					else if (DocumentRoot.ANNOTATION_NESTING_ORDER_ATTRIBUTE.equals(attributeNames[n])) {
 						if (this.document instanceof DocumentRoot)
-//							((DocumentRoot) this.document).setAnnotationNestingOrder(IoTools.prepareForPlainText(docAttributes.getAttribute(attributeNames[n])));
 							((DocumentRoot) this.document).setAnnotationNestingOrder(docAttributes.getAttribute(attributeNames[n]));
 					}
 					
 					//	set attribute regularly
-//					this.document.setAttribute(attributeNames[n], IoTools.prepareForPlainText(docAttributes.getAttribute(attributeNames[n])));
 					this.document.setAttribute(attributeNames[n], docAttributes.getAttribute(attributeNames[n]));
 				}
 			}
@@ -257,19 +266,22 @@ public class SgmlDocumentReader extends TokenReceiver {
 			else if (DEBUG) System.out.println("   ignored");
 		}
 		
+		//	textual content before first tag
+		else if (this.inProlog) {
+			if (DEBUG) System.out.println("   prolog ignored");
+		}
+		
 		//	textual content
 		else if ((this.maxTokens < 1) || (this.document.size() < this.maxTokens)) {
 			int oldSize = this.document.size();
 			
-//			String plain = IoTools.prepareForPlainText(token).trim();
 			String plain;
 			if (this.grammar.isStrictXML())
 				plain = this.grammar.unescape(token).trim();
 			else plain = IoTools.prepareForPlainText(token).trim();
 			
 			if (plain.length() != 0) {// ignore whitespace between tags and text
-//				TokenSequence ts = new PlainTokenSequence(plain, this.document.getTokenizer());
-				TokenSequence ts = this.document.getTokenizer().tokenize(plain);//
+				TokenSequence ts = this.document.getTokenizer().tokenize(plain);
 				
 				//	make sure tokens before and after tags do not cling together
 				if ((this.document.size() != 0) && (ts.size() != 0) && (this.lastChar > 32) && Gamta.insertSpace(this.document.lastToken(), ts.firstToken()))
@@ -332,11 +344,10 @@ public class SgmlDocumentReader extends TokenReceiver {
 	 * @return a document created from the data form the specified Reader
 	 */
 	public static DocumentRoot readDocument(Reader reader) throws IOException {
-		DocumentRoot document = Gamta.newDocument(Gamta.INNER_PUNCTUATION_TOKENIZER);
-		SgmlDocumentReader dc = new SgmlDocumentReader(document, null, null, null, null);
+		SgmlDocumentReader dc = new SgmlDocumentReader(null, null, null, null, null);
 		PARSER.stream(reader, dc);
 		dc.close();
-		return document;
+		return ((DocumentRoot) dc.getDocument());
 	}
 	
 	/**	read a Document from an XML file using default settings
