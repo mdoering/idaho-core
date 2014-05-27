@@ -41,7 +41,7 @@ import de.uka.ipd.idaho.gamta.util.constants.LiteratureConstants;
 import de.uka.ipd.idaho.stringUtils.StringVector;
 
 public class ParagraphStructureNormalizer extends AbstractAnalyzer implements LiteratureConstants {
-	private static final String DASHES = "-­——";
+	private static final String DASHES = "-­——\u00AD¬";
 	private StringVector enumerationConjunctions = new StringVector();
 	
 	/** Constructor
@@ -132,7 +132,7 @@ public class ParagraphStructureNormalizer extends AbstractAnalyzer implements Li
 				Token t1 = paragraph.tokenAt(t);
 				Token t2 = paragraph.tokenAt(t + 1);
 				
-				//	concatenate word devided Tokens
+				//	concatenate word divided tokens
 				if (t1.hasAttribute(Token.PARAGRAPH_END_ATTRIBUTE)) {
 					String jointForm = this.getJointForm(t1, t2, tokens);
 					
@@ -177,7 +177,7 @@ public class ParagraphStructureNormalizer extends AbstractAnalyzer implements Li
 				paragraph.tokenAt(t).removeAttribute(Token.PARAGRAPH_END_ATTRIBUTE);
 			}
 			
-			//	set line preak at end of paragraph
+			//	set line break at end of paragraph
 			paragraph.lastToken().setAttribute(Token.PARAGRAPH_END_ATTRIBUTE, Token.PARAGRAPH_END_ATTRIBUTE);
 			String whitespace = data.getWhitespaceAfter((paragraph.getEndIndex() - 1));
 			if (whitespace.indexOf("\n") == -1)
@@ -224,17 +224,15 @@ public class ParagraphStructureNormalizer extends AbstractAnalyzer implements Li
 		if (token1.length() < 2)
 			return null;
 		
-		//	no hyphen at end of line
+		//	no hyphen at end of line (also accept tilde to account for bad OCR)
 		String value1 = token1.getValue();
-		if (!value1.endsWith("-"))
+		if (!value1.endsWith("-") && !value1.endsWith("~"))
 			return null;
 		
 		//	no word to continue with, or part of enumeration
 		String value2 = token2.getValue();
 		if (!Gamta.isWord(value2) || this.enumerationConjunctions.containsIgnoreCase(value2))
 			return null;
-//		if (!Gamta.isWord(value2) || "and".equalsIgnoreCase(value2) || "or".equalsIgnoreCase(value2))
-//			return null;
 		
 		//	prepare for lookup
 		String nValue2 = value2.toLowerCase();
@@ -261,7 +259,7 @@ public class ParagraphStructureNormalizer extends AbstractAnalyzer implements Li
 		if (tokens.containsIgnoreCase(nJointValue))
 			return jointValue;
 		
-		//	if lower case letter before hyhen (probably nothing like 'B-carotin') ==> join
+		//	if lower case letter before hyphen (probably nothing like 'B-carotin') ==> join
 		if (Gamta.LOWER_CASE_LETTERS.indexOf(value1.charAt(value1.length() - 2)) != -1)
 			return jointValue;
 		

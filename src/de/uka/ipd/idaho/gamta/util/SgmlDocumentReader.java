@@ -29,7 +29,6 @@ package de.uka.ipd.idaho.gamta.util;
 
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +39,6 @@ import java.util.Properties;
 import java.util.Stack;
 
 import de.uka.ipd.idaho.gamta.Annotation;
-import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.DocumentRoot;
 import de.uka.ipd.idaho.gamta.Gamta;
 import de.uka.ipd.idaho.gamta.MutableAnnotation;
@@ -154,7 +152,7 @@ public class SgmlDocumentReader extends TokenReceiver {
 				if ("id".equalsIgnoreCase(attributeNames[n])) {
 					String id = ac.attributes.getAttribute(attributeNames[n]);
 					if (id.matches("[0-9A-Fa-f]{32}")) {
-						annotation.setAttribute(Annotation.ANNOTATION_ID_ATTRIBUTE, id);
+						annotation.setAttribute(Annotation.ANNOTATION_ID_ATTRIBUTE, id.toUpperCase());
 						continue;
 					}
 				}

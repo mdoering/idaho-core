@@ -91,6 +91,6 @@ public interface NamedEntityConstants {
 	/** the annotation type for marking up an official position in the text of a document*/
 	public static final String OFFICIAL_POSITION_TYPE = "officialPosition";
 	
-	/** the attribute holding a normalized form of an arbitray proper name in a respective annotation*/
+	/** the attribute holding a normalized form of an arbitrary proper name in a respective annotation*/
 	public static final String NAME_ATTRIBUTE = "name";
 }

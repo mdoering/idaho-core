@@ -45,6 +45,8 @@ import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.TokenSequenceUtils;
 import de.uka.ipd.idaho.gamta.Tokenizer;
+import de.uka.ipd.idaho.gamta.util.gPath.GPath;
+import de.uka.ipd.idaho.gamta.util.gPath.exceptions.GPathException;
 import de.uka.ipd.idaho.htmlXmlUtil.TreeNodeAttributeSet;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
@@ -56,18 +58,11 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * The pattern syntax is partially XML based:<br>
  * <ul>
  * <li><code>&lt;<i>type</i>&gt;</code>: matches an annotation of the specified
- * type. Further, there are attribute based filters:<ul>
+ * type. Further, XPath expressions can be used for filtering:<ul>
  * <li>
- * <code>&lt;<i>type</i> <i>attribute</i>=&quot;*&quot;&gt;</code>: matches an
- * annotation of the specified type if it has the specified attribute</li>
- * <li>
- * <code>&lt;<i>type</i> <i>attribute</i>=&quot;<i>value</i>&quot;&gt;</code>:
- * matches an annotation of the specified type if it has the specified attribute
- * with the specified value</li>
- * <li>
- * <code>&lt;<i>type</i> <i>attribute</i>=&quot;(<i>regex</i>)&quot;&gt;</code>:
- * matches an annotation of the specified type if it has the specified attribute
- * with a value matching the regular expression pattern between the parentheses</li>
+ * <code>&lt;<i>type</i> <i>test</i>=&quot;(xPathExpression)&quot;&gt;</code>:
+ * matches an annotation of the specified type if <code>xPathExpression</code>
+ * evaluates to <code>true</code> for the annotation</li>
  * </ul></li>
  * <li>
  * <code>'<i>literal</i>'</code>: matches the literal between the high commas</li>
@@ -91,8 +86,7 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * <code>+</code>: equivalent to <code>{1,inf}</code>, where <code>inf</code>
  * indicates infinity</li>
  * <li>
- * <code>?</code>: equivalent to <code>{0,1}</code>, where <code>inf</code>
- * indicates infinity</li>
+ * <code>?</code>: equivalent to <code>{0,1}</code></li>
  * </ul></li>
  * </ul>
  * <br>
@@ -101,7 +95,7 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * <br>
  * This pattern matches a <code>lastName</code> annotation followed by a comma,
  * an optional leading <code>initials</code> annotation, a
- * <code>firstName</code> annotation, and , an optional middle
+ * <code>firstName</code> annotation, and an optional middle
  * <code>initials</code> annotation.<br>
  * <code>&lt;lastName lang=&quot;en&quot;&gt; ', ' &lt;initials&gt;? &lt;firstName&gt; &lt;initials&gt;?</code>
  * <br>
@@ -568,6 +562,14 @@ public class AnnotationPatternMatcher {
 			matchTree.clear();
 		}
 		
+		//	filter out duplicate matches
+		HashSet matchIDs = new HashSet();
+		for (Iterator mtit = matches.iterator(); mtit.hasNext();) {
+			MatchTree mt = ((MatchTree) mtit.next());
+			if (!matchIDs.add(mt.match.getType() + "@" + mt.match.getStartIndex() + "-" + mt.match.getEndIndex()))
+				mtit.remove();
+		}
+		
 		//	finally ...
 		return ((MatchTree[]) matches.toArray(new MatchTree[matches.size()]));
 	}
@@ -643,40 +645,53 @@ public class AnnotationPatternMatcher {
 		if (pattern[elementIndex].annotationType != null) {
 			Annotation[] annots = annotationIndex.getAnnotations(pattern[elementIndex].annotationType, matchFrom);
 			for (int a = 0; a < annots.length; a++) {
-				boolean attribMatch = true;
-				if (pattern[elementIndex].annotationAttributes != null) {
-					String[] attribNames = pattern[elementIndex].annotationAttributes.getAttributeNames();
-					for (int n = 0; n < attribNames.length; n++) {
-						System.out.println(" - " + attribNames[n]);
-						Object attribValueObj = annots[a].getAttribute(attribNames[n]);
-						if (attribValueObj == null) {
-							attribMatch = false;
-							break;
-						}
-						String attribTest = pattern[elementIndex].annotationAttributes.getAttribute(attribNames[n]);
-						System.out.println(getIndent(matchDepth) + " - test is " + attribTest);
-						if ("*".equals(attribTest))
-							continue;
-						String attribValue = attribValueObj.toString();
-						if (attribTest.startsWith("(") && attribTest.endsWith(")")) {
-							if (!attribValue.matches(attribTest)) {
-								attribMatch = false;
-								System.out.println(getIndent(matchDepth) + " --> pattern match failed");
-								break;
-							}
-						}
-						else if (!attribTest.equalsIgnoreCase(attribValue)) {
-							attribMatch = false;
-							System.out.println(getIndent(matchDepth) + " --> value match failed");
-							break;
-						}
-					}
-				}
-				if (attribMatch) {
+				boolean filterMatch = true;
+				if ((pattern[elementIndex].annotationAttributes != null) && pattern[elementIndex].annotationAttributes.containsAttribute("test")) try {
+					QueriableAnnotation qAnnot;
+					if (annots[a] instanceof QueriableAnnotation)
+						qAnnot = ((QueriableAnnotation) annots[a]);
+					else qAnnot = new QueriableAnnotationWrapper(annots[a]);
+					filterMatch = GPath.evaluateExpression(pattern[elementIndex].annotationAttributes.getAttribute("test"), qAnnot, null).asBoolean().value;
+				} catch (GPathException gpe) {}
+				if (filterMatch) {
 					matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], annots[a]));
 					step(tokens, matchStart, (matchFrom + annots[a].size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, patternLiteralMatchIndex, matches, matchDepth, matchTree);
 					matchTree.removeLast();
 				}
+//				boolean attribMatch = true;
+//				if (pattern[elementIndex].annotationAttributes != null) {
+//					String[] attribNames = pattern[elementIndex].annotationAttributes.getAttributeNames();
+//					for (int n = 0; n < attribNames.length; n++) {
+//						System.out.println(" - " + attribNames[n]);
+//						Object attribValueObj = annots[a].getAttribute(attribNames[n]);
+//						if (attribValueObj == null) {
+//							attribMatch = false;
+//							break;
+//						}
+//						String attribTest = pattern[elementIndex].annotationAttributes.getAttribute(attribNames[n]);
+//						System.out.println(getIndent(matchDepth) + " - test is " + attribTest);
+//						if ("*".equals(attribTest))
+//							continue;
+//						String attribValue = attribValueObj.toString();
+//						if (attribTest.startsWith("(") && attribTest.endsWith(")")) {
+//							if (!attribValue.matches(attribTest)) {
+//								attribMatch = false;
+//								System.out.println(getIndent(matchDepth) + " --> pattern match failed");
+//								break;
+//							}
+//						}
+//						else if (!attribTest.equalsIgnoreCase(attribValue)) {
+//							attribMatch = false;
+//							System.out.println(getIndent(matchDepth) + " --> value match failed");
+//							break;
+//						}
+//					}
+//				}
+//				if (attribMatch) {
+//					matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], annots[a]));
+//					step(tokens, matchStart, (matchFrom + annots[a].size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, patternLiteralMatchIndex, matches, matchDepth, matchTree);
+//					matchTree.removeLast();
+//				}
 			}
 			return;
 		}
@@ -718,6 +733,30 @@ public class AnnotationPatternMatcher {
 				}
 				subMatches.clear();
 			}
+		}
+	}
+	
+	private static class QueriableAnnotationWrapper extends GenericAnnotationWrapper implements QueriableAnnotation {
+		QueriableAnnotationWrapper(Annotation data) {
+			super(data);
+		}
+		public int getAbsoluteStartIndex() {
+			return this.getStartIndex();
+		}
+		public int getAbsoluteStartOffset() {
+			return this.getStartOffset();
+		}
+		public QueriableAnnotation[] getAnnotations() {
+			return new QueriableAnnotation[0];
+		}
+		public QueriableAnnotation[] getAnnotations(String type) {
+			return new QueriableAnnotation[0];
+		}
+		public String[] getAnnotationTypes() {
+			return new String[0];
+		}
+		public String getAnnotationNestingOrder() {
+			return "";
 		}
 	}
 	

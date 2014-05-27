@@ -242,13 +242,15 @@ public class Benchmark {
 					if (isCoextensive(benchmark, annotation)) {
 						
 						// full match
-						if (isCompatible(benchmark, annotation, bm.relevantAttributes)) pairing = new Pairing(bm, b, a, CORRECT);
+						if (isCompatible(benchmark, annotation, bm.relevantAttributes))
+							pairing = new Pairing(bm, b, a, CORRECT);
 						
-						// the two annotations are coextensive but don't match: missmatch
+						// the two annotations are coextensive but don't match: mismatch
 						else pairing = new Pairing(bm, b, a, WRONG);
-						
+					}
+					
 					// partial overlap -> PARTIALLY_CORRECT or WRONG
-					} else if (AnnotationUtils.overlaps(benchmark, annotation)) {
+					else if (AnnotationUtils.overlaps(benchmark, annotation)) {
 						if (isPartiallyCompatible(benchmark, annotation, bm.relevantAttributes)) pairing = new Pairing(bm, b, a, PARTIALLY_CORRECT);
 						else pairing = new Pairing(bm, b, a, WRONG);
 					}
@@ -328,42 +330,48 @@ public class Benchmark {
 	private static void sanityCheck(Benchmark ad) {
 		
 		//	check already performed
-		if (ad.sanityProblems != null) return;
+		if (ad.sanityProblems != null)
+			return;
 		ad.sanityProblems = new StringVector();
 		
 		// all benchmark Annotations and annotations should have at most one choice left
 		for (int b = 0; b < ad.benchmarkPairings.length; b++) {
 			ArrayList pairings = ad.benchmarkPairings[b];
-			if (pairings != null) {
-				if (pairings.size() > 1) ad.sanityProblems.addElement("Multiple choices found!");
-				else if (!pairings.isEmpty()) {
-					
-					// size must be 1
-					Pairing pairing = ((Pairing) pairings.get(0));
-					
-					// the SAME choice should be found for the associated annotation
-					ArrayList otherPairings = ad.annotationPairings[pairing.annotationIndex];
-					if (otherPairings == null || otherPairings.size() != 1 || otherPairings.get(0) != pairing)
-						ad.sanityProblems.addElement("Reciprocity error!");
-				}
+			if (pairings == null)
+				continue;
+			if (pairings.size() > 1)
+				ad.sanityProblems.addElement("Multiple choices found!");
+			else if (!pairings.isEmpty()) {
+				
+				// size must be 1
+				Pairing pairing = ((Pairing) pairings.get(0));
+				
+				// the SAME choice should be found for the associated annotation
+				ArrayList otherPairings = ad.annotationPairings[pairing.annotationIndex];
+				if (otherPairings == null || otherPairings.size() != 1 || otherPairings.get(0) != pairing)
+					ad.sanityProblems.addElement("Reciprocity error!");
 			}
 		}
 		
 		for (int a = 0; a < ad.annotationPairings.length; a++) {
 			ArrayList pairings = ad.annotationPairings[a];
-			if (pairings != null) {
-				if (pairings.size() > 1) ad.sanityProblems.addElement("Multiple choices found!");
-				else if (!pairings.isEmpty()) {
-					
-					// size must be 1
-					Pairing pairing = ((Pairing) pairings.get(0));
-					
-					// the SAME choice should be found for the associated annotation
-					ArrayList otherPairings = ad.benchmarkPairings[pairing.benchmarkIndex];
-					if (otherPairings == null) ad.sanityProblems.addElement("Reciprocity error : null!");
-					else if (otherPairings.size() != 1) ad.sanityProblems.addElement("Reciprocity error: not 1!");
-					else if (otherPairings.get(0) != pairing) ad.sanityProblems.addElement("Reciprocity error: different!");
-				}
+			if (pairings == null)
+				continue;
+			if (pairings.size() > 1)
+				ad.sanityProblems.addElement("Multiple choices found!");
+			else if (!pairings.isEmpty()) {
+				
+				// size must be 1
+				Pairing pairing = ((Pairing) pairings.get(0));
+				
+				// the SAME choice should be found for the associated annotation
+				ArrayList otherPairings = ad.benchmarkPairings[pairing.benchmarkIndex];
+				if (otherPairings == null)
+					ad.sanityProblems.addElement("Reciprocity error : null!");
+				else if (otherPairings.size() != 1)
+					ad.sanityProblems.addElement("Reciprocity error: not 1!");
+				else if (otherPairings.get(0) != pairing)
+					ad.sanityProblems.addElement("Reciprocity error: different!");
 			}
 		}
 	}
@@ -409,7 +417,8 @@ public class Benchmark {
 	 *         not done yet)
 	 */
 	public String[] getSanityProblems() {
-		if (this.sanityProblems == null) sanityCheck(this);
+		if (this.sanityProblems == null)
+			sanityCheck(this);
 		return this.sanityProblems.toStringArray();
 	}
 
@@ -418,7 +427,8 @@ public class Benchmark {
 	 *         the provided annotations).
 	 */
 	public double getPrecisionStrict() {
-		if (this.annotations.length == 0) return 1.0;
+		if (this.annotations.length == 0)
+			return 1.0;
 		return (((double) this.correctMatches) / ((double) this.annotations.length));
 	}
 
@@ -427,7 +437,8 @@ public class Benchmark {
 	 *         annotation out of all the benchmark Annotations).
 	 */
 	public double getRecallStrict() {
-		if (this.benchmarks.length == 0) return 1.0;
+		if (this.benchmarks.length == 0)
+			return 1.0;
 		return (((double) this.correctMatches) / ((double) this.benchmarks.length));
 	}
 
@@ -436,7 +447,8 @@ public class Benchmark {
 	 *         as correct).
 	 */
 	public double getPrecisionLenient() {
-		if (this.annotations.length == 0) return 1.0;
+		if (this.annotations.length == 0)
+			return 1.0;
 		return (((double) (this.correctMatches + this.partiallyCorrectMatches)) / this.annotations.length);
 	}
 
@@ -1049,7 +1061,7 @@ public class Benchmark {
 		}
 	}
 	
-	/** Compares two pairings: the better score is preferred; for the same score the better type is preferred (exact matches are preffered to partial ones).
+	/** Compares two pairings: the better score is preferred; for the same score the better type is preferred (exact matches are preferred to partial ones).
 	 */
 	private static class PairingScoreComparator implements Comparator {
 		
@@ -1108,7 +1120,7 @@ public class Benchmark {
 	/**
 	 * evaluate a set of Annotations against a set of benchmark Annotations
 	 * @param annotations the Annotations to evaluate
-	 * @param benchmark the Annnotations to use as the benchmark for evaluation
+	 * @param benchmark the Annotations to use as the benchmark for evaluation
 	 * @param relevantAttributes a Set containing the names of the attributes to
 	 *            consider when comparing Annotations (specifying null will
 	 *            consider all attributes)

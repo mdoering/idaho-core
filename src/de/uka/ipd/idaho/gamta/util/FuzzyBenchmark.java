@@ -99,7 +99,7 @@ public class FuzzyBenchmark {
 		this.benchmarkedAnnotationTypes.addElement(type);
 		this.benchmarksByAnnotationType.put(type, bm);
 	}
-
+	
 	/**
 	 * @return the evaluation summary
 	 */
@@ -169,10 +169,14 @@ public class FuzzyBenchmark {
 		FuzzyBenchmark result = new FuzzyBenchmark();
 		
 		//	check parameters
-		if (doc == null) result.addSummaryEntry("No document specified for evaluation.");
-		if (benchmark == null) result.addSummaryEntry("No benchmark document specified.");
-		if (annotationTypes == null) result.addSummaryEntry("No annotationTypes specified for evaluation.");
-		if (!result.summary.isEmpty()) return result;
+		if (doc == null)
+			result.addSummaryEntry("No document specified for evaluation.");
+		if (benchmark == null)
+			result.addSummaryEntry("No benchmark document specified.");
+		if (annotationTypes == null)
+			result.addSummaryEntry("No annotationTypes specified for evaluation.");
+		if (!result.summary.isEmpty())
+			return result;
 		
 		//	copy documents
 		MutableAnnotation dDoc = Gamta.copyDocument(doc);
@@ -362,8 +366,10 @@ public class FuzzyBenchmark {
 		if (DEBUG) System.out.println("Remaining unique in doc:\n - " + dTokens.concatStrings("\n - "));
 		if (DEBUG) System.out.println("Remaining unique in benchmark:\n - " + bTokens.concatStrings("\n - "));
 		
-		for (int t = 0; t < dDoc.size(); t++) dTokens.addElement(dDoc.valueAt(t));
-		for (int t = 0; t < benchmark.size(); t++) bTokens.addElement(benchmark.valueAt(t));
+		for (int t = 0; t < dDoc.size(); t++)
+			dTokens.addElement(dDoc.valueAt(t));
+		for (int t = 0; t < benchmark.size(); t++)
+			bTokens.addElement(benchmark.valueAt(t));
 		
 		//	get unique values (eliminate matching ones)
 		sharedTokens = dTokens.intersect(bTokens);

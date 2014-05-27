@@ -110,7 +110,7 @@ public interface LiteratureConstants {
 	/**	the annotation type for marking a page number in a print layouted document*/
 	public static final String PAGE_NUMBER_TYPE = "pageNumber";
 	
-	/**	the annotation type for marking tokens that originates from a page other than the one immediately preceeding them in a print layouted document*/
+	/**	the annotation type for marking tokens that originates from a page other than the one immediately preceding them in a print layouted document*/
 	public static final String PAGE_BREAK_TOKEN_TYPE = "pageBreakToken";
 	
 	/**	the annotation type for marking a page title in a print layouted document*/
