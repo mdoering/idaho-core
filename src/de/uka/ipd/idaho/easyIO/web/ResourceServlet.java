@@ -30,6 +30,7 @@ package de.uka.ipd.idaho.easyIO.web;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +39,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Properties;
 
 import javax.servlet.ServletContext;
@@ -64,8 +66,6 @@ import javax.servlet.http.HttpServletResponse;
 public class ResourceServlet extends WebServlet implements WebConstants {
 	
 	private static final SimpleDateFormat lastModifiedDateFormat = new SimpleDateFormat("EE, dd MMM yyyy HH:mm:ss z");
-	
-	private static HashMap accessibleResourceSets = new HashMap();
 	
 	private static Properties fileExtensionsToMimeTypesDefault = new Properties();
 	static { // default MIME types, according to Wikipedia (http://en.wikipedia.org/wiki/Internet_media_type)
@@ -120,6 +120,8 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 		fileExtensionsToMimeTypesDefault.setProperty("flv", "video/x-flv");// Flash video (FLV files)
 	}
 	
+	private static HashMap accessibleResourceSets = new HashMap();
+	
 	/**
 	 * Register a resource to be accessible via HTTP for a given web-app. The
 	 * argument resource name is made accessible for the whole web-app, ignoring
@@ -130,22 +132,119 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 	 * @param resName the name of the resource
 	 */
 	public static synchronized void registerAccessibleResource(ServletContext sc, String resName) {
-		String scPath = sc.getRealPath("./");
-		scPath = (new File(scPath)).getAbsolutePath();
-		
 		while (resName.indexOf('/') != -1)
 			resName = resName.substring(resName.indexOf('/') + 1);
-		
+		getAccessibleResourceSet(sc).add(resName.toLowerCase());
+	}
+	private static synchronized HashSet getAccessibleResourceSet(ServletContext sc) {
+		String scPath = sc.getRealPath("./");
+		scPath = (new File(scPath)).getAbsolutePath();
 		HashSet accessibleResources = ((HashSet) accessibleResourceSets.get(scPath));
 		if (accessibleResources == null) {
 			accessibleResources = new HashSet();
 			accessibleResourceSets.put(scPath, accessibleResources);
 		}
-		accessibleResources.add(resName.toLowerCase());
+		return accessibleResources;
+	}
+	
+	/**
+	 * Interface to implement by a provider of web-app resources, like images,
+	 * JavaScript files, or stylesheets. In particular, this interface allows
+	 * for its implementors to generate resources on demand instead of only
+	 * providing them statically. If the resource servlet doesn't find a static
+	 * representation of a resource, it will ask all registered resource
+	 * providers for the resource before returning a '404 - Not Fount' error to
+	 * the requesting client.
+	 * 
+	 * @author sautter
+	 */
+	public static interface ResourceProvider {
+		
+		/**
+		 * Obtain an input stream pointing to a resource. The argument resource
+		 * file name is equivalent to the path info of the argument request,
+		 * but provided separately for instant access. The argument request,
+		 * in turn, is there to provide access to request parameters, session
+		 * info, etc.
+		 * @param resName the resource file name
+		 * @param request the original HTTP request asking for the resource
+		 * @return
+		 */
+		public abstract ResourceInputStream getResource(String resName, HttpServletRequest request);
+	}
+	
+	/**
+	 * Input stream coupled with a modification timestamp for its content.
+	 * 
+	 * @author sautter
+	 */
+	public static class ResourceInputStream extends FilterInputStream {
+		
+		/** the modification timestamp of the resource */
+		public final long lastModified;
+		
+		/**
+		 * Constructor wrapping an input stream for dynamically generated
+		 * resources not persisted on disc after generation, with the
+		 * modification timestamp set to the current time
+		 * @param in the input stream to wrap
+		 */
+		public ResourceInputStream(InputStream in) {
+			this(in, System.currentTimeMillis());
+		}
+		
+		/**
+		 * Constructor wrapping an input stream for dynamically generated
+		 * resources not necessarily persisted on disc after generation
+		 * @param in the input stream to wrap
+		 * @param lastModified the modification time of the underlying data
+		 */
+		public ResourceInputStream(InputStream in, long lastModified) {
+			super(in);
+			this.lastModified = lastModified;
+		}
+		
+		/**
+		 * Constructor for persistent resources
+		 * @param file the file to wrap
+		 */
+		public ResourceInputStream(File file) throws IOException {
+			this(new FileInputStream(file), file.lastModified());
+		}
+	}
+	
+	private static HashMap resourceProviderSets = new HashMap();
+	
+	/**
+	 * Register a resource provider. In particular, this resource providers can
+	 * generate resources on demand instead of only providing them statically.
+	 * If the resource servlet belonging to the argument servlet context doesn't
+	 * find a static representation of a resource, it will ask all registered
+	 * resource providers for the resource before returning a '404 - Not Fount'
+	 * error to the requesting client.
+	 * @param sc the servlet context identifying the web-app
+	 * @param rp the resource provider to register
+	 */
+	public static synchronized void registerResourceProvider(ServletContext sc, ResourceProvider rp) {
+		getResourceProviderSet(sc).add(rp);
+		System.out.println("ResourceServlet: " + rp.getClass().getName() + " registered as resource provider");
+	}
+	private static synchronized HashSet getResourceProviderSet(ServletContext sc) {
+		String scPath = sc.getRealPath("./");
+		scPath = (new File(scPath)).getAbsolutePath();
+		HashSet resourceProviders = ((HashSet) resourceProviderSets.get(scPath));
+		if (resourceProviders == null) {
+			resourceProviders = new HashSet();
+			resourceProviderSets.put(scPath, resourceProviders);
+			System.out.println("ResourceServlet: resource provider set generated for " + scPath);
+		}
+		return resourceProviders;
 	}
 	
 	private HashSet accessibleFileExtensions = new HashSet();
-	private HashSet accessibleFileNames = new HashSet();
+	private HashSet accessibleFileNames = null;
+	
+	private HashSet resourceProviders = null;
 	
 	private Properties fileExtensionsToMimeTypes = new Properties(fileExtensionsToMimeTypesDefault);
 	
@@ -173,16 +272,18 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 			if (feMimeType != null)
 				this.fileExtensionsToMimeTypes.setProperty(fe.toLowerCase(), feMimeType);
 		}
+		
+		//	get resource filter
+		this.accessibleFileNames = getAccessibleResourceSet(this.getServletContext());
+		
+		//	get resource providers
+		this.resourceProviders = getResourceProviderSet(this.getServletContext());
 	}
 	
 	/* (non-Javadoc)
 	 * @see javax.servlet.http.HttpServlet#doGet(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		
-		//	check if we have the resource filter yet (we need this to be independent of servlet loading order)
-		if (this.accessibleFileNames == null)
-			this.accessibleFileNames = ((HashSet) accessibleResourceSets.get(this.rootFolder.getAbsolutePath()));
 		
 		//	get requested resource name
 		String resName = request.getPathInfo();
@@ -214,9 +315,22 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 		else if (!this.accessibleFileExtensions.contains(fileExtension))
 			resName = null;
 		
-		//	try and find file if not filtered out
-		File resFile = ((resName == null) ? null : this.findFile(resName));
-		if (resFile == null) {
+		//	we don't have this one
+		if (resName == null) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+//		
+//		//	try and find file if not filtered out
+//		File resFile = ((resName == null) ? null : this.findFile(resName));
+//		if (resFile == null) {
+//			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+//			return;
+//		}
+		
+		//	try and find resource if not filtered out
+		ResourceInputStream ris = this.findResource(resName, request);
+		if (ris == null) {
 			response.sendError(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
@@ -225,10 +339,10 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 		String mimeType = ((fileExtension == null) ? null : this.fileExtensionsToMimeTypes.getProperty(fileExtension));
 		
 		//	deliver resource
-		InputStream resIn = new BufferedInputStream(new FileInputStream(resFile));
+		InputStream resIn = new BufferedInputStream(ris);
 		if (mimeType != null)
 			response.setContentType(mimeType);
-		response.setHeader("Last-Modified", lastModifiedDateFormat.format(new Date(resFile.lastModified())));
+		response.setHeader("Last-Modified", lastModifiedDateFormat.format(new Date(ris.lastModified)));
 		OutputStream resOut = response.getOutputStream();
 		byte[] resBuf = new byte[1024];
 		int read;
@@ -236,5 +350,25 @@ public class ResourceServlet extends WebServlet implements WebConstants {
 			resOut.write(resBuf, 0, read);
 		resOut.flush();
 		resIn.close();
+	}
+	
+	private ResourceInputStream findResource(String resName, HttpServletRequest request) throws IOException {
+		
+		//	try and find static resources
+		File resFile = this.findFile(resName);
+		if (resFile != null)
+			return new ResourceInputStream(resFile);
+		
+		//	try resource providers (copy for thread safety, as we don't want concurrent modification exceptions)
+		LinkedList rpList = new LinkedList(this.resourceProviders);
+		while (rpList.size() != 0) {
+			ResourceProvider rp = ((ResourceProvider) rpList.removeFirst());
+			ResourceInputStream ris = rp.getResource(resName, request);
+			if (ris != null)
+				return ris;
+		}
+		
+		//	nothing we can do about this one
+		return null;
 	}
 }
