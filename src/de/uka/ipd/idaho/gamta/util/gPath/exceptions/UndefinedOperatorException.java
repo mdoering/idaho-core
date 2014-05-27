@@ -29,7 +29,7 @@ package de.uka.ipd.idaho.gamta.util.gPath.exceptions;
 
 
 /**
- * Exception indication that a GPath expression contains an invalid operator
+ * Exception indicating that a GPath expression contains an invalid operator
  * 
  * @author sautter
  */

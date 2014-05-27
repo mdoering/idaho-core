@@ -153,8 +153,10 @@ public class ParquettFunction extends GScriptAnnotationSetFunction {
 		}
 		
 		//	create annotations between separators
-		for (int a = 1; a < sortedAnnotations.length; a++)
-			if (this.spanGap(data, sortedAnnotations[a - 1], sortedAnnotations[a], type, mode)) affectedAnnotationCount ++;
+		for (int a = 1; a < sortedAnnotations.length; a++) {
+			if (this.spanGap(data, sortedAnnotations[a - 1], sortedAnnotations[a], type, mode))
+				affectedAnnotationCount++;
+		}
 		
 		//	create annotation from last separator to end (if required)
 		if (includeEnd && (sortedAnnotations.length != 0) && (sortedAnnotations[sortedAnnotations.length - 1].getEndIndex() < data.size())) {

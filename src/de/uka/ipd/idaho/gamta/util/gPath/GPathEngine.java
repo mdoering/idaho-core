@@ -28,11 +28,16 @@
 package de.uka.ipd.idaho.gamta.util.gPath;
 
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Properties;
+import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.regex.PatternSyntaxException;
 
 import de.uka.ipd.idaho.gamta.Annotation;
@@ -910,7 +915,7 @@ public class GPathEngine implements GPathConstants {
 		}
 		else if ("lang".equalsIgnoreCase(functionName)) {
 			if ((args.length != 1) || !(args[0] instanceof GPathString))
-				throw new InvalidArgumentsException("The function 'boolean' requires 1 argument(s) of type(s) GPathString.");
+				throw new InvalidArgumentsException("The function 'lang' requires 1 argument(s) of type(s) GPathString.");
 			return new GPathBoolean(true);
 		}
 		else if ("not".equalsIgnoreCase(functionName))
@@ -992,8 +997,8 @@ public class GPathEngine implements GPathConstants {
 			
 			StringBuffer assembler = new StringBuffer("");
 			for (int a = 0; a < args.length; a++) {
-				if (!(args[a] instanceof GPathString) && false)
-					throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
+//				if (!(args[a] instanceof GPathString) && false)
+//					throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
 				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
 			}
 			return new GPathString(assembler.toString());
@@ -1149,16 +1154,84 @@ public class GPathEngine implements GPathConstants {
 			return new GPathString(assembler.toString());
 		}
 		
+		else if ("date".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'date' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(dateDateFormat.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		else if ("dateUTC".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'dateUTC' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(dateDateFormatUTC.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		else if ("time".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'time' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(timeDateFormat.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		else if ("timeUTC".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'timeUTC' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(timeDateFormatUTC.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		else if ("dateTime".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'dateTime' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(dateTimeDateFormat.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		else if ("dateTimeUTC".equalsIgnoreCase(functionName)) {
+			if (args.length > 1)
+				throw new InvalidArgumentsException("The function 'dateTimeUTC' requires no or 1 argument(s) of type GPathNumber.");
+			return new GPathString(dateTimeDateFormatUTC.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
+		}
+		
+		else if ("getAttribute".equalsIgnoreCase(functionName)) {
+			if ((args.length < 1) || (args.length > 2))
+				throw new InvalidArgumentsException("The function 'getAttribute' requires 1 or 2 argument(s) of type(s) GPathString.");
+			Object attributeValue = contextAnnotation.getAttribute(args[0].asString().value);
+			if (attributeValue == null)
+				return new GPathString((args.length == 1) ? "" : args[1].asString().value);
+			else return new GPathString(attributeValue.toString());
+		}
+		
+		else if ("isFunctionAvailable".equalsIgnoreCase(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'isFunctionAvailable' requires 1 argument of type GPathString.");
+			if (this.customFunctions.containsKey(args[0].asString().value))
+				return new GPathBoolean(true);
+			else if (!this.isDefaultEngine && GPath.DEFAULT_ENGINE.customFunctions.containsKey(args[0].asString().value))
+				return new GPathBoolean(true);
+			else return new GPathBoolean(false);
+		}
+		
 		if (this.isDefaultEngine) throw new UndefinedFunctionException("The function '" + functionName + "' is not defined.");
 		
 		return GPath.DEFAULT_ENGINE.executeFunction(functionName, contextAnnotation, contextPosition, contextSize, args);
 	}
 	
+	private static final DateFormat dateDateFormat;
+	private static final DateFormat dateDateFormatUTC;
+	private static final DateFormat timeDateFormat;
+	private static final DateFormat timeDateFormatUTC;
+	private static final DateFormat dateTimeDateFormat;
+	private static final DateFormat dateTimeDateFormatUTC;
+	static {
+		dateDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		dateDateFormatUTC = new SimpleDateFormat("yyyy-MM-dd");
+		dateDateFormatUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+		timeDateFormat = new SimpleDateFormat("HH:mm:ss");
+		timeDateFormatUTC = new SimpleDateFormat("HH:mm:ss");
+		timeDateFormatUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+		dateTimeDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		dateTimeDateFormatUTC = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		dateTimeDateFormatUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+	}
+	
 	//	register for custom functions
-	private final HashMap customFunctions = new HashMap();
+	private final TreeMap customFunctions = new TreeMap(String.CASE_INSENSITIVE_ORDER);
 	
 	/**	add a custom function to the function library of this GPathEngine (will overwrite the original function if it has the same name, the same is true for equally named custom functions in the default function library)
-	 * @param	functionName	the name the function will be invocable with in GPath queries
+	 * @param	functionName	the name the function will be invokable with in GPath queries
 	 * @param	function		the GPathFunction to be added
 	 */
 	public void addFunction(String functionName, GPathFunction function) {

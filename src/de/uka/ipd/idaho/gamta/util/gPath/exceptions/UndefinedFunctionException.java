@@ -29,7 +29,7 @@ package de.uka.ipd.idaho.gamta.util.gPath.exceptions;
 
 
 /**
- * Exception indication that a function has been called that does not exist 
+ * Exception indicating that a function has been called that does not exist 
  * 
  * @author sautter
  */

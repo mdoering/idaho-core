@@ -29,7 +29,7 @@ package de.uka.ipd.idaho.gamta.util.gPath.exceptions;
 
 
 /**
- * Exception indication invalid GPath syntax
+ * Exception indicating invalid GPath syntax
  * 
  * @author sautter
  */

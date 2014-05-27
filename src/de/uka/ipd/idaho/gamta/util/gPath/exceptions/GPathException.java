@@ -31,7 +31,7 @@ package de.uka.ipd.idaho.gamta.util.gPath.exceptions;
 
 
 /**
- * super class of all the exceptions that may occur when evaluationg a GPath
+ * super class of all the exceptions that may occur when evaluating a GPath
  * 
  * @author sautter
  */

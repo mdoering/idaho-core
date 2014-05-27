@@ -29,7 +29,7 @@ package de.uka.ipd.idaho.gamta.util.gPath.exceptions;
 
 
 /**
- * Exception indicationg that a GPath function has been called with inappropriate arguments
+ * Exception indicating that a GPath function has been called with inappropriate arguments
  * 
  * @author sautter
  */

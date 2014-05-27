@@ -2333,7 +2333,7 @@ public class GScript {
 					if (resolvedParameterDefinitions[pIndex] instanceof GPathAnnotationSet)
 						parameterValues[pIndex] = resolvedParameterDefinitions[pIndex];
 					
-					//	create annotation set, interpret value as GPath expresion
+					//	create annotation set, interpret value as GPath expression
 					else {
 						GPathAnnotationSet gpas = new GPathAnnotationSet();
 						String pathExpression = resolvedParameterDefinitions[pIndex].asString().value;
