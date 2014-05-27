@@ -386,7 +386,8 @@ public class TableDefinition {
 			TableColumnDefinition tcd = ((TableColumnDefinition) this.columns.get(c));
 			columnString += (((c == 0) ? "" : ", ") + tcd.getColumnName());
 		}
-		return ((columnString.indexOf(", ") == -1) ? null : ("SELECT " + columnString + " FROM " + this.tableName + " WHERE 1=0;"));
+//		return ((columnString.indexOf(", ") == -1) ? null : ("SELECT " + columnString + " FROM " + this.tableName + " WHERE 1=0;"));
+		return ((columnString.length() == 0) ? null : ("SELECT " + columnString + " FROM " + this.tableName + " WHERE 1=0;"));
 	}
 	
 	/**

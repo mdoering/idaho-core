@@ -44,23 +44,23 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 import de.uka.ipd.idaho.easyIO.EasyIO;
 import de.uka.ipd.idaho.htmlXmlUtil.Parser;
 import de.uka.ipd.idaho.htmlXmlUtil.TreeNode;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
+//import java.util.ArrayList;
 
 /**
  * A Settings object is quite similar to a java.util.Properties (and can act as
@@ -79,8 +79,6 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class Settings {
-	
-	//	TODO redo settings IO, i.e., stream it
 	
 	//	constants for XML style storage
 	/**
@@ -121,6 +119,12 @@ public class Settings {
 	public static final String COMMENT_MARKER = "#";
 
 	/**
+	 * the start marking a line as a comment in the text representation,
+	 * namely '//'
+	 */
+	public static final String ALT_COMMENT_MARKER = "//";
+
+	/**
 	 * the character used for escaping settings values in the text
 	 * representation, namely '\'
 	 */
@@ -148,12 +152,16 @@ public class Settings {
 	
 	private static Parser PARSER = new Parser(new SettingsGrammar());
 	
-	private Properties keyStore = new Properties();
-	private Properties valueStore = new Properties();
+//	private Properties keyStore = new Properties();
+//	private Properties valueStore = new Properties();
+	private TreeMap valueStore = new TreeMap();
 	
-	private HashMap subSets = new HashMap();
+//	private HashMap subSets = new HashMap();
+	private TreeMap subSets = new TreeMap();
 	private Settings parent = null;
 	private String prefix = null;
+	
+	private boolean dirty = false;
 	
 	/**	Constructor
 	 */
@@ -175,12 +183,19 @@ public class Settings {
 	 * @return the value the specified key was mapped to before
 	 */
 	public String setSetting(String key, String value) {
+		if (value == null)
+			return this.removeSetting(key);
+		
 		Settings set = this.getSubsetFor(key);
 		String localKey = getLocalKey(key);
 		
-		String oldValue = set.valueStore.getProperty(localKey);
-		set.keyStore.setProperty(localKey, key.substring(key.lastIndexOf(PREFIX_PART_SEPARATOR) + 1));
-		set.valueStore.setProperty(localKey, value);
+//		String oldValue = set.valueStore.getProperty(localKey);
+		String oldValue = ((String) set.valueStore.get(localKey));
+//		set.keyStore.setProperty(localKey, key.substring(key.lastIndexOf(PREFIX_PART_SEPARATOR) + 1));
+//		set.valueStore.setProperty(localKey, value);
+		set.valueStore.put(localKey, value);
+		if (!value.equals(oldValue))
+			this.setDirty();
 		return oldValue;
 	}
 	
@@ -203,14 +218,14 @@ public class Settings {
 	 * @param prop the Properties containing the key / value pairs to be added
 	 */
 	public void setProperties(Properties prop) {
-		if (prop != null) {
-			Enumeration en = prop.keys();
-			Object key;
-			while (en.hasMoreElements()) {
-				key = en.nextElement();
-				if (key instanceof String)
-					this.setSetting(((String) key), prop.getProperty((String) key));
-			}
+		if (prop == null)
+			return;
+		Enumeration en = prop.keys();
+		Object key;
+		while (en.hasMoreElements()) {
+			key = en.nextElement();
+			if (key instanceof String)
+				this.setSetting(((String) key), prop.getProperty((String) key));
 		}
 	}
 	
@@ -234,7 +249,9 @@ public class Settings {
 	 */
 	public String getSetting(String key, String def) {
 		Settings set = this.getSubsetFor(key);
-		return set.valueStore.getProperty(getLocalKey(key), def);
+//		return set.valueStore.getProperty(getLocalKey(key), def);
+		String value = ((String) set.valueStore.get(getLocalKey(key)));
+		return ((value == null) ? def : value);
 	}
 	
 	/**
@@ -246,19 +263,51 @@ public class Settings {
 		Settings set = this.getSubsetFor(key);
 		String localKey = getLocalKey(key);
 		
-		String value = set.valueStore.getProperty(localKey);
-		set.keyStore.remove(localKey);
-		set.valueStore.remove(localKey);
-		return value;
+//		String value = set.valueStore.getProperty(localKey);
+//		set.keyStore.remove(localKey);
+//		set.valueStore.remove(localKey);
+//		return value;
+		String oldValue = ((String) set.valueStore.remove(localKey));
+		if (oldValue != null)
+			this.setDirty();
+		return oldValue;
+	}
+	
+	private void setDirty() {
+		this.dirty = true;
+		if (this.parent != null)
+			this.parent.setDirty();
+	}
+	
+	private void setClean() {
+		this.dirty = false;
+		for (Iterator ssit = this.subSets.values().iterator(); ssit.hasNext();)
+			((Settings) ssit.next()).setClean();
+//		ArrayList subsets = new ArrayList(this.subSets.values());
+//		for (int s = 0; s < subsets.size(); s++)
+//			((Settings) subsets.get(s)).setClean();
+	}
+	
+	/**
+	 * Test if the Settings object was modified since being saved the last
+	 * time. The <code>dirty</code> flag is set by any modifications, be it
+	 * <code>setSetting()</code>, <code>removeSettings()</code>, or
+	 * <code>clear()</code>
+	 * @return true if the Settings object is dirty
+	 */
+	public boolean isDirty() {
+		return this.dirty;
 	}
 	
 	private static String getLocalKey(String key) {
-		return ((key == null) ? null : produceKey(key.substring(key.lastIndexOf(PREFIX_PART_SEPARATOR) + 1)));
+//		return ((key == null) ? null : produceKey(key.substring(key.lastIndexOf(PREFIX_PART_SEPARATOR) + 1)));
+		return ((key == null) ? null : key.substring(key.lastIndexOf(PREFIX_PART_SEPARATOR) + 1));
 	}
 	
 	private Settings getSubsetFor(String key) {
 		//	no prefix
-		if ((key == null) || (key.indexOf(PREFIX_PART_SEPARATOR) == -1)) return this;
+		if ((key == null) || (key.indexOf(PREFIX_PART_SEPARATOR) == -1))
+			return this;
 		
 		//	find appropriate subset
 		int split = key.indexOf(PREFIX_PART_SEPARATOR);
@@ -340,10 +389,17 @@ public class Settings {
 	 * @return true if and only if this Settings contains the specified value
 	 */
 	public boolean containsValue(String value) {
-		if ((this.valueStore.containsValue(value))) return true;
-		ArrayList list = new ArrayList(this.subSets.values());
-		for (int i = 0; i < list.size(); i++)
-			if (((Settings) list.get(i)).containsValue(value)) return true;
+		if ((this.valueStore.containsValue(value)))
+			return true;
+		for (Iterator ssit = this.subSets.values().iterator(); ssit.hasNext();) {
+			if (((Settings) ssit.next()).containsValue(value))
+				return true;
+		}
+//		ArrayList list = new ArrayList(this.subSets.values());
+//		for (int i = 0; i < list.size(); i++) {
+//			if (((Settings) list.get(i)).containsValue(value))
+//				return true;
+//		}
 		return false;
 	}
 
@@ -359,10 +415,12 @@ public class Settings {
 		
 		//	prefix of first level subset
 		if (prefix.indexOf(PREFIX_PART_SEPARATOR) == -1)
-			return produceKey(prefix).equals(produceKey(this.prefix));
+//			return produceKey(prefix).equals(produceKey(this.prefix));
+			return prefix.equalsIgnoreCase(this.prefix);
 		
 		//	prefix of some deeper level subset
-		if ((PREFIX_PART_SEPARATOR + produceKey(prefix)).endsWith(PREFIX_PART_SEPARATOR + produceKey(this.prefix))) 
+//		if ((PREFIX_PART_SEPARATOR + produceKey(prefix)).endsWith(PREFIX_PART_SEPARATOR + produceKey(this.prefix))) 
+		if ((PREFIX_PART_SEPARATOR + prefix).toLowerCase().endsWith((PREFIX_PART_SEPARATOR + this.prefix).toLowerCase())) 
 			return ((this.parent != null) && this.parent.hasPrefix(prefix.substring(0, prefix.lastIndexOf(PREFIX_PART_SEPARATOR))));
 		
 		//	no match
@@ -409,11 +467,13 @@ public class Settings {
 		
 		//	prefix of first level subset
 		if (prefix.indexOf(PREFIX_PART_SEPARATOR) == -1)
-			return this.subSets.containsKey(produceKey(prefix));
+//			return this.subSets.containsKey(produceKey(prefix));
+			return this.subSets.containsKey(prefix);
 		
 		//	prefix of some deeper level subset
 		int split = prefix.indexOf(PREFIX_PART_SEPARATOR);
-		String localPrefix = produceKey(prefix.substring(0, split));
+//		String localPrefix = produceKey(prefix.substring(0, split));
+		String localPrefix = prefix.substring(0, split);
 		return (this.subSets.containsKey(localPrefix) && this.getSubset(localPrefix).hasSubset(prefix.substring(split + 1)));
 	}
 	
@@ -423,12 +483,13 @@ public class Settings {
 	 *         Strings
 	 */
 	public String[] getSubsetPrefixes() {
-		ArrayList subsets = new ArrayList(this.subSets.values());
-		ArrayList subsetPrefixes = new ArrayList();
-		for (int s = 0; s < subsets.size(); s++)
-			subsetPrefixes.add(((Settings) subsets.get(s)).prefix);
-		Collections.sort(subsetPrefixes);
-		return ((String[]) subsetPrefixes.toArray(new String[subsetPrefixes.size()]));
+//		ArrayList subsets = new ArrayList(this.subSets.values());
+//		ArrayList subsetPrefixes = new ArrayList();
+//		for (int s = 0; s < subsets.size(); s++)
+//			subsetPrefixes.add(((Settings) subsets.get(s)).prefix);
+//		Collections.sort(subsetPrefixes);
+//		return ((String[]) subsetPrefixes.toArray(new String[subsetPrefixes.size()]));
+		return ((String[]) this.subSets.keySet().toArray(new String[this.subSets.size()]));
 	}
 	
 	/**
@@ -437,9 +498,10 @@ public class Settings {
 	 * @return all the keys contained in this Settings, packed in a String array
 	 */
 	public String[] getLocalKeys() {
-		ArrayList keys = new ArrayList(this.keyStore.values());
-		Collections.sort(keys);
-		return ((String[]) keys.toArray(new String[keys.size()]));
+//		ArrayList keys = new ArrayList(this.keyStore.values());
+//		Collections.sort(keys);
+//		return ((String[]) keys.toArray(new String[keys.size()]));
+		return ((String[]) this.valueStore.keySet().toArray(new String[this.valueStore.size()]));
 	}
 	
 	/**
@@ -484,7 +546,8 @@ public class Settings {
 	}
 	
 	private String[] getKeys(boolean isRoot) {
-		ArrayList keys = new ArrayList();
+//		ArrayList keys = new ArrayList();
+		TreeSet keys = new TreeSet(String.CASE_INSENSITIVE_ORDER);
 		
 		//	get own keys
 		String[] localKeys = this.getLocalKeys();
@@ -492,15 +555,20 @@ public class Settings {
 			keys.add((isRoot ? "" : (this.prefix + PREFIX_PART_SEPARATOR)) + localKeys[k]);
 		
 		//	get keys from subsets
-		ArrayList subsets = new ArrayList(this.subSets.values());
-		for (int s = 0; s < subsets.size(); s++) {
-			String[] subsetKeys = ((Settings) subsets.get(s)).getKeys(false);
+		for (Iterator ssit = this.subSets.values().iterator(); ssit.hasNext();) {
+			String[] subsetKeys = ((Settings) ssit.next()).getKeys(false);
 			for (int k = 0; k < subsetKeys.length; k++)
 				keys.add((isRoot ? "" : (this.prefix + PREFIX_PART_SEPARATOR)) + subsetKeys[k]);
 		}
+//		ArrayList subsets = new ArrayList(this.subSets.values());
+//		for (int s = 0; s < subsets.size(); s++) {
+//			String[] subsetKeys = ((Settings) subsets.get(s)).getKeys(false);
+//			for (int k = 0; k < subsetKeys.length; k++)
+//				keys.add((isRoot ? "" : (this.prefix + PREFIX_PART_SEPARATOR)) + subsetKeys[k]);
+//		}
 		
 		//	return results
-		Collections.sort(keys);
+//		Collections.sort(keys);
 		return ((String[]) keys.toArray(new String[keys.size()]));
 	}
 	
@@ -511,13 +579,20 @@ public class Settings {
 	 *         array
 	 */
 	public String[] getValues() {
+		
 		//	get own values
-		ArrayList values = new ArrayList(this.valueStore.values());
+//		ArrayList values = new ArrayList(this.valueStore.values());
+		LinkedList values = new LinkedList(this.valueStore.values());
 		
 		//	get subset values
-		ArrayList subsets = new ArrayList(this.subSets.values());
-		for (int s = 0; s < subsets.size(); s++) {
-			String[] subsetValues = ((Settings) subsets.get(s)).getValues();
+//		ArrayList subsets = new ArrayList(this.subSets.values());
+//		for (int s = 0; s < subsets.size(); s++) {
+//			String[] subsetValues = ((Settings) subsets.get(s)).getValues();
+//			for (int v = 0; v < subsetValues.length; v++)
+//				values.add(subsetValues[v]);
+//		}
+		for (Iterator ssit = this.subSets.values().iterator(); ssit.hasNext();) {
+			String[] subsetValues = ((Settings) ssit.next()).getValues();
 			for (int v = 0; v < subsetValues.length; v++)
 				values.add(subsetValues[v]);
 		}
@@ -531,10 +606,13 @@ public class Settings {
 	 *         it's subsets
 	 */
 	public int size() {
-		int size = this.keyStore.size();
-		ArrayList list = new ArrayList(this.subSets.values());
-		for (int i = 0; i < list.size(); i++)
-			size += ((Settings) list.get(i)).size();
+//		int size = this.keyStore.size();
+		int size = this.valueStore.size();
+		for (Iterator ssit = this.subSets.values().iterator(); ssit.hasNext();)
+			size += ((Settings) ssit.next()).size();
+//		ArrayList list = new ArrayList(this.subSets.values());
+//		for (int i = 0; i < list.size(); i++)
+//			size += ((Settings) list.get(i)).size();
 		return size;
 	}
 	
@@ -550,8 +628,10 @@ public class Settings {
 	 * Remove all key / value pairs from this Settings and its subsets.
 	 */
 	public void clear() {
+		if ((this.subSets.size() + this.valueStore.size()) != 0)
+			this.setDirty();
 		this.subSets.clear();
-		this.keyStore.clear();
+//		this.keyStore.clear();
 		this.valueStore.clear();
 	}
 	
@@ -564,30 +644,44 @@ public class Settings {
 	 *         value pairs that's keys begin with the specified prefix
 	 */
 	public Settings getSubset(String prefix) {
+		
 		//	check parameter
 		if ((prefix == null) || (prefix.length() == 0))
 			return this;
 		
 		//	produce first prefix part
 		int split = prefix.indexOf(PREFIX_PART_SEPARATOR);
-		String localPrefix = produceKey((split == -1) ? prefix : prefix.substring(0, split));
+//		String localPrefix = produceKey((split == -1) ? prefix : prefix.substring(0, split));
+		String localPrefix = ((split == -1) ? prefix : prefix.substring(0, split));
+//		
+//		//	check if subset exists
+//		Object o = this.subSets.get(localPrefix);
+//		if ((o != null) && (o instanceof Settings))
+//			return ((split == -1) ? ((Settings) o) : ((Settings) o).getSubset(prefix.substring(split + 1)));
+//		
+//		//	create new subset
+//		Settings subset = new Settings(this, ((split == -1) ? prefix : prefix.substring(0, split)));
+//		this.subSets.put(localPrefix, subset);
+//		return ((split == -1) ? subset : subset.getSubset(prefix.substring(split + 1)));
 		
-		//	check if subset exists
-		Object o = this.subSets.get(localPrefix);
-		if ((o != null) && (o instanceof Settings))
-			return ((split == -1) ? ((Settings) o) : ((Settings) o).getSubset(prefix.substring(split + 1)));
-		
-		//	create new subset
-		Settings subset = new Settings(this, ((split == -1) ? prefix : prefix.substring(0, split)));
-		this.subSets.put(localPrefix, subset);
+		//	get / create and return subset
+		Settings subset = ((Settings) this.subSets.get(localPrefix));
+		if (subset == null) {
+			subset = new Settings(this, ((split == -1) ? prefix : prefix.substring(0, split)));
+			this.subSets.put(localPrefix, subset);
+		}
 		return ((split == -1) ? subset : subset.getSubset(prefix.substring(split + 1)));
 	}
 	
 	private void changeSubsetPrefix(Settings subset, String newPrefix) {
-		if ((subset != null) && (newPrefix != null) && (newPrefix.length() != 0)) {
-			String key = produceKey(subset.prefix);
-			this.subSets.remove(key);
-			this.subSets.put(produceKey(newPrefix), subset);
+		if ((subset != null) && (newPrefix != null) && (newPrefix.length() != 0) && !subset.prefix.equals(newPrefix)) {
+//			String key = produceKey(subset.prefix);
+//			this.subSets.remove(key);
+//			this.subSets.put(produceKey(newPrefix), subset);
+			this.subSets.remove(subset.prefix);
+			this.subSets.put(newPrefix, subset);
+			if (subset.size() != 0)
+				this.setDirty();
 		}
 	}
 	
@@ -597,8 +691,12 @@ public class Settings {
 	 */
 	public void removeSubset(Settings subset) {
 		if (subset != null) {
-			String key = produceKey(subset.prefix);
-			this.subSets.remove(key);
+//			String key = produceKey(subset.prefix);
+//			this.subSets.remove(key);
+//			subset.clear();
+			this.subSets.remove(subset.prefix);
+			if (subset.size() != 0)
+				this.setDirty();
 			subset.clear();
 		}
 	}
@@ -677,12 +775,13 @@ public class Settings {
 			}
 			
 			//	text style
-			else {
-				ArrayList lines = new ArrayList();
-				for (String line; (line = sourceReader.readLine()) != null;)
-					lines.add(line);
-				readSettingsFromText(lines, set);
-			}
+			else readSettingsFromText(sourceReader, set);
+//			else {
+//				ArrayList lines = new ArrayList();
+//				for (String line; (line = sourceReader.readLine()) != null;)
+//					lines.add(line);
+//				readSettingsFromText(lines, set);
+//			}
 		}
 		catch (FileNotFoundException fnfe) {
 			System.out.println("Unable to find specified file, please check path and filename.");
@@ -691,19 +790,20 @@ public class Settings {
 			System.out.println(ioe.getClass() + ": " + ioe.getMessage() + " while loading file.");
 		}
 		
+		set.setClean();
 		return set;
 	}
 	
-	private static void readSettingsFromText(ArrayList lines, Settings settings) {
-		ArrayList keys = new ArrayList();
-		Properties pairs = new Properties();
+	private static void readSettingsFromText(BufferedReader lines, Settings settings) throws IOException {
+//		ArrayList keys = new ArrayList();
+//		Properties pairs = new Properties();
 		
 		//	read settings line by line
-		for (int l = 0; l < lines.size(); l++) {
-			String line = ((String) lines.get(l)).trim();
+		for (String line; (line = lines.readLine()) != null;) {
+			line = line.trim();
 			
 			//	exclude comments and blank lines
-			if (line.startsWith(COMMENT_MARKER) || (line.length() == 0))
+			if (line.startsWith(COMMENT_MARKER) || line.startsWith("//") || (line.length() == 0))
 				continue;
 			
 			//	get key
@@ -741,49 +841,118 @@ public class Settings {
 			}
 			
 			//	remember key and value
-			keys.add(key);
-			pairs.setProperty(key, value.toString().trim());
+//			keys.add(key);
+//			pairs.setProperty(key, value.toString().trim());
+			settings.setSetting(key, value.toString().trim());
 		}
-		
-		//	sort keys
-		Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
-		
-		//	read top level settings and collect top level group prefixes
-		TreeSet prefixes = new TreeSet(String.CASE_INSENSITIVE_ORDER);
-		for (int k = 0; k < keys.size(); k++) {
-			String key = ((String) keys.get(k));
-			if (key.indexOf(PREFIX_PART_SEPARATOR) == -1)
-				settings.setSetting(key, pairs.getProperty(key));
-			else prefixes.add(key.substring(0, key.indexOf(PREFIX_PART_SEPARATOR)));
-		}
-		
-		//	create subsets
-		for (Iterator pit = prefixes.iterator(); pit.hasNext();)
-			readSubsetFromText(keys, pairs, ((String) pit.next()), settings);
+//		
+//		//	sort keys
+//		Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
+//		
+//		//	read top level settings and collect top level group prefixes
+//		TreeSet prefixes = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+//		for (int k = 0; k < keys.size(); k++) {
+//			String key = ((String) keys.get(k));
+//			if (key.indexOf(PREFIX_PART_SEPARATOR) == -1)
+//				settings.setSetting(key, pairs.getProperty(key));
+//			else prefixes.add(key.substring(0, key.indexOf(PREFIX_PART_SEPARATOR)));
+//		}
+//		
+//		//	create subsets
+//		for (Iterator pit = prefixes.iterator(); pit.hasNext();)
+//			readSubsetFromText(keys, pairs, ((String) pit.next()), settings);
 	}
-	
-	private static void readSubsetFromText(ArrayList keys, Properties pairs, String prefix, Settings settings) {
-		
-		//	create subset for prefix
-		String subsetName = ((prefix.indexOf(PREFIX_PART_SEPARATOR) == -1) ? prefix : prefix.substring(prefix.lastIndexOf(PREFIX_PART_SEPARATOR) + 1));
-		Settings subset = settings.getSubset(subsetName);
-		
-		//	read settings and collect group prefixes
-		TreeSet prefixes = new TreeSet(String.CASE_INSENSITIVE_ORDER);
-		for (int k = 0; k < keys.size(); k++) {
-			String key = ((String) keys.get(k));
-			if (key.startsWith(prefix + PREFIX_PART_SEPARATOR)) {
-				int prefixLength = prefix.length() + 1;	//	consider separator char
-				if (key.indexOf(PREFIX_PART_SEPARATOR, prefixLength) == -1)
-					subset.setSetting(key.substring(prefixLength), pairs.getProperty(key));
-				else prefixes.add(key.substring(0, key.indexOf(PREFIX_PART_SEPARATOR, prefixLength)));
-			}
-		}
-		
-		//	create subsets recursively
-		for (Iterator pit = prefixes.iterator(); pit.hasNext();)
-			readSubsetFromText(keys, pairs, ((String) pit.next()), subset);
-	}
+//	private static void readSettingsFromText(ArrayList lines, Settings settings) {
+////		ArrayList keys = new ArrayList();
+////		Properties pairs = new Properties();
+//		
+//		//	read settings line by line
+//		for (int l = 0; l < lines.size(); l++) {
+//			String line = ((String) lines.get(l)).trim();
+//			
+//			//	exclude comments and blank lines
+//			if (line.startsWith(COMMENT_MARKER) || line.startsWith("//") || (line.length() == 0))
+//				continue;
+//			
+//			//	get key
+//			int keyValueSplit = line.indexOf(SETTING_VALUE_SEPARATOR);
+//			int valueStart = line.indexOf(SETTING_VALUE_DELIMITER);
+//			String key = (((keyValueSplit != -1) && (keyValueSplit < valueStart)) ? line.substring(0, line.indexOf(SETTING_VALUE_SEPARATOR)).trim() : null);
+//			
+//			//	get value only if key is valid
+//			if (key == null)
+//				continue;
+//			
+//			//	get value
+//			StringBuffer value = new StringBuffer();
+//			int escape = -1;
+//			char ch;
+//			
+//			//	collect value
+//			for (int c = (valueStart + 1); c < line.length(); c++) {
+//				ch = line.charAt(c);
+//				
+//				//	character is escaped
+//				if (c == escape)
+//					value = value.append(ch);
+//					
+//				//	escape next character
+//				else if (ch == ESCAPER)
+//					escape = c + 1;
+//					
+//				//	end of value
+//				else if (ch == SETTING_VALUE_DELIMITER)
+//					break;
+//					
+//				//	actual character belongs to value
+//				else value.append(ch);
+//			}
+//			
+//			//	remember key and value
+////			keys.add(key);
+////			pairs.setProperty(key, value.toString().trim());
+//			settings.setSetting(key, value.toString().trim());
+//		}
+////		
+////		//	sort keys
+////		Collections.sort(keys, String.CASE_INSENSITIVE_ORDER);
+////		
+////		//	read top level settings and collect top level group prefixes
+////		TreeSet prefixes = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+////		for (int k = 0; k < keys.size(); k++) {
+////			String key = ((String) keys.get(k));
+////			if (key.indexOf(PREFIX_PART_SEPARATOR) == -1)
+////				settings.setSetting(key, pairs.getProperty(key));
+////			else prefixes.add(key.substring(0, key.indexOf(PREFIX_PART_SEPARATOR)));
+////		}
+////		
+////		//	create subsets
+////		for (Iterator pit = prefixes.iterator(); pit.hasNext();)
+////			readSubsetFromText(keys, pairs, ((String) pit.next()), settings);
+//	}
+//	
+//	private static void readSubsetFromText(ArrayList keys, Properties pairs, String prefix, Settings settings) {
+//		
+//		//	create subset for prefix
+//		String subsetName = ((prefix.indexOf(PREFIX_PART_SEPARATOR) == -1) ? prefix : prefix.substring(prefix.lastIndexOf(PREFIX_PART_SEPARATOR) + 1));
+//		Settings subset = settings.getSubset(subsetName);
+//		
+//		//	read settings and collect group prefixes
+//		TreeSet prefixes = new TreeSet(String.CASE_INSENSITIVE_ORDER);
+//		for (int k = 0; k < keys.size(); k++) {
+//			String key = ((String) keys.get(k));
+//			if (key.startsWith(prefix + PREFIX_PART_SEPARATOR)) {
+//				int prefixLength = prefix.length() + 1;	//	consider separator char
+//				if (key.indexOf(PREFIX_PART_SEPARATOR, prefixLength) == -1)
+//					subset.setSetting(key.substring(prefixLength), pairs.getProperty(key));
+//				else prefixes.add(key.substring(0, key.indexOf(PREFIX_PART_SEPARATOR, prefixLength)));
+//			}
+//		}
+//		
+//		//	create subsets recursively
+//		for (Iterator pit = prefixes.iterator(); pit.hasNext();)
+//			readSubsetFromText(keys, pairs, ((String) pit.next()), subset);
+//	}
 	
 	private static void readSettingsFromXML(TreeNode root, Settings settings) {
 		
@@ -865,6 +1034,7 @@ public class Settings {
 		}
 		if (bw != out)
 			bw.flush();
+		settings.setClean();
 	}
 	
 	/**
@@ -906,41 +1076,41 @@ public class Settings {
 		settings.writeXML(bw, "");
 		if (bw != out)
 			bw.flush();
+		settings.setClean();
 	}
 	
 	private void writeXML(BufferedWriter bw, String indent) throws IOException {
+		if (this.isEmpty())
+			return;
+		
 		boolean isRoot = (indent.length() == 0);
 		
-		//	don't display an empty group
-		if (!this.isEmpty()) {
-			
-			//	add start tag
-			bw.write(indent + "<" + SETTING_GROUP_TAG + 
-					((isRoot || (this.prefix == null)) ? "" : (" " + SETTING_NAME_ATTRIBUTE + "=\"" + this.prefix) + "\"") +
-					">");
-			bw.newLine();
-			
-			//	add own settings
-			String[] keys = this.getKeys();
-			for (int k = 0; k < keys.length; k++) {
-				if (keys[k].indexOf(PREFIX_PART_SEPARATOR) == -1) {
-					bw.write(indent + INDENT_PER_LEVEL + "<" + SETTING_TAG + "" +
-							" " + SETTING_NAME_ATTRIBUTE + "=\"" + keys[k] + "\"" +
-							" " + SETTING_VALUE_ATTRIBUTE + "=\"" + this.getSetting(keys[k], "") + "\"" +
-							"/>");
-					bw.newLine();
-				}
+		//	add start tag
+		bw.write(indent + "<" + SETTING_GROUP_TAG + 
+				((isRoot || (this.prefix == null)) ? "" : (" " + SETTING_NAME_ATTRIBUTE + "=\"" + this.prefix) + "\"") +
+				">");
+		bw.newLine();
+		
+		//	add own settings
+		String[] keys = this.getKeys();
+		for (int k = 0; k < keys.length; k++) {
+			if (keys[k].indexOf(PREFIX_PART_SEPARATOR) == -1) {
+				bw.write(indent + INDENT_PER_LEVEL + "<" + SETTING_TAG + "" +
+						" " + SETTING_NAME_ATTRIBUTE + "=\"" + keys[k] + "\"" +
+						" " + SETTING_VALUE_ATTRIBUTE + "=\"" + this.getSetting(keys[k], "") + "\"" +
+						"/>");
+				bw.newLine();
 			}
-			
-			//	add subsets
-			String[] subsetPrefixes = this.getSubsetPrefixes();
-			for (int s = 0; s < subsetPrefixes.length; s++)
-				this.getSubset(subsetPrefixes[s]).writeXML(bw, (indent + INDENT_PER_LEVEL));
-			
-			//	add end tag
-			bw.write(indent + "</" + SETTING_GROUP_TAG + ">");
-			bw.newLine();
 		}
+		
+		//	add subsets
+		String[] subsetPrefixes = this.getSubsetPrefixes();
+		for (int s = 0; s < subsetPrefixes.length; s++)
+			this.getSubset(subsetPrefixes[s]).writeXML(bw, (indent + INDENT_PER_LEVEL));
+		
+		//	add end tag
+		bw.write(indent + "</" + SETTING_GROUP_TAG + ">");
+		bw.newLine();
 	}
 
 	/**
@@ -952,130 +1122,82 @@ public class Settings {
 		return new SettingsView(settings);
 	}
 	
-	private static final int HASH_THRESHOLD = 13;
-	
-	private static String produceKey(String rawKey) {
-		if (rawKey == null) return null;
-		return ((rawKey.length() < HASH_THRESHOLD) ? rawKey.toLowerCase() : ("" + rawKey.toLowerCase().hashCode()));
-	}
+//	private static final int HASH_THRESHOLD = 13;
+//	
+//	private static String produceKey(String rawKey) {
+//		if (rawKey == null)
+//			return null;
+//		return ((rawKey.length() < HASH_THRESHOLD) ? rawKey.toLowerCase() : ("" + rawKey.toLowerCase().hashCode()));
+//	}
 	
 	private static class SettingsView extends Properties {
-		
 		private Settings valueStore;
-		
-		/** Constructor
-		 * @param	settings	the Settiongs object to be wrapped
-		 */
 		SettingsView(Settings settings) {
 			this.valueStore = settings;
 		}
-		
-		/** @see java.util.Properties#getProperty(java.lang.String)
-		 */
 		public String getProperty(String key) {
 			return this.valueStore.getSetting(key);
 		}
-		
-		/** @see java.util.Properties#getProperty(java.lang.String, java.lang.String)
-		 */
 		public String getProperty(String key, String defaultValue) {
 			return this.valueStore.getSetting(key, defaultValue);
 		}
-		
-		/** @see java.util.Properties#setProperty(java.lang.String, java.lang.String)
-		 */
 		public Object setProperty(String key, String value) {
 			return this.valueStore.setSetting(key, value);
 		}
-		
-		/** @see java.util.Properties#propertyNames()
-		 */
 		public Enumeration propertyNames() {
 			return new StringArrayEnumeration(this.valueStore.getKeys());
 		}
-		
-		/** @see java.util.Map#clear()
-		 */
 		public void clear() {
 			this.valueStore.clear();
 		}
-		
-		/** @see java.util.Map#containsKey(java.lang.Object)
-		 */
 		public boolean containsKey(Object key) {
 			return ((key != null) 
 					&& (key instanceof String) 
 					&& (this.valueStore.containsKey((String) key))
 					);
 		}
-		
-		/** @see java.util.Map#containsValue(java.lang.Object)
-		 */
 		public boolean containsValue(Object value) {
 			return ((value != null) 
 					&& (value instanceof String) 
 					&& (this.valueStore.containsValue((String) value))
 					);
 		}
-		
-		/** @see java.util.Dictionary#get(java.lang.Object)
-		 */
 		public Object get(Object key) {
 			if ((key != null) && (key instanceof String))
 				return this.valueStore.getSetting((String) key);
 			return super.get(key);
 		}
-		
-		/** @see java.util.Dictionary#isEmpty()
-		 */
 		public boolean isEmpty() {
 			return this.valueStore.isEmpty();
 		}
-		
-		/** @see java.util.Dictionary#put(java.lang.Object, java.lang.Object)
-		 */
 		public Object put(Object key, Object value) {
 			if ((key instanceof String) && (value instanceof String))
 				return this.valueStore.setSetting(((String) key), ((String) value));
 			return super.put(key, value);
 		}
-		
-		/** @see java.util.Map#putAll(java.util.Map)
-		 */
 		public void putAll(Map t) {
-			ArrayList list = new ArrayList(t.keySet());
-			for (int i = 0; i < list.size(); i++)
-				this.put(list.get(i), t.get(list.get(i)));
+			for (Iterator kit = t.keySet().iterator(); kit.hasNext();) {
+				Object key = kit.next();
+				this.put(key, t.get(key));
+			}
+//			ArrayList list = new ArrayList(t.keySet());
+//			for (int i = 0; i < list.size(); i++)
+//				this.put(list.get(i), t.get(list.get(i)));
 		}
-		
-		/** @see java.util.Dictionary#remove(java.lang.Object)
-		 */
 		public Object remove(Object key) {
 			if ((key != null) && (key instanceof String))
 				return this.valueStore.removeSetting((String) key);
 			return super.remove(key);
 		}
-		
-		/** @see java.util.Dictionary#size()
-		 */
 		public int size() {
 			return this.valueStore.size();
 		}
-		
-		/** @see java.lang.Object#toString()
-		 */
 		public String toString() {
 			return this.valueStore.toString();
 		}
-		
-		/** @see java.util.Dictionary#keys()
-		 */
 		public Enumeration keys() {
 			return this.propertyNames();
 		}
-		
-		/** @see java.util.Map#keySet()
-		 */
 		public Set keySet() {
 			HashSet keySet = new HashSet();
 			Enumeration names = this.propertyNames();
@@ -1083,19 +1205,18 @@ public class Settings {
 				keySet.add(names.nextElement());
 			return keySet;
 		}
-		
-		/** @see java.util.Map#values()
-		 */
 		public Collection values() {
-			ArrayList list = new ArrayList(this.keySet());
 			HashSet valueSet = new HashSet();
-			for (int i = 0; i < list.size(); i++)
-				valueSet.add(this.get(list.get(i)));
+			Enumeration names = this.propertyNames();
+			while (names.hasMoreElements())
+				valueSet.add(this.get(names.nextElement()));
 			return valueSet;
+//			ArrayList list = new ArrayList(this.keySet());
+//			HashSet valueSet = new HashSet();
+//			for (int i = 0; i < list.size(); i++)
+//				valueSet.add(this.get(list.get(i)));
+//			return valueSet;
 		}
-		
-		/** @see java.util.Dictionary#elements()
-		 */
 		public Enumeration elements() {
 			String[] keys = this.valueStore.getKeys();
 			String[] values = new String[keys.length];
@@ -1106,25 +1227,14 @@ public class Settings {
 	}
 
 	private static class StringArrayEnumeration implements Enumeration {
-		
 		private int counter = 0;
 		private String[] content;
-		
-		/**	Constructor
-		 * @param	content		the ArrayList to be wrapped
-		 */
 		StringArrayEnumeration(String[] content) {
 			this.content = content;
 		}
-		
-		/**	@see java.util.Enumeration#hasMoreElements()
-		 */
 		public boolean hasMoreElements() {
 			return (this.counter < this.content.length);
 		}
-		
-		/**	@see java.util.Enumeration#nextElement()
-		 */
 		public Object nextElement() {
 			if (this.counter < this.content.length) {
 				String s = this.content[counter];
@@ -1135,29 +1245,43 @@ public class Settings {
 	}
 
 	private static class SettingsGrammar extends StandardGrammar {
-		
-		SettingsGrammar() {
-			super();
-		}
-		
-		/** @see de.htmlXmlUtil.grammars.Grammar#correctErrors()
-		 */
+		SettingsGrammar() {}
 		public boolean correctErrors() {
 			return false;
 		}
-		
-		/** @see de.htmlXmlUtil.grammars.Grammar#getParentTags(java.lang.String)
-		 */
 		public HashSet getParentTags(String tag) {
 			HashSet parents = new HashSet();
 			parents.add(Settings.SETTING_GROUP_TAG);
 			return parents;
 		}
-		
-		/** @see de.htmlXmlUtil.grammars.Grammar#canBeChildOf(java.lang.String, java.lang.String)
-		 */
 		public boolean canBeChildOf(String child, String parent) {
 			return ((parent != null) && parent.equalsIgnoreCase(Settings.SETTING_GROUP_TAG));
 		}
 	}
+//	
+//	//	!!! TEST ONLY !!!
+//	public static void main(String[] args) throws Exception {
+//		Settings set = loadSettings(new File("E:/GoldenGATEv3/GoldenGATE.cnfg"));
+//		String[] keys = set.getKeys();
+//		for (int k = 0; k < keys.length; k++)
+//			System.out.println(keys[k]);
+//		System.out.println(set.isDirty());
+//		Settings sSet = set.getSubset("DDP");
+//		sSet.removeSetting("NON_EXISTING");
+//		System.out.println(set.isDirty());
+//		sSet.setSetting("TEST", "");
+//		sSet.removeSetting("TEST");
+//		System.out.println(set.isDirty());
+//		set.setClean();
+//		System.out.println(set.isDirty());
+//		set.removeSubset(sSet);
+//		System.out.println(set.isDirty());
+//		set.setClean();
+//		set.getSubset("TEST").setSetting("TEST", null);
+//		System.out.println(set.isDirty());
+//		set.getSubset("TEST").setSetting("TEST", "Test");
+//		System.out.println(set.isDirty());
+//		set.storeAsText(System.out);
+//		System.out.println(set.isDirty());
+//	}
 }

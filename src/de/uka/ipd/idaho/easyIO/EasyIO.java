@@ -493,9 +493,13 @@ public class EasyIO {
 			try {
 				
 				//	get old definition from DB
-				String validationQuery = definition.getColumnValidationQuery();
-				System.out.println("StandardIoProvider: ensuring table columns in " + definition.getTableName() + "\n  " + validationQuery);
-				SqlQueryResult sqr = this.executeSelectQuery(validationQuery, true);
+				String columnValidationQuery = definition.getColumnValidationQuery();
+				if (columnValidationQuery == null) {
+					System.out.println("StandardIoProvider: empty table definition.");
+					return false;
+				}
+				System.out.println("StandardIoProvider: ensuring table columns in " + definition.getTableName() + "\n  " + columnValidationQuery);
+				SqlQueryResult sqr = this.executeSelectQuery(columnValidationQuery, true);
 				System.out.println("StandardIoProvider: column validation query successful.");
 				TableDefinition existingDefinition = new TableDefinition(sqr, definition.getTableName());
 				
