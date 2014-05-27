@@ -1237,8 +1237,8 @@ public class StringUtils {
 	
 	/**
 	 * Parse a Roman number.
-	 * @param romanNumber the roman number to parse
-	 * @return the int value of the argument roman number
+	 * @param romanNumber the Roman number to parse
+	 * @return the int value of the argument Roman number
 	 */
 	public static int parseRomanNumber(String romanNumber) {
 		

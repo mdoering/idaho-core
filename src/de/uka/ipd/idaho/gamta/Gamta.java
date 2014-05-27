@@ -1097,12 +1097,13 @@ public class Gamta extends StringUtils {
 			int del = ((startIndex != 0) ? distanceMatrix[startIndex - 1][goalIndex] : maxDistance);
 			int ins = ((goalIndex != 0) ? distanceMatrix[startIndex][goalIndex - 1] : maxDistance);
 			
-			//	substitution
+			//	retainment or substitution
 			if ((subst <= del) && (subst <= ins) && (startIndex != 0) && (goalIndex != 0)) {
 				if (start.tokenAt(startIndex-1).equals(goal.tokenAt(goalIndex-1)) || (!caseSensitive && start.valueAt(startIndex-1).equalsIgnoreCase(goal.valueAt(goalIndex-1)))) {
 					//System.out.println("Keep " + start.tokenAt(startIndex-1));
 					steps.add(new Integer(LEVENSHTEIN_KEEP));
-				} else {
+				}
+				else {
 					//System.out.println("Replace " + start.tokenAt(startIndex-1) + " by " + goal.tokenAt(goalIndex-1));
 					steps.add(new Integer(LEVENSHTEIN_REPLACE));
 				}
@@ -1984,7 +1985,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list) {
-		return extractAllContained(tokens, list, 0, list.isDefaultCaseSensitive(), false, true);
+		return extractAllContained(tokens, list, 0, list.isDefaultCaseSensitive(), false, false);
 	}
 	
 	/**
@@ -1997,7 +1998,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list, boolean caseSensitive) {
-		return extractAllContained(tokens, list, 0, caseSensitive, false, true);
+		return extractAllContained(tokens, list, 0, caseSensitive, false, false);
 	}
 	
 	/**
@@ -2012,7 +2013,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list, boolean caseSensitive, boolean allowOverlap) {
-		return extractAllContained(tokens, list, 0, caseSensitive, allowOverlap, true);
+		return extractAllContained(tokens, list, 0, caseSensitive, allowOverlap, false);
 	}
 	
 	/**
@@ -2022,7 +2023,7 @@ public class Gamta extends StringUtils {
 	 * @param caseSensitive use case sensitive or case insensitive matching
 	 * @param allowOverlap allow a set of overlapping matches to be all
 	 *            extracted
-	 * @param normalize normalize whitespaces? (default is true)
+	 * @param normalize normalize whitespaces? (default is false)
 	 * @return an array of Annotations marking all subsequences of the specified
 	 *         TokenSequence that's String representation is contained in the
 	 *         specified StringVector
@@ -2043,7 +2044,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list, int maxTokens) {
-		return extractAllContained(tokens, list, maxTokens, list.isDefaultCaseSensitive(), false, true);
+		return extractAllContained(tokens, list, maxTokens, list.isDefaultCaseSensitive(), false, false);
 	}
 	
 	/**
@@ -2059,7 +2060,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list, int maxTokens, boolean caseSensitive) {
-		return extractAllContained(tokens, list, maxTokens, caseSensitive, false, true);
+		return extractAllContained(tokens, list, maxTokens, caseSensitive, false, false);
 	}
 	
 	/**
@@ -2077,7 +2078,7 @@ public class Gamta extends StringUtils {
 	 *         specified StringVector
 	 */
 	public static Annotation[] extractAllContained(TokenSequence tokens, Dictionary list, int maxTokens, boolean caseSensitive, boolean allowOverlap) {
-		return extractAllContained(tokens, list, maxTokens, caseSensitive, allowOverlap, true);
+		return extractAllContained(tokens, list, maxTokens, caseSensitive, allowOverlap, false);
 	}
 	
 	/**
@@ -2090,7 +2091,7 @@ public class Gamta extends StringUtils {
 	 * @param caseSensitive use case sensitive or case insensitive matching
 	 * @param allowOverlap allow a set of overlapping matches to be all
 	 *            extracted
-	 * @param normalize normalize whitespaces? (default is true)
+	 * @param normalize normalize whitespaces? (default is false)
 	 * @return an array of Annotations marking all subsequences of the specified
 	 *         TokenSequence that's String representation is contained in the
 	 *         specified StringVector

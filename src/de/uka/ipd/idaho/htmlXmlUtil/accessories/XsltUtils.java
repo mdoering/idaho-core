@@ -852,7 +852,7 @@ public class XsltUtils {
 	 */
 	public static synchronized TransformerPool getTransformer(String name, InputStream xsltIn, boolean allowCache) throws IOException {
 		if (allowCache && (name != null) && transformerCache.containsKey(name)) {
-			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
+//			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
 			return ((TransformerPool) transformerCache.get(name));
 		}
 		InputStream tis = new ByteOrderMarkFilterInputStream(xsltIn);
@@ -890,7 +890,7 @@ public class XsltUtils {
 	 */
 	public static synchronized TransformerPool getTransformer(String name, Reader xsltIn, boolean allowCache) throws IOException {
 		if (allowCache && (name != null) && transformerCache.containsKey(name)) {
-			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
+//			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
 			return ((TransformerPool) transformerCache.get(name));
 		}
 		BufferedReader xsltReader = ((xsltIn instanceof BufferedReader) ? ((BufferedReader) xsltIn) : new BufferedReader(xsltIn));
@@ -947,13 +947,13 @@ public class XsltUtils {
 	 */
 	private static synchronized TransformerPool doGetTransformer(String name, byte[] xsltBytes, boolean allowCache) throws IOException {
 		if (allowCache && (name != null) && transformerCache.containsKey(name)) {
-			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
+//			System.out.println("XsltUtils: XSL Transformer Pool cache hit for '" + name + "'");
 			return ((TransformerPool) transformerCache.get(name));
 		}
 		try {
 			TransformerPool tp = new TransformerPool(xsltBytes);
 			tp.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			System.out.println("XsltUtils: loaded XSL Transformer Pool from '" + name + "'");
+//			System.out.println("XsltUtils: loaded XSL Transformer Pool from '" + name + "'");
 			if (name != null)
 				transformerCache.put(name, tp);
 			return tp;
@@ -1104,33 +1104,33 @@ public class XsltUtils {
 		 * @return a transfromer from the pool
 		 */
 		public synchronized PooledTransformer getTransformer() {
-			System.out.println("TransformerPool: retrieving transformer ...");
+//			System.out.println("TransformerPool: retrieving transformer ...");
 			PooledTransformer pt;
 			try {
 				if (this.transformerPool.isEmpty()) {
 					pt = new PooledTransformer(this, this.produceTransformer());
-					System.out.println(" - transformer created, pool was empty");
+//					System.out.println(" - transformer created, pool was empty");
 				}
 				else {
 					pt = ((PooledTransformer) this.transformerPool.removeFirst());
-					System.out.println(" - transformer found in pool");
+//					System.out.println(" - transformer found in pool");
 				}
 			}
 			catch (TransformerConfigurationException tce) {
 				return null; // not going to happen after constructor goes OK, but Java don't know ...
 			}
 			pt.prepare(this.parameters, this.properties, this.uriResolver);
-			System.out.println(" - transformer prepared");
+//			System.out.println(" - transformer prepared");
 			return pt;
 		}
 		
 		synchronized void handBack(PooledTransformer pt) {
-			System.out.println("TransformerPool: getting back transformer ...");
+//			System.out.println("TransformerPool: getting back transformer ...");
 			if (this.transformerPool.size() < this.transformerPoolSize) {
 				this.transformerPool.addLast(pt);
-				System.out.println(" - transformer stored in pool");
+//				System.out.println(" - transformer stored in pool");
 			}
-			else System.out.println(" - transformer discarded, pool was full");
+//			else System.out.println(" - transformer discarded, pool was full");
 		}
 		
 		/**
