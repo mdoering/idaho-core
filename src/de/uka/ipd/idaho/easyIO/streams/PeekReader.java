@@ -213,11 +213,27 @@ public class PeekReader extends FilterReader {
 			return this.lookahead;
 		this.in.mark(this.lookahead);
 		char[] lBuffer = new char[this.lookahead];
-		int r = this.in.read(lBuffer, 0, lBuffer.length);
-		if (r != -1) {
-			this.lookaheadCache = new String(lBuffer, 0, r);
-			this.in.reset();
+		int read = 0;
+		while (read < this.lookahead) {
+			int r = this.in.read(lBuffer, read, (lBuffer.length-read));
+			if (r == -1)
+				break;
+			read += r;
 		}
-		return r;
+		if (read == 0)
+			return -1;
+		this.lookaheadCache = new String(lBuffer, 0, read);
+		this.in.reset();
+		return read;
+//		if ((this.lookaheadCache != null) && (this.lookaheadCache.length() == this.lookahead))
+//			return this.lookahead;
+//		this.in.mark(this.lookahead);
+//		char[] lBuffer = new char[this.lookahead];
+//		int r = this.in.read(lBuffer, 0, lBuffer.length);
+//		if (r != -1) {
+//			this.lookaheadCache = new String(lBuffer, 0, r);
+//			this.in.reset();
+//		}
+//		return r;
 	}
 }

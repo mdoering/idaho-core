@@ -106,8 +106,21 @@ public class PeekInputStream extends FilterInputStream {
 	public int peek(byte[] b, int off, int len) throws IOException {
 		len = Math.min(this.lookahead, len);
 		this.in.mark(len);
-		int r = this.read(b, off, len);
+		int read = 0;
+		while (0 < len) {
+			int r = this.read(b, off, len);
+			if (r == -1)
+				break;
+			read += r;
+			off += r;
+			len -= r;
+		}
 		this.in.reset();
-		return r;
+		return ((read == 0) ? -1 : read);
+//		len = Math.min(this.lookahead, len);
+//		this.in.mark(len);
+//		int r = this.read(b, off, len);
+//		this.in.reset();
+//		return r;
 	}
 }
