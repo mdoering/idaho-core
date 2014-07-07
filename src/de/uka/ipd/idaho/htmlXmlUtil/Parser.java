@@ -293,21 +293,27 @@ public class Parser {
 							node = node.getParent();
 							
 							//	if streaming, write end tag directly and clean up closed tag and it's content
-							if (output != null) output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size() + 1);
-							if (!build) lastNode.deleteSubtree();
+							if (output != null)
+								output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size() + 1);
+							if (!build)
+								lastNode.deleteSubtree();
 						}
 						
 						//	if end tag(s) missing and not correcting errors, throw Exception
-						if (!this.correctErrors && (missingEndTags.size() > 0)) throw new MissingEndTagException("The following tag(s) have not been closed properly: <" + TreeTools.concatVector(missingEndTags, ">, <") + ">");
+						if (!this.correctErrors && (missingEndTags.size() > 0))
+							throw new MissingEndTagException("The following tag(s) have not been closed properly: <" + TreeTools.concatVector(missingEndTags, ">, <") + ">");
 						
 						//	rise one tree level and write end tag
-						if (!parserStack.empty()) parserStack.pop();
+						if (!parserStack.empty())
+							parserStack.pop();
 						lastNode = node;
 						node = node.getParent();
 						
 						//	if streaming, write end tag directly and clean up closed tag and it's content
-						if (output != null) output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size() + 1);
-						if (!build) lastNode.deleteSubtree();
+						if (output != null)
+							output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size() + 1);
+						if (!build)
+							lastNode.deleteSubtree();
 					}
 					
 					//	end tag not matching any open tag
@@ -328,7 +334,8 @@ public class Parser {
 					while (!parserStack.empty() && ((this.searchParent(tagType, parserStack) > 0) || !this.embeddingValid(tagType, parserStack))) {
 						
 						//	if not correcting errors, throw Exception
-						if (!this.correctErrors) throw new InvalidNestingException("<" + parserStack.peek() + "> is not a valid parent for <" + tagType + "> in the context of the Grammar in use (" + this.grammar.getClass().getName() + ")");
+						if (!this.correctErrors)
+							throw new InvalidNestingException("<" + parserStack.peek() + "> is not a valid parent for <" + tagType + "> in the context of the Grammar in use (" + this.grammar.getClass().getName() + ")");
 						
 						//	rise to appropriate parent tag, close lower tags implicitly and write end tags
 						parserStack.pop();
@@ -336,8 +343,10 @@ public class Parser {
 						node = node.getParent();
 						
 						//	if streaming, write end tag directly
-						if (output != null) output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size());
-						if (!build) lastNode.deleteSubtree();
+						if (output != null)
+							output.storeToken(lastNode.getEndTag(this.grammar), parserStack.size());
+						if (!build)
+							lastNode.deleteSubtree();
 					}
 					
 					//	create new node and link it to the tree
@@ -350,7 +359,8 @@ public class Parser {
 						node = newNode;
 						
 						//	if streaming, write start tag directly
-						if (output != null) output.storeToken(node.getStartTag(this.grammar), parserStack.size());
+						if (output != null)
+							output.storeToken(node.getStartTag(this.grammar), parserStack.size());
 					}
 					else {
 						
@@ -360,8 +370,9 @@ public class Parser {
 							//	get singular tag
 							String singularTag = newNode.getSingularTag(this.grammar);
 							
-							//	write singular tag if allowed in context of garmmar in use
-							if (singularTag != null) output.storeToken(singularTag, parserStack.size());
+							//	write singular tag if allowed in context of grammar in use
+							if (singularTag != null)
+								output.storeToken(singularTag, parserStack.size());
 							
 							//	otherwise, write start tag and end tag
 							else {
@@ -375,23 +386,27 @@ public class Parser {
 			
 			//	handle data, comment, DTD, or processing instruction
 			else if (token != null) {
+				
 				//	create new data / comment node and link it to the tree
 				if (this.grammar.isComment(token)) {
 					
 					//	if streaming, write comment directly
-					if (output != null) output.storeToken(token, parserStack.size() + 1);
+					if (output != null)
+						output.storeToken(token, parserStack.size() + 1);
 					node.addChildNode(new TreeNode(node, TreeNode.COMMENT_NODE_TYPE, token));
 				}
 				else if (this.grammar.isDTD(token)) {
 					
 					//	if streaming, write data directly
-					if (output != null) output.storeToken(token, parserStack.size() + 1);
+					if (output != null)
+						output.storeToken(token, parserStack.size() + 1);
 					node.addChildNode(new TreeNode(node, TreeNode.DTD_NODE_TYPE, token));
 				}
 				else if (this.grammar.isProcessingInstruction(token)) {
 					
 					//	if streaming, write data directly
-					if (output != null) output.storeToken(token, parserStack.size() + 1);
+					if (output != null)
+						output.storeToken(token, parserStack.size() + 1);
 					node.addChildNode(new TreeNode(node, TreeNode.PROCESSING_INSTRUCTION_NODE_TYPE, token));
 				}
 				else {
@@ -399,7 +414,6 @@ public class Parser {
 					//	if streaming, write data directly
 					if (output != null)
 						output.storeToken(token, parserStack.size() + 1);
-//					node.addChildNode(new TreeNode(node, TreeNode.DATA_NODE_TYPE, token));
 					node.addChildNode(new TreeNode(node, TreeNode.DATA_NODE_TYPE, this.grammar.unescape(token)));
 				}
 			}
@@ -415,9 +429,10 @@ public class Parser {
 	 * @return	the stack depth of the first possible parent for the specified tag
 	 */
 	private int searchParent(String tag, StringStack stack) {
-		for (int i = 0; i < stack.size(); i++)
-			if (this.grammar.canBeChildOf(tag, stack.get(i))) return i;
-		
+		for (int i = 0; i < stack.size(); i++) {
+			if (this.grammar.canBeChildOf(tag, stack.get(i)))
+				return i;
+		}
 		return -1;
 	}
 	
@@ -427,9 +442,10 @@ public class Parser {
 	 * @return	true if and only if there is no embedding problem with the specified tag and any of the tags in the specified spack
 	 */
 	private boolean embeddingValid(String tag, StringStack stack) {
-		for (int i = 0; i < stack.size(); i++)
-			if (!this.grammar.canBeEmbeddedIn(tag, stack.get(i))) return false;
-		
+		for (int i = 0; i < stack.size(); i++) {
+			if (!this.grammar.canBeEmbeddedIn(tag, stack.get(i)))
+				return false;
+		}
 		return true;
 	}
 	

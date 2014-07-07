@@ -84,8 +84,10 @@ public class XPath {
 	/**	@see java.lang.Object#toString()
 	 */
 	public String toString() {
-		if (this.steps == null) return "";
-		if (this.steps.length == 0) return "";
+		if (this.steps == null)
+			return "";
+		if (this.steps.length == 0)
+			return "";
 		String string = this.steps[0].toString();
 		for (int s = 1; s < this.steps.length; s++)
 			string = string + "/" + this.steps[s].toString();
@@ -95,7 +97,7 @@ public class XPath {
 	public static final XPathEngine DEFAULT_ENGINE = new XPathEngine(true);
 	
 	/**	add a custom function to the default function library (will overwrite the original function if it has the same name)
-	 * @param	functionName	the name the function will be invocable with in XPath queries
+	 * @param	functionName	the name the function will be invokable with in XPath queries
 	 * @param	function		the XPathFunction to be added
 	 */
 	public static void addFunction(String functionName, XPathFunction function) {
@@ -116,8 +118,10 @@ public class XPath {
 	 * @return the String value of the specified node as an XPathString
 	 */
 	public static XPathString stringValue(TreeNode node) {
-		if (node == null) return new XPathString("");
-		if (node.isAttributeNode()) return new XPathString(node.getNodeValue());
+		if (node == null)
+			return new XPathString("");
+		if (node.isAttributeNode())
+			return new XPathString(node.getNodeValue());
 		TreeNode[] nodes = TreeTools.getAllNodesOfType(node, TreeNode.DATA_NODE_TYPE);
 		StringBuffer assembler = new StringBuffer();
 		for (int n = 0; n < nodes.length; n++)

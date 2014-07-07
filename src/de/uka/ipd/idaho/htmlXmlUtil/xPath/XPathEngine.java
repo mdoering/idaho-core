@@ -55,6 +55,8 @@ import de.uka.ipd.idaho.htmlXmlUtil.xPath.types.XPathString;
  */
 public class XPathEngine {
 	
+	private static Properties dummyVariableBindings = new Properties();
+	
 	private final boolean isDefaultEngine;
 	
 	/**	Constructor
@@ -78,11 +80,13 @@ public class XPathEngine {
 	 * @throws XPathException
 	 */
 	public XPathNodeSet evaluatePath(XPath path, TreeNode startNode, Properties variableBindings) throws XPathException {
+		if (variableBindings == null)
+			variableBindings = dummyVariableBindings;
 		if (startNode.getDocumentOrderPosition() == -1)
 			startNode.computeDocumentOrderPosition(0);
 		XPathNodeSet result = new XPathNodeSet();
 		result.add(startNode);
-		return evaluatePath(path, result, variableBindings);
+		return this.evaluatePath(path, result, variableBindings);
 	}
 	
 	/**
@@ -94,9 +98,11 @@ public class XPathEngine {
 	 * @throws XPathException
 	 */
 	public XPathNodeSet evaluatePath(XPath path, XPathNodeSet startNodes, Properties variableBindings) throws XPathException {
+		if (variableBindings == null)
+			variableBindings = dummyVariableBindings;
 		XPathNodeSet result = startNodes;
 		for (int s = 0; s < path.steps.length; s++)
-			result = evaluateStep(path.steps[s], result, variableBindings);
+			result = this.evaluateStep(path.steps[s], result, variableBindings);
 		return result;
 	}
 	
@@ -131,7 +137,7 @@ public class XPathEngine {
 			else if (step.axis.startsWith("descendant"))
 				nodeResult = getDescendant(node, filterType);
 				
-			else if (step.axis.startsWith("preceeding")) {
+			else if (step.axis.startsWith("preceding")) {
 				nodeResult = getPreceedingSibling(node, (step.axis.endsWith("sibling") ? filterType : null));
 				if (!step.axis.endsWith("sibling")) {
 					XPathNodeSet temp = getAncestor(node, null);
@@ -186,7 +192,7 @@ public class XPathEngine {
 			//	apply predicates
 			if (step.predicates != null) {
 				for (int p = 0; p < step.predicates.length; p++)
-					nodeResult = applyPredicate(step.predicates[p], nodeResult, variableBindings);
+					nodeResult = this.applyPredicate(step.predicates[p], nodeResult, variableBindings);
 			}
 			
 			//	copy nodes to result
@@ -197,11 +203,11 @@ public class XPathEngine {
 	}
 	
 	/**	compute the ancestor axis of a given TreeNode
-	 * @param	startNode	the TreeNode to compute the ancestore axis for
-	 * @param	filterType	the type of the nodes to include in the resuling NodeSet
+	 * @param	startNode	the TreeNode to compute the ancestor axis for
+	 * @param	filterType	the type of the nodes to include in the resulting NodeSet
 	 * @return all TreeNodes that are on the ancestor axis of the specified TreeNode
 	 */
-	private XPathNodeSet getAncestor(TreeNode startNode, String filterType) {
+	private static XPathNodeSet getAncestor(TreeNode startNode, String filterType) {
 		XPathNodeSet result = new XPathNodeSet(true);
 		TreeNode parent = startNode.getParent();
 		while (parent != null) {
@@ -212,10 +218,10 @@ public class XPathEngine {
 		return result;
 	}
 	
-	/**	compute the preceeding-sibling axis of a given TreeNode
-	 * @param	startNode	the TreeNode to compute the preceeding-sibling axis for
-	 * @param	filterType	the type of the nodes to include in the resuling NodeSet
-	 * @return all TreeNodes that are on the preceeding-sibling axis of the specified TreeNode
+	/**	compute the preceding-sibling axis of a given TreeNode
+	 * @param	startNode	the TreeNode to compute the preceding-sibling axis for
+	 * @param	filterType	the type of the nodes to include in the resulting NodeSet
+	 * @return all TreeNodes that are on the preceding-sibling axis of the specified TreeNode
 	 */
 	private static XPathNodeSet getPreceedingSibling(TreeNode startNode, String filterType) {
 		XPathNodeSet result = new XPathNodeSet(true);
@@ -237,10 +243,10 @@ public class XPathEngine {
 	
 	/**	compute the following-sibling axis of a given TreeNode
 	 * @param	startNode	the TreeNode to compute the following-sibling axis for
-	 * @param	filterType	the type of the nodes to include in the resuling NodeSet
+	 * @param	filterType	the type of the nodes to include in the resulting NodeSet
 	 * @return all TreeNodes that are on the following-sibling axis of the specified TreeNode
 	 */
-	private XPathNodeSet getFollowingSibling(TreeNode startNode, String filterType) {
+	private static XPathNodeSet getFollowingSibling(TreeNode startNode, String filterType) {
 		XPathNodeSet result = new XPathNodeSet(false);
 		TreeNode parent = startNode.getParent();
 		if (parent != null) {
@@ -260,10 +266,10 @@ public class XPathEngine {
 	
 	/**	compute the descendant axis of a given TreeNode
 	 * @param	startNode	the TreeNode to compute the descendant axis for
-	 * @param	filterType	the type of the nodes to include in the resuling NodeSet
+	 * @param	filterType	the type of the nodes to include in the resulting NodeSet
 	 * @return all TreeNodes that are on the descendant axis of the specified TreeNode
 	 */
-	private XPathNodeSet getDescendant(TreeNode startNode, String filterType) {
+	private static XPathNodeSet getDescendant(TreeNode startNode, String filterType) {
 		XPathNodeSet result = new XPathNodeSet(false);
 		NodeCollector nc = new NodeCollector(result, filterType);
 		nc.searchTree(startNode);
@@ -273,24 +279,21 @@ public class XPathEngine {
 	
 	/** class for collecting nodes
 	 */
-	private class NodeCollector {
-		
+	private static class NodeCollector {
 		private XPathNodeSet nodeSet;
 		private String filterType;
-		
-		private NodeCollector(XPathNodeSet nodeSet, String filterType) {
+		NodeCollector(XPathNodeSet nodeSet, String filterType) {
 			this.nodeSet = nodeSet;
 			this.filterType = filterType;
 		}
-		
-		private void searchTree(TreeNode node) {
-			if (node != null) {
-				if ((filterType == null) || filterType.equals(node.getNodeType()))
-					nodeSet.add(node);
-				TreeNode[] children = node.getChildNodes();
-				for (int c = 0; c < children.length; c++)
-					this.searchTree(children[c]);
-			}
+		void searchTree(TreeNode node) {
+			if (node == null)
+				return;
+			if ((this.filterType == null) || this.filterType.equals(node.getNodeType()))
+				this.nodeSet.add(node);
+			TreeNode[] children = node.getChildNodes();
+			for (int c = 0; c < children.length; c++)
+				this.searchTree(children[c]);
 		}
 	}
 	
@@ -301,12 +304,13 @@ public class XPathEngine {
 	 * @return
 	 */
 	private XPathNodeSet applyPredicate(XPathPredicate predicate, XPathNodeSet nodeSet, Properties variableBindings) throws XPathException {
-		if (predicate.expression == null) return nodeSet;
+		if (predicate.expression == null)
+			return nodeSet;
 		XPathNodeSet resultNodeSet = new XPathNodeSet(nodeSet.isReverseDocOrder);
 		int size = nodeSet.size();
 		for (int n = 0; n < size; n++) {
 			TreeNode node = nodeSet.get(n);
-			XPathObject xpo = evaluateExpression(predicate.expression, node, (n + 1), size, variableBindings);
+			XPathObject xpo = this.evaluateExpression(predicate.expression, node, (n + 1), size, variableBindings);
 			if (xpo instanceof XPathNumber) {
 				if (xpo.asNumber().value == (n + 1))
 					resultNodeSet.add(node);
@@ -327,28 +331,31 @@ public class XPathEngine {
 	 */
 	private XPathObject evaluateExpression(XPathExpression expression, TreeNode contextNode, int contextPosition, int contextSize, Properties variableBindings) throws XPathException {
 		if (expression instanceof XPathUnaryExpression)
-			return evaluateUnaryExpression(((XPathUnaryExpression) expression), contextNode, contextPosition, contextSize, variableBindings);
+			return this.evaluateUnaryExpression(((XPathUnaryExpression) expression), contextNode, contextPosition, contextSize, variableBindings);
 		else if (expression instanceof XPathBinaryExpression)
-			return evaluateBinaryExpression(((XPathBinaryExpression) expression), contextNode, contextPosition, contextSize, variableBindings);
+			return this.evaluateBinaryExpression(((XPathBinaryExpression) expression), contextNode, contextPosition, contextSize, variableBindings);
 		else return new XPathBoolean(false);
 	}
 	
 	private XPathObject evaluateUnaryExpression(XPathUnaryExpression expression, TreeNode contextNode, int contextPosition, int contextSize, Properties variableBindings) throws XPathException {
-		if (expression.literal != null) return expression.literal;
-		if (expression.number != null) return (expression.isNegative ? new XPathNumber(-expression.number.value) : expression.number);
-		if (expression.variableName != null) return new XPathString(variableBindings.getProperty(expression.variableName));
+		if (expression.literal != null)
+			return expression.literal;
+		if (expression.number != null)
+			return (expression.isNegative ? new XPathNumber(-expression.number.value) : expression.number);
+		if (expression.variableName != null)
+			return new XPathString(variableBindings.getProperty(expression.variableName));
 		if (expression.enclosedExpression != null) {
-			XPathObject result = evaluateExpression(expression.enclosedExpression, contextNode, contextPosition, contextSize, variableBindings);
+			XPathObject result = this.evaluateExpression(expression.enclosedExpression, contextNode, contextPosition, contextSize, variableBindings);
 			if (result instanceof XPathNumber)
 				return (expression.isNegative ? new XPathNumber(-result.asNumber().value) : result);
-			return evaluateExpression(expression.enclosedExpression, contextNode, contextPosition, contextSize, variableBindings);
+			return this.evaluateExpression(expression.enclosedExpression, contextNode, contextPosition, contextSize, variableBindings);
 		}
 		if (expression.functionName != null) {
 			
 			XPathObject[] args = new XPathObject[expression.functionArgs.length];
 			for (int a = 0; a < args.length; a++)
-				args[a] = evaluateExpression(expression.functionArgs[a], contextNode, contextPosition, contextSize, variableBindings);
-			XPathObject xpo = executeFunction(expression.functionName, contextNode, contextPosition, contextSize, args);
+				args[a] = this.evaluateExpression(expression.functionArgs[a], contextNode, contextPosition, contextSize, variableBindings);
+			XPathObject xpo = this.executeFunction(expression.functionName, contextNode, contextPosition, contextSize, args);
 			
 			if (xpo instanceof XPathNumber)
 				return (expression.isNegative ? new XPathNumber(-xpo.asNumber().value) : xpo);
@@ -357,24 +364,24 @@ public class XPathEngine {
 				if (!(xpo instanceof XPathNodeSet)) throw new InvalidArgumentsException("Predicates are applicable only for NodeSets.");
 				XPathNodeSet nodeSet = ((XPathNodeSet) xpo);
 				for (int p = 0; p < expression.predicates.length; p++)
-					nodeSet = applyPredicate(expression.predicates[p], nodeSet, variableBindings);
+					nodeSet = this.applyPredicate(expression.predicates[p], nodeSet, variableBindings);
 				xpo = nodeSet;
 			}
 			
 			if ((expression.pathExpression != null) && (expression.pathExpression.steps != null) && (expression.pathExpression.steps.length != 0)) {
 				if (!(xpo instanceof XPathNodeSet)) throw new InvalidArgumentsException("Path expressions are applicable only for NodeSets.");
 				XPathNodeSet nodeSet = ((XPathNodeSet) xpo);
-				return evaluatePath(expression.pathExpression, nodeSet, variableBindings);
+				return this.evaluatePath(expression.pathExpression, nodeSet, variableBindings);
 			}
 			
 			return xpo;
 		}
 		if (expression.pathExpression != null)
-			return evaluatePath(expression.pathExpression, contextNode, variableBindings);
+			return this.evaluatePath(expression.pathExpression, contextNode, variableBindings);
 		if ((expression.partExpressions != null) && (expression.partExpressions.length != 0)) {
 			XPathNodeSet result = new XPathNodeSet();
 			for (int p = 1; p < expression.partExpressions.length; p++) {
-				XPathObject xpo = evaluateExpression(expression.partExpressions[p], contextNode, contextPosition, contextSize, variableBindings);
+				XPathObject xpo = this.evaluateExpression(expression.partExpressions[p], contextNode, contextPosition, contextSize, variableBindings);
 				if (!(xpo instanceof XPathNodeSet))
 					throw new InvalidArgumentsException("Union expressions are applicable only for NodeSets.");
 				XPathNodeSet nodeSet = ((XPathNodeSet) xpo);
@@ -391,7 +398,7 @@ public class XPathEngine {
 			return new XPathBoolean(true);
 		
 		//	get left result
-		XPathObject left = evaluateExpression(expression.leftExpression, contextNode, contextPosition, contextSize, variableBindings);
+		XPathObject left = this.evaluateExpression(expression.leftExpression, contextNode, contextPosition, contextSize, variableBindings);
 		if (expression.rightExpression == null)
 			return left;
 		
@@ -400,19 +407,19 @@ public class XPathEngine {
 			boolean res = left.asBoolean().value;
 			if (res)
 				return new XPathBoolean(true);
-			XPathObject right = evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
+			XPathObject right = this.evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
 			return new XPathBoolean(right.asBoolean().value);
 		}
 		else if ("and".equals(expression.operator)) {
 			boolean res = left.asBoolean().value;
 			if (!res)
 				return new XPathBoolean(false);
-			XPathObject right = evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
+			XPathObject right = this.evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
 			return new XPathBoolean(right.asBoolean().value);
 		}
 		
 		//	get right result
-		XPathObject right = evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
+		XPathObject right = this.evaluateExpression(expression.rightExpression, contextNode, contextPosition, contextSize, variableBindings);
 		
 		//	check if NodeSets involved
 		boolean leftIsSet = (left instanceof XPathNodeSet);
@@ -777,10 +784,8 @@ public class XPathEngine {
 			if (args.length < 2) throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) XPathString.");
 			
 			StringBuffer assembler = new StringBuffer("");
-			for (int a = 0; a < args.length; a++) {
-				if (!(args[a] instanceof XPathString) && false) throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) XPathString.");
+			for (int a = 0; a < args.length; a++)
 				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
-			}
 			return new XPathString(assembler.toString());
 		}
 		else if ("local-name".equalsIgnoreCase(functionName)) {
@@ -911,7 +916,7 @@ public class XPathEngine {
 	 */
 	public void addFunction(String functionName, XPathFunction function) {
 		if ((functionName != null) && (function != null))
-			customFunctions.put(functionName, function);
+			this.customFunctions.put(functionName, function);
 	}
 	
 	/**	remove a custom function from the function library of this XPathEngine
@@ -919,30 +924,28 @@ public class XPathEngine {
 	 * @return the function that was just removed, or null if there was no function with the specified name
 	 */
 	public XPathFunction removeFunction(String functionName) {
-		return ((XPathFunction) customFunctions.remove(functionName));
+		return ((XPathFunction) this.customFunctions.remove(functionName));
 	}
 	
 	/**	representation of IDref-based node selection
 	 */
-	private class IdBasedNodeCollector {
-		
+	private static class IdBasedNodeCollector {
 		private XPathNodeSet nodeSet;
 		private String searchID;
-		
-		private IdBasedNodeCollector(XPathNodeSet nodeSet, String searchID) {
+		IdBasedNodeCollector(XPathNodeSet nodeSet, String searchID) {
 			this.nodeSet = nodeSet;
 			this.searchID = searchID;
 		}
-		
-		private void searchTree(TreeNode node) {
-			if (node != null) {
-				if (this.storeNode(node)) this.nodeSet.add(node);
-				TreeNode[] children = node.getChildNodes();
-				for (int c = 0; c < children.length; c++) this.searchTree(children[c]);
-			}
+		void searchTree(TreeNode node) {
+			if (node == null)
+				return;
+			if (this.storeNode(node))
+				this.nodeSet.add(node);
+			TreeNode[] children = node.getChildNodes();
+			for (int c = 0; c < children.length; c++)
+				this.searchTree(children[c]);
 		}
-		
-		private boolean storeNode(TreeNode node) {
+		boolean storeNode(TreeNode node) {
 			return node.getAttribute("id", "").equals(this.searchID);
 		}
 	}

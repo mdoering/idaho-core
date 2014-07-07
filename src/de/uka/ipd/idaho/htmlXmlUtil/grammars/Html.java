@@ -332,8 +332,8 @@ public class Html extends StandardGrammar {
 			"? ?"
 		};
 	private final String characterCodesString = "&nbsp;";
-	private final String characterDecCodeCharsString = "0,1,2,3,4,5,6,7,8,9,;";
-	private final String characterHexCodeCharsString = "0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,;";
+//	private final String characterDecCodeCharsString = "0,1,2,3,4,5,6,7,8,9,;";
+//	private final String characterHexCodeCharsString = "0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,;";
 	
 	//	data structures for specific data
 	protected final HashMap tagTypeToParentTypesMappings = new HashMap();
@@ -345,8 +345,8 @@ public class Html extends StandardGrammar {
 	protected final Properties characterEncodings = new Properties();
 	protected final Properties characterDecodings = new Properties();
 	protected final HashSet characterCodes = new HashSet();
-	protected final HashSet characterDecCodeChars = new HashSet();
-	protected final HashSet characterHexCodeChars = new HashSet();
+//	protected final HashSet characterDecCodeChars = new HashSet();
+//	protected final HashSet characterHexCodeChars = new HashSet();
 	
 	protected final boolean isStrictXML = false;
 	private int charLookahead = 6; // length of '&nbsp;'
@@ -420,14 +420,14 @@ public class Html extends StandardGrammar {
 		//	initialize character code list
 		t = IoTools.parseString(this.characterCodesString.toLowerCase(), ",");
 		for (int i = 0; i < t.length; i++) this.characterCodes.add(t[i]);
-		
-		//	initialize character decimal code list
-		t = IoTools.parseString(this.characterDecCodeCharsString.toLowerCase(), ",");
-		for (int i = 0; i < t.length; i++) this.characterDecCodeChars.add(t[i]);
-		
-		//	initialize character hexadecimal code list
-		t = IoTools.parseString(this.characterHexCodeCharsString.toLowerCase(), ",");
-		for (int i = 0; i < t.length; i++) this.characterHexCodeChars.add(t[i]);
+//		
+//		//	initialize character decimal code list
+//		t = IoTools.parseString(this.characterDecCodeCharsString.toLowerCase(), ",");
+//		for (int i = 0; i < t.length; i++) this.characterDecCodeChars.add(t[i]);
+//		
+//		//	initialize character hexadecimal code list
+//		t = IoTools.parseString(this.characterHexCodeCharsString.toLowerCase(), ",");
+//		for (int i = 0; i < t.length; i++) this.characterHexCodeChars.add(t[i]);
 	}
 	
 	/** @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#isStrictXML()
@@ -631,7 +631,7 @@ public class Html extends StandardGrammar {
 				escapedString.append("&quot;");
 			else if (ch == '&') {
 				int escapeEnd = string.indexOf(';', c);
-				if ((escapeEnd != -1) && ((escapeEnd - c) <= this.charLookahead) && this.characterCodes.contains(string.substring(c, (escapeEnd+1))))
+				if ((escapeEnd != -1) && ((escapeEnd - c) <= this.charLookahead) && this.isCharCode(string.substring(c, (escapeEnd+1))))
 					escapedString.append(ch);
 				else if (!hadWhitespace && hadQuestionMark)
 					escapedString.append(ch);
@@ -645,7 +645,6 @@ public class Html extends StandardGrammar {
 	/** @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#ckeckTokenSequence(java.util.Vector)
 	 */
 	public void ckeckTokenSequence(Vector ts) {
-		
 		int index = 0;
 		boolean inScript = false;
 		boolean inStyle = false;
@@ -666,8 +665,12 @@ public class Html extends StandardGrammar {
 					//	store script content, surround it by comment marks if no already so
 					if (collector.length() > 0) {
 						String script = collector.toString().trim();
-						if (!(script.startsWith("//") && script.substring(2).trim().startsWith("<!--")) && !script.startsWith("<!--")) script = "<!--\n" + script;
-						if (!script.endsWith("-->")) script = script + "\n//-->";
+						if (script.startsWith("<!--"))
+							script = "//" + script;
+						else if (!script.startsWith("//<!--"))
+							script = "//<!--\r\n" + script;
+						if (!script.endsWith("-->"))
+							script = script + "\r\n//-->";
 						
 						ts.insertElementAt(script, index);
 						index++;

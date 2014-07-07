@@ -46,47 +46,47 @@ import java.util.Vector;
 public abstract class Grammar {
 	
 	//	default values, may be overwritten by subclasses
-	/** the chararcter starting a tag, default is '<' */
+	/** the character starting a tag, default is '<' */
 	protected final char tagStart = '<';
 	
-	/** the chararcter ending a tag, default is '>' */
+	/** the character ending a tag, default is '>' */
 	protected final char tagEnd = '>';
 	
-	/** the chararcter marking an end tag, default is '/' */
+	/** the character marking an end tag, default is '/' */
 	protected final char endTagMarker = '/';
 	
-	/** a String holding the chararcters an element name may start with, case insensitive, default are the lating letters */
+	/** a String holding the characters an element name may start with, case insensitive, default are the Latin letters */
 	protected final String suitableTagStarts = "abcdefghijklmnopqrstuvwxyz";
 	
-	/** the chararcter separating an element name from the start of the first attribute name, if any, default is ' ' */
+	/** the character separating an element name from the start of the first attribute name, if any, default is ' ' */
 	protected final char tagAttributeSeparator = ' ';
 	
-	/** the chararcter separating an attribute name from the attribute's value, default is '=' */
+	/** the character separating an attribute name from the attribute's value, default is '=' */
 	protected final char tagAttributeValueSeparator = '=';
 	
-	/** the chararcter sequence starting a comment, default is '<!--' */
+	/** the character sequence starting a comment, default is '<!--' */
 	protected final String commentStartMarker = "<!--";
 	
-	/** the chararcter sequence ending a comment, default is '-->' */
+	/** the character sequence ending a comment, default is '-->' */
 	protected final String commentEndMarker = "-->";
 	
-	/** the chararcter sequence starting a processing instruction, default is '<?' */
+	/** the character sequence starting a processing instruction, default is '<?' */
 	protected final String processingInstructionStartMarker = "<?";
 	
-	/** the chararcter sequence ending a processing instruction, default is '?>' */
+	/** the character sequence ending a processing instruction, default is '?>' */
 	protected final String processingInstructionEndMarker = "?>";
 	
-	/** the chararcter sequence starting an embedded DTD, default is '<!' */
+	/** the character sequence starting an embedded DTD, default is '<!' */
 	protected final String dtdStartMarker = "<!";
 	
-	/** the chararcter sequence ending an embedded DTD, default is '!>' */
+	/** the character sequence ending an embedded DTD, default is '!>' */
 	protected final String dtdEndMarker = ">";
 	
-	/** the indentation chararcter sequence for output, default is '  ' (two spaces) */
+	/** the indentation character sequence for output, default is '  ' (two spaces) */
 	protected final String standardIndent = "  ";
 	
 	
-	/** corrrect errors on parsing? */
+	/** correct errors on parsing? */
 	protected final boolean correctErrors = true;
 	
 	/** encode characters not encoded in entities on tokenization? */
@@ -379,7 +379,7 @@ public abstract class Grammar {
 	 * get the character for a given encoding sequence. This implementation
 	 * decodes codes in decimal and hexadecimal notation. Other encodings are to
 	 * be handled by sub classes.
-	 * @param code the endocing sequence to be decoded
+	 * @param code the encoding sequence to be decoded
 	 * @return the character encoded by the argument encoding sequence (e.g.
 	 *         &quot; for &amp;quot; in HTML), or 0 if the specified character
 	 *         code is invalid
@@ -394,7 +394,7 @@ public abstract class Grammar {
 			if (code.endsWith(";"))
 				code = code.substring(0, (code.length() - 1));
 			try {
-				return ((char) Integer.parseInt(code.substring(3), 16));
+				return ((char) Integer.parseInt(code.substring("&#x".length()), 16));
 			} catch (NumberFormatException nfe) {}
 		}
 		
@@ -403,16 +403,16 @@ public abstract class Grammar {
 			if (code.endsWith(";"))
 				code = code.substring(0, (code.length() - 1));
 			try {
-				return ((char) Integer.parseInt(code.substring(2), 16));
+				return ((char) Integer.parseInt(code.substring("&x".length()), 16));
 			} catch (NumberFormatException nfe) {}
 		}
 		
-		//	handle dec encoding
+		//	handle decimal encoding
 		else if (code.startsWith("&#")) {
 			if (code.endsWith(";"))
 				code = code.substring(0, (code.length() - 1));
 			try {
-				return ((char) Integer.parseInt(code.substring(2)));
+				return ((char) Integer.parseInt(code.substring("&#".length())));
 			} catch (NumberFormatException nfe) {}
 		}
 		

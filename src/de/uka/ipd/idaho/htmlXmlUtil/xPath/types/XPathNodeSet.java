@@ -85,7 +85,8 @@ public class XPathNodeSet extends XPathObject {
 	/** @see de.uka.ipd.idaho.htmlXmlUtil.xPath.types.XPathObject#asString()
 	 */
 	public XPathString asString() {
-		if (this.isEmpty()) return new XPathString("");
+		if (this.isEmpty())
+			return new XPathString("");
 		return XPath.stringValue(this.getFirst());
 	}
 	
@@ -94,7 +95,8 @@ public class XPathNodeSet extends XPathObject {
 	 * @return a new NodeSet containing the nodes from this NodeSet that have the specified type 
 	 */
 	public XPathNodeSet filterByType(String filterType) {
-		if (filterType == null) return this;
+		if (filterType == null)
+			return this;
 		XPathNodeSet result = new XPathNodeSet(this.isReverseDocOrder);
 		for (int n = 0; n < this.size(); n++) {
 			TreeNode node = this.get(n);
