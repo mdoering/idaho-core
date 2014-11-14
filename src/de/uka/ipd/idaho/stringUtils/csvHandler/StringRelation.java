@@ -53,17 +53,6 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
  */
 public class StringRelation {
 	
-	//	TODO enable reading Excel 'CSV' files, which are semicolon separated
-	
-	/* TODO
-create readXYZ() methods in StringRelation that allow specifying the sepatator
-- defaults to comma ...
-- ... but allows specifying a semicolon as well, which is good for reading Microsoft "CSV"
-==> helps with tab delimited formats as well
-- think of more defaults, e.g. for value delimiter
-
-	 */
-	
 	private Vector data = new Vector();
 	
 	/**	Constructor
@@ -573,12 +562,12 @@ create readXYZ() methods in StringRelation that allow specifying the sepatator
 	
 	/**
 	 * Specifying this constant as the value separator to any of the
-	 * readCsvData() methods will cause the implementation to try and deduce the
-	 * actual separator character from the first 8192 bytes of the input
+	 * readCsvData() methods will cause the implementation to try and deduce
+	 * the actual separator character from the first 8192 bytes of the input
 	 * provided, choosing between comma, semicolon (used in MS Excel's 'CSV'
-	 * format), and tab. This is for situations where CSV data from third paries
-	 * has to be loaded and the actual separator character is not known at
-	 * implementation time.
+	 * format), and tab. This is for situations where CSV data from third
+	 * parties has to be loaded and the actual separator character is not known
+	 * at implementation time.
 	 */
 	public static final char GUESS_SEPARATOR = '\u0000';
 	

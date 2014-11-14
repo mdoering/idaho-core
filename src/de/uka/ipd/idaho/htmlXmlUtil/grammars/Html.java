@@ -37,8 +37,8 @@ import de.uka.ipd.idaho.htmlXmlUtil.accessories.IoTools;
 
 /**
  * Default Grammar for handling HTML, defining all the elements, etc. This
- * grammar switches on error correction in order to facilitate anz given
- * real-world HTML page as far as possible.
+ * grammar switches on error correction in order to facilitate parsing any
+ * given real-world HTML page as far as possible.
  * 
  * @author sautter
  */

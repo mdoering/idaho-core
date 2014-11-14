@@ -28,9 +28,10 @@
 package de.uka.ipd.idaho.htmlXmlUtil;
 
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Vector;
 
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
@@ -43,8 +44,6 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class TreeNodeAttributeSet {
-	
-	private static final char NULLCHAR = '\u0000';
 	
 	private Grammar grammar;
 	
@@ -104,7 +103,7 @@ public class TreeNodeAttributeSet {
 		String oldValue = this.values.getProperty(key);
 		this.names.setProperty(key, attributeName);
 		this.values.setProperty(key, value);
-		if (!nameList.contains(key)) this.nameList.add(key);
+		if (!this.nameList.contains(key)) this.nameList.add(key);
 		return oldValue;
 	}
 	
@@ -133,28 +132,12 @@ public class TreeNodeAttributeSet {
 	/**	@return	all attribute / value pairs in an array
 	 */
 	public String[] getAttributeValuePairs(char attributeValueSeparator, char quoter) {
-//		String[] ret = this.getAttributeNames();
-//		for (int i = 0; i < ret.length; i++) {
-//			String value = this.getAttribute(ret[i], ret[i]);
-////			if (value != null) ret[i] += (attributeValueSeparator + "" + quoter + "" + value + "" + quoter);
-//			if (value != null)
-//				ret[i] += (attributeValueSeparator + "" + quoter + "" + this.grammar.escape(value) + "" + quoter);
-//		}
-//		return ret;
 		return this.getAttributeValuePairs(attributeValueSeparator, quoter, this.grammar);
 	}
 	
 	/**	@return	all attribute / value pairs in an array
 	 */
 	public String[] getAttributeValuePairs(Grammar grammar) {
-//		String[] ret = this.getAttributeNames();
-//		for (int i = 0; i < ret.length; i++) {
-//			String value = this.getAttribute(ret[i], ret[i]);
-////			if (value != null) ret[i] += (attributeValueSeparator + "" + quoter + "" + value + "" + quoter);
-//			if (value != null)
-//				ret[i] += (grammar.getTagAttributeValueSeparator() + "" + grammar.getTagAttributeValueQuoter() + "" + grammar.escape(value) + "" + grammar.getTagAttributeValueQuoter());
-//		}
-//		return ret;
 		return this.getAttributeValuePairs(grammar.getTagAttributeValueSeparator(), grammar.getTagAttributeValueQuoter(), grammar);
 	}
 	
@@ -202,7 +185,7 @@ public class TreeNodeAttributeSet {
 		this.nameList.clear();
 	}
 	
-	/** check wether this TreeNodeAttributeSet is empty
+	/** check whether this TreeNodeAttributeSet is empty
 	 * @return true if and only if this TreeNodeAttributeSet contains no key/value pairs
 	 */
 	public boolean isEmpty() {
@@ -215,7 +198,7 @@ public class TreeNodeAttributeSet {
 		return this.names.size();
 	}
 	
-	/**	@return	a key value for the hashmaps produced from the specified String
+	/**	@return	a key value for the HashMaps produced from the specified String
 	 */
 	protected String getKey(String string) {
 		return ((string != null) ? string.toLowerCase() : null);
@@ -223,144 +206,200 @@ public class TreeNodeAttributeSet {
 	
 	/**	parse the attribute / value pairs out of the specified tag
 	 * @param 	tag			the tag to be parsed
-	 * @param 	grammar		the Grammar in that's context the attributes are to be parsed
-	 * @return	the specified tag's attribute / value pairs in a Propertirs object
+	 * @param 	grammar		the Grammar in whose context to parse the attributes
+	 * @return	the argument tag's attribute / value pairs in a Properties object
 	 */
 	public static TreeNodeAttributeSet getTagAttributes(String tag, Grammar grammar) {
 		TreeNodeAttributeSet attributes = new TreeNodeAttributeSet(grammar);
-		
-		//	check attributes
-		if ((tag == null) || (grammar == null))
-			return attributes;
-		
-		char tagAttributeSeparator = grammar.getTagAttributeSeparator();
+		if ((tag != null) || (grammar != null)) try {
+			fillTagAttributeSet(tag, grammar, attributes);
+		} catch (IOException ioe) { /* does not happen with a StringReader, but Java don't know */ }
+		return attributes;
+	}
+	
+	private static void fillTagAttributeSet(String tag, Grammar grammar, TreeNodeAttributeSet attributes) throws IOException {
+		LookaheadReader charSource = new LookaheadReader(new StringReader(tag), grammar.getCharLookahead());
 		char tagAttributeValueSeparator = grammar.getTagAttributeValueSeparator();
 		char tagEnd = grammar.getTagEnd();
 		char endTagMarker = grammar.getEndTagMarker();
+		charSource.read(); // crop tag start
 		
-		StringBuffer assembler = new StringBuffer();
-		Vector attributeCollector = new Vector();
+		//	crop end tag marker
+		if (charSource.peek() == endTagMarker)
+			charSource.read();
 		
-		boolean inQuotas = false;
-		char ch;
-		char quoter = NULLCHAR;
+		//	crop qName
+		String tagType = LookaheadReader.cropName(charSource);
+		skipWhitespace(charSource, grammar);
 		
-		//	get start of first attribute (if there is any)
-		int index = tag.indexOf("" + tagAttributeSeparator);
-		
-		//	return if no tag or no attributes in tag
-		if (!grammar.isTag(tag) || (index == -1))
-			return attributes;
-		
-		//	find attributes and values
-		index ++;
-		while (index < tag.length()) {
+		//	crop attribute-value pairs
+		while (charSource.peek() != -1) {
+			skipWhitespace(charSource, grammar);
 			
-			ch = tag.charAt(index);
+			//	end of attributes
+			if ((charSource.peek() == tagEnd) || (charSource.peek() == endTagMarker))
+				break;
 			
-			//	in quotas
-			if (inQuotas) {
-				
-				//	end of quotas
-				if (ch == quoter) {
-					quoter = NULLCHAR;
-					inQuotas = false;
-					assembler.append(ch);
-					
-					//	store token
-					if (assembler.length() > 0)
-						attributeCollector.addElement(assembler.toString().trim());
-					assembler.delete(0, assembler.length());
-				}
-				else assembler.append(ch);
-					
-				index ++;
+			//	read attribute name
+			String attribName = LookaheadReader.cropName(charSource);
+			skipWhitespace(charSource, grammar);
+			
+			//	we have a value (tolerate missing separator if configured that way)
+			String attribValue;
+			if ((charSource.peek() == tagAttributeValueSeparator) || (grammar.correctErrors() && grammar.isTagAttributeValueQuoter((char) charSource.peek()))) {
+				if (charSource.peek() == tagAttributeValueSeparator)
+					charSource.read();
+				skipWhitespace(charSource, grammar);
+				attribValue = LookaheadReader.cropAttributeValue(charSource, grammar, tagType, attribName, tagEnd, endTagMarker);
 			}
 			
-			//	not in quotas
-			else {
-				
-				//	start of quotas
-				if (grammar.isTagAttributeValueQuoter(ch)) {
-					
-					//	store token
-					if (assembler.length() > 0)
-						attributeCollector.addElement(assembler.toString().trim());
-					assembler.delete(0, assembler.length());
-					
-					inQuotas = true;
-					quoter = ch;
-					assembler.append(ch);
-					index ++;
-				}
-				
-				//	end of attribute or value (separator or end of tag)
-				else if ((ch == tagAttributeSeparator) || (ch == tagAttributeValueSeparator) || (ch == tagEnd) || (ch == endTagMarker)) {
-					if (ch == tagAttributeValueSeparator)
-						assembler.append(tagAttributeValueSeparator);
-					
-					//	store token
-					if (assembler.length() > 0)
-						attributeCollector.addElement(assembler.toString().trim());
-					assembler.delete(0, assembler.length());
-					index++;
-				}
-				
-				//	common character
-				else {
-					assembler.append(ch);
-					index ++;
-				}
-			}
+			//	we have a standalone attribute, substitute name for value
+			else attribValue = attribName;
+			
+			//	append normalized attribute
+			attributes.setAttribute(attribName, grammar.unescape(attribValue));
 		}
-		
-		//	remove empty attributes
-		while (attributeCollector.contains(""))
-			attributeCollector.remove("");
-		
-		//	assembler attribute / value pairs
-		index = 0;
-		while (index < attributeCollector.size()) {
-			
-			//	get next token to be checked
-			String token = ((String) attributeCollector.get(index)).trim();
-			
-			//	token is attribute name with a subsequent value token to be expected
-			if (token.endsWith("" + tagAttributeValueSeparator)) {
-				
-				//	next token is attribute value
-				if (((index + 1) < attributeCollector.size()) && !((String) attributeCollector.get(index + 1)).trim().endsWith("" + tagAttributeValueSeparator)) {
-					
-					//	 get value
-					String value = ((String) attributeCollector.get(index + 1)).trim();
-					
-					//	remove quoters
-					if ((value.length() > 0) && grammar.isTagAttributeValueQuoter(value.charAt(0)))
-						value = value.substring(1);
-					if ((value.length() > 0) && grammar.isTagAttributeValueQuoter(value.charAt(value.length() - 1)))
-						value = value.substring(0, (value.length() - 1));
-					
-					//	store attribute / value pair
-//					attributes.setAttribute(token.substring(0, (token.length() - 1)), value);
-					attributes.setAttribute(token.substring(0, (token.length() - 1)), grammar.unescape(value));
-					index += 2;
-				}
-				
-				//	next token is another attribute name with a subsequent value token to be expected, value of current token empty, store attribute with empty value
-				else {
-					attributes.setAttribute(token.substring(0, (token.length() - 1)), "");
-					index ++;
-				}
-			}
-			
-			//	token is attribute name with no subsequent value token to be expected, store valueless attribute 
-			else {
-				attributes.setAttribute(token, token);
-				index ++;
-			}
-		}
-		
-		//	return attributes
-		return attributes;
 	}
+	
+	private static void skipWhitespace(LookaheadReader charSource, Grammar grammar) throws IOException {
+		while ((charSource.peek() != -1) && grammar.isWhitespace((char) charSource.peek()))
+			charSource.read();
+	}
+//	public static TreeNodeAttributeSet getTagAttributes(String tag, Grammar grammar) {
+//		TreeNodeAttributeSet attributes = new TreeNodeAttributeSet(grammar);
+//		
+//		//	check attributes
+//		if ((tag == null) || (grammar == null))
+//			return attributes;
+//		
+//		char tagAttributeSeparator = grammar.getTagAttributeSeparator();
+//		char tagAttributeValueSeparator = grammar.getTagAttributeValueSeparator();
+//		char tagEnd = grammar.getTagEnd();
+//		char endTagMarker = grammar.getEndTagMarker();
+//		
+//		StringBuffer assembler = new StringBuffer();
+//		Vector attributeCollector = new Vector();
+//		
+//		boolean inQuotas = false;
+//		char ch;
+//		char quoter = NULLCHAR;
+//		
+//		//	get start of first attribute (if there is any)
+//		int index = tag.indexOf("" + tagAttributeSeparator);
+//		
+//		//	return if no tag or no attributes in tag
+//		if (!grammar.isTag(tag) || (index == -1))
+//			return attributes;
+//		
+//		//	find attributes and values
+//		index ++;
+//		while (index < tag.length()) {
+//			
+//			ch = tag.charAt(index);
+//			
+//			//	in quotas
+//			if (inQuotas) {
+//				
+//				//	end of quotas
+//				if (ch == quoter) {
+//					quoter = NULLCHAR;
+//					inQuotas = false;
+//					assembler.append(ch);
+//					
+//					//	store token
+//					if (assembler.length() > 0)
+//						attributeCollector.addElement(assembler.toString().trim());
+//					assembler.delete(0, assembler.length());
+//				}
+//				else assembler.append(ch);
+//					
+//				index ++;
+//			}
+//			
+//			//	not in quotas
+//			else {
+//				
+//				//	start of quotas
+//				if (grammar.isTagAttributeValueQuoter(ch)) {
+//					
+//					//	store token
+//					if (assembler.length() > 0)
+//						attributeCollector.addElement(assembler.toString().trim());
+//					assembler.delete(0, assembler.length());
+//					
+//					inQuotas = true;
+//					quoter = ch;
+//					assembler.append(ch);
+//					index ++;
+//				}
+//				
+//				//	end of attribute or value (separator or end of tag)
+//				else if ((ch == tagAttributeSeparator) || (ch == tagAttributeValueSeparator) || (ch == tagEnd) || (ch == endTagMarker)) {
+//					if (ch == tagAttributeValueSeparator)
+//						assembler.append(tagAttributeValueSeparator);
+//					
+//					//	store token
+//					if (assembler.length() > 0)
+//						attributeCollector.addElement(assembler.toString().trim());
+//					assembler.delete(0, assembler.length());
+//					index++;
+//				}
+//				
+//				//	common character
+//				else {
+//					assembler.append(ch);
+//					index ++;
+//				}
+//			}
+//		}
+//		
+//		//	remove empty attributes
+//		while (attributeCollector.contains(""))
+//			attributeCollector.remove("");
+//		
+//		//	assembler attribute / value pairs
+//		index = 0;
+//		while (index < attributeCollector.size()) {
+//			
+//			//	get next token to be checked
+//			String token = ((String) attributeCollector.get(index)).trim();
+//			
+//			//	token is attribute name with a subsequent value token to be expected
+//			if (token.endsWith("" + tagAttributeValueSeparator)) {
+//				
+//				//	next token is attribute value
+//				if (((index + 1) < attributeCollector.size()) && !((String) attributeCollector.get(index + 1)).trim().endsWith("" + tagAttributeValueSeparator)) {
+//					
+//					//	 get value
+//					String value = ((String) attributeCollector.get(index + 1)).trim();
+//					
+//					//	remove quoters
+//					if ((value.length() > 0) && grammar.isTagAttributeValueQuoter(value.charAt(0)))
+//						value = value.substring(1);
+//					if ((value.length() > 0) && grammar.isTagAttributeValueQuoter(value.charAt(value.length() - 1)))
+//						value = value.substring(0, (value.length() - 1));
+//					
+//					//	store attribute / value pair
+////					attributes.setAttribute(token.substring(0, (token.length() - 1)), value);
+//					attributes.setAttribute(token.substring(0, (token.length() - 1)), grammar.unescape(value));
+//					index += 2;
+//				}
+//				
+//				//	next token is another attribute name with a subsequent value token to be expected, value of current token empty, store attribute with empty value
+//				else {
+//					attributes.setAttribute(token.substring(0, (token.length() - 1)), "");
+//					index ++;
+//				}
+//			}
+//			
+//			//	token is attribute name with no subsequent value token to be expected, store valueless attribute 
+//			else {
+//				attributes.setAttribute(token, token);
+//				index ++;
+//			}
+//		}
+//		
+//		//	return attributes
+//		return attributes;
+//	}
 }

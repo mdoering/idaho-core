@@ -28,10 +28,8 @@
 package de.uka.ipd.idaho.htmlXmlUtil;
 
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FilterReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -53,9 +51,6 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class TokenSource {
-	
-	private static final char NULLCHAR = '\u0000';
-	
 	private final char tagStart;
 	private final char tagEnd;
 	private final char endTagMarker;
@@ -246,7 +241,7 @@ public class TokenSource {
 		}
 		
 		//	crop qName
-		String tagType = this.cropName();
+		String tagType = LookaheadReader.cropName(this.charSource);
 		tag.append(tagType);
 		this.skipWhitespace(false);
 		
@@ -261,7 +256,7 @@ public class TokenSource {
 //			System.out.println("Tag part: " + tag.toString());
 			
 			//	read attribute name
-			String attribName = this.cropName();
+			String attribName = LookaheadReader.cropName(this.charSource);
 //			System.out.println("Attrib name: " + attribName);
 			this.skipWhitespace(false);
 			
@@ -271,7 +266,7 @@ public class TokenSource {
 				if (this.charSource.peek() == this.tagAttributeValueSeparator)
 					this.charSource.read();
 				this.skipWhitespace(false);
-				attribValue = this.cropAttributeValue(tagType, attribName);
+				attribValue = LookaheadReader.cropAttributeValue(this.charSource, this.grammar, tagType, attribName, this.tagEnd, this.endTagMarker);
 //				System.out.println("Attrib value: " + attribValue);
 			}
 			
@@ -299,86 +294,6 @@ public class TokenSource {
 		//	finally ...
 //		System.out.println("Tag full: " + tag.toString());
 		return tag.toString();
-	}
-	
-	private String cropName() throws IOException {
-		StringBuffer name = new StringBuffer();
-		while (this.charSource.peek() != -1) {
-			if (Character.isLetter((char) this.charSource.peek()))
-				name.append((char) this.charSource.read());
-			else if ("_:".indexOf((char) this.charSource.peek()) != -1)
-				name.append((char) this.charSource.read());
-			else if (name.length() == 0)
-				break;
-			else if (Character.isDigit((char) this.charSource.peek()))
-				name.append((char) this.charSource.read());
-			else if ("-.".indexOf((char) this.charSource.peek()) != -1)
-				name.append((char) this.charSource.read());
-			else break;
-		}
-		return name.toString();
-	}
-	
-	private String cropAttributeValue(String tagType, String attribName) throws IOException {
-		StringBuffer value = new StringBuffer();
-		char quoter = NULLCHAR;
-		
-		//	read quoter, if any
-		if (this.grammar.isTagAttributeValueQuoter((char) this.charSource.peek()))
-			quoter = ((char) this.charSource.read());
-		
-		//	read value
-		while (this.charSource.peek() != -1) {
-			
-			//	un-quoted value
-			if (quoter == NULLCHAR) {
-				
-				//	tag end
-				if (((this.charSource.peek() == this.tagEnd) || ((this.charSource.peek() == this.endTagMarker) && (this.charSource.peek(1) == this.tagEnd))))
-					break;
-				
-				//	whitespace
-				if (this.grammar.isWhitespace((char) this.charSource.peek()))
-					break;
-				
-				//	un-opened quoter, consume it
-				if (this.correctErrors && this.grammar.isTagAttributeValueQuoter((char) this.charSource.peek())) {
-					this.charSource.read();
-					break;
-				}
-			}
-			
-			//	end quoter, consume it and we're done
-			if (this.charSource.peek() == quoter) {
-				this.charSource.read();
-				break;
-			}
-			
-			//	whitespace in attribute value that may not contain it
-			if (this.grammar.isWhitespace((char) this.charSource.peek()) && this.correctErrors && !this.grammar.valueMayContainWhitespace(tagType, attribName))
-				break;
-			
-			//	asymmetric quoter, consume it
-			if (this.correctErrors && this.grammar.isTagAttributeValueQuoter((char) this.charSource.peek()) && !this.grammar.valueMayContainWhitespace(tagType, attribName)) {
-				this.charSource.read();
-				break;
-			}
-			
-			//	check encoding if activated
-			if (this.correctCharEncoding) {
-				
-				//	possible start of encoded character
-				if (this.charSource.peek() == '&')
-					value.append(this.cropCharCode());
-				
-				//	encode current character
-				else value.append(this.grammar.getCharCode((char) this.charSource.read()));
-			}
-			
-			//	other character
-			else value.append((char) this.charSource.read());
-		}
-		return value.toString();
 	}
 	
 	private String cropData() throws IOException {
@@ -414,7 +329,7 @@ public class TokenSource {
 				
 				//	possible start of encoded character
 				if (this.charSource.peek() == '&')
-					data.append(this.cropCharCode());
+					data.append(LookaheadReader.cropCharCode(this.charSource, this.grammar));
 				
 				//	encode current character
 				else data.append(this.grammar.getCharCode((char) this.charSource.read()));
@@ -426,55 +341,6 @@ public class TokenSource {
 		
 		//	finally ...
 		return data.toString();
-	}
-	
-	private String cropCharCode() throws IOException {
-		StringBuffer charCode = new StringBuffer("&");
-		
-		//	check if we have a semicolon to terminate the character code
-		int nextSemicolonIndex = this.charSource.indexOf(';');
-		if ((nextSemicolonIndex != -1) && (nextSemicolonIndex < this.grammar.getCharLookahead())) {
-			
-			//	read remaining potential character code
-			for (int i = 1; i <= nextSemicolonIndex; i++)
-				charCode.append((char) this.charSource.peek(i));
-			
-			//	we do have a character code
-			if (this.grammar.isCharCode(charCode.toString())) {
-				this.charSource.skip(charCode.length());
-				return charCode.toString();
-			}
-		}
-		
-		//	check if character code with missing semicolon
-		else for (int i = 1; i < this.grammar.getCharLookahead(); i++) {
-			if (this.charSource.peek(i) < 33)
-				break;
-			charCode.append((char) this.charSource.peek(i));
-			if (charCode.length() < 3)
-				continue; // we have at least the ampersand and two letters, or a hash tag or x and at least one digit
-			String codePrefix = charCode.substring(0, 3);
-			if (codePrefix.startsWith("&#x") || codePrefix.startsWith("&x")) {
-				if ("0123456789abcdefABCDEF".indexOf((char) this.charSource.peek(i+1)) != -1)
-					continue; // next char is valid hex digit
-			}
-			else if (codePrefix.startsWith("&#")) {
-				 if ("0123456789".indexOf((char) this.charSource.peek(i+1)) != -1)
-					 continue; // next char is valid decimal digit
-			}
-			else if (Character.isLetter((char) this.charSource.peek(i+1)))
-				continue; // next char continues alphanumeric character code
-			
-			//	we do have a character code
-			if (this.grammar.isCharCode(charCode.toString() + ';')) {
-				this.charSource.skip(charCode.length());
-				charCode.append(';');
-				return charCode.toString();
-			}
-		}
-		
-		//	no character code found, escape ampersand
-		return this.grammar.getCharCode((char) this.charSource.read());
 	}
 	
 	/**	create a TokenSource providing tokens parsed from a String in the context of the StandardGrammar 
@@ -555,193 +421,23 @@ public class TokenSource {
 		return getTokenSource(new FileInputStream(file), grammar);
 	}
 	
-	private static class LookaheadReader extends FilterReader {
-		private char[] charBuffer;
-		private int bufferStart = 0;
-		private int bufferEnd;
-		private int lookahead;
-		LookaheadReader(Reader in, int lookahead) throws IOException {
-			super((in instanceof BufferedReader) ? ((BufferedReader) in) : new BufferedReader(in));
-			this.lookahead = lookahead;
-			this.charBuffer = new char[Math.max((this.lookahead * 2), 1024)];
-		}
-		private void fillBuffer(int min) throws IOException {
-			if (this.bufferEnd == -1)
-				return;
-			if (min < (this.bufferEnd - this.bufferStart))
-				return;
-			if (this.bufferStart != 0) {
-				for (int i = 0; i < (this.bufferEnd - this.bufferStart); i++)
-					this.charBuffer[i] = this.charBuffer[this.bufferStart + i];
-				this.bufferEnd -= this.bufferStart;
-				this.bufferStart = 0;
-			}
-			while (this.bufferEnd < this.charBuffer.length) {
-				int r = super.read();
-				if (r == -1)
-					break;
-				this.charBuffer[this.bufferEnd++] = ((char) r);
-			}
-			if (this.bufferStart == this.bufferEnd)
-				this.bufferEnd = -1;
-			//	TODO_not consider using small char buffer instead of char-by-char reading
-			//	==> looking inside BufferedReader, the single char read() method looks like the best choice
-		}
-		public boolean markSupported() {
-			return false;
-		}
-		public void mark(int readAheadLimit) throws IOException {}
-		public void reset() throws IOException {
-			throw new IOException("mark/reset not supported, use peek() instead");
-		}
-		public int read() throws IOException {
-			this.fillBuffer(this.lookahead + 1);
-			if (this.bufferEnd == -1)
-				return -1;
-			return this.charBuffer[this.bufferStart++];
-		}
-		public int read(char[] cbuf, int off, int len) throws IOException {
-			this.fillBuffer(this.lookahead + len);
-			if (this.bufferEnd == -1)
-				return -1;
-			int read = 0;
-			while (read < len) {
-				if (this.bufferStart == this.bufferEnd)
-					break;
-				cbuf[off + read] = this.charBuffer[this.bufferStart++];
-				read++;
-			}
-			return read;
-		}
-		public long skip(long n) throws IOException {
-			this.fillBuffer((int) n + this.lookahead);
-			if (this.bufferEnd == -1)
-				return 0;
-			int skip = Math.min((this.bufferEnd - this.bufferStart), ((int) n));
-			this.bufferStart += skip;
-			return skip;
-		}
-//		void skipSpace() throws IOException {
-//			while ((this.peek() < 33) && (this.peek() != -1))
-//				this.read();
-//		}
-		int peek() throws IOException {
-			return this.peek(0);
-		}
-		int peek(int index) throws IOException {
-			if (this.lookahead < index)
-				return -1;
-			this.fillBuffer(this.lookahead + index);
-			if (this.bufferEnd <= (this.bufferStart + index))
-				return -1;
-			return this.charBuffer[this.bufferStart + index];
-		}
-//		int peek(char[] cbuf) throws IOException {
-//			return this.peek(cbuf, 0, cbuf.length);
-//		}
-//		int peek(char[] cbuf, int off, int len) throws IOException {
-//			this.fillBuffer(this.lookahead + 1);
-//			if (this.bufferEnd == -1)
-//				return -1;
-//			int peek = 0;
-//			while (peek < len) {
-//				if ((this.bufferStart + peek) == this.bufferEnd)
-//					break;
-//				cbuf[off + peek] = this.charBuffer[this.bufferStart + peek];
-//				peek++;
-//			}
-//			return peek;
-//		}
-		boolean startsWith(String prefix, boolean caseSensitive) throws IOException {
-			if (this.lookahead < prefix.length())
-				return false;
-			this.fillBuffer(this.lookahead + 1);
-			if (this.bufferEnd < (this.bufferStart + prefix.length()))
-				return false;
-			for (int c = 0; c < prefix.length(); c++) {
-				if ((this.bufferStart + c) == this.bufferEnd)
-					return false;
-				if (caseSensitive ? (this.charBuffer[this.bufferStart + c] != prefix.charAt(c)) : (Character.toLowerCase(this.charBuffer[this.bufferStart + c]) != Character.toLowerCase(prefix.charAt(c))))
-					return false;
-//				if (caseSensitive) {
-//					if (this.charBuffer[this.bufferStart + c] != prefix.charAt(c))
-//						return false;
-//				}
-//				else {
-//					if (Character.toLowerCase(this.charBuffer[this.bufferStart + c]) != Character.toLowerCase(prefix.charAt(c)))
-//						return false;
-//				}
-			}
-			return true;
-		}
-		int indexOf(char ch) throws IOException {
-			this.fillBuffer(this.lookahead + 1);
-			if (this.bufferEnd == -1)
-				return -1;
-			for (int i = 0; i < (this.bufferEnd - this.bufferStart); i++) {
-				if (this.charBuffer[this.bufferStart + i] == ch)
-					return i;
-			}
-			return -1;
-		}
-//		int indexOf(String infix) throws IOException {
-//			this.fillBuffer(this.lookahead + 1);
-//			if (this.bufferEnd == -1)
-//				return -1;
-//			if (infix.length() == 0)
-//				return 0;
-//			if (this.lookahead < infix.length())
-//				return -1;
-//			char infixStartChar = infix.charAt(0);
-//			for (int i = 0; i < (this.bufferEnd - this.bufferStart); i++) {
-//				if (this.charBuffer[this.bufferStart + i] != infixStartChar)
-//					continue;
-//				boolean match = true;
-//				for (int c = 1; c < infix.length(); c++) {
-//					if ((this.bufferStart + i + c) == this.bufferEnd)
-//						return -1;
-//					if (this.charBuffer[this.bufferStart + i + c] != infix.charAt(c)) {
-//						match = false;
-//						break;
-//					}
-//				}
-//				if (match)
-//					return i;
-//			}
-//			return -1;
-//		}
-//		private int fillLookaheadCache() throws IOException {
-//			if (this.lookahead == -1)
-//				return -1;
-//			if ((this.lookaheadCache != null) && (this.lookaheadCache.length() == this.lookahead))
-//				return this.lookahead;
-//			this.in.mark(this.lookahead);
-//			char[] lBuffer = new char[this.lookahead];
-//			int read = 0;
-//			while (read < this.lookahead) {
-//				int r = this.in.read(lBuffer, read, (lBuffer.length-read));
-//				if (r == -1)
-//					break;
-//				read += r;
-//			}
-//			if (read == 0) {
-//				this.lookahead = -1;
-//				return -1;
-//			}
-//			this.lookaheadCache = new String(lBuffer, 0, read);
-//			this.in.reset();
-//			return read;
-//		}
-	}
-	
 	public static void main(String[] args) throws Exception {
 //		String html = "<?xml screw=it?><!element is><!element it><!element now><html>\r\n  <head><script>some & crap < with --> bad <!-- char > sequences</script></head>\r\n  <body test=test with space test2=with' width='100% hight=100%\">  Test  </body>\r\n<!-- comment -></html>";
 //		TokenSource ts = getTokenSource(html, new Html());
 //		while (ts.hasMoreTokens())
 //			System.out.println("Token: '" + ts.retrieveToken() + "'");
-		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), new Html());
-		while (ts.hasMoreTokens())
-			System.out.println("Token: '" + ts.retrieveToken() + "'");
+		Html html = new Html();
+		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), html);
+		while (ts.hasMoreTokens()) {
+			String token = ts.retrieveToken();
+			System.out.println("Token: '" + token + "'");
+			if (html.isTag(token) && !html.isEndTag(token)) {
+				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
+				String[] ans = tnas.getAttributeNames();
+				for (int a = 0; a < ans.length; a++)
+					System.out.println(ans[a] + " = " + tnas.getAttribute(ans[a]));
+			}
+		}
 		
 	}
 }
