@@ -33,7 +33,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 
 /**
- * This class addds hierarchy functionality to java.util.Properties. This is
+ * This class adds hierarchy functionality to java.util.Properties. This is
  * done by prepending the prefix specified in the constructor to every property
  * name before accessing the wrapped base Properties object. This reflects only
  * in the getProperty(), setProperty(), and getPropertyNames() methods, however.

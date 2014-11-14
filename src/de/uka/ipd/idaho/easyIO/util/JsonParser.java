@@ -230,10 +230,10 @@ public class JsonParser {
 	 */
 	public static Object parseJson(Reader in) throws IOException {
 		PeekReader pr = new PeekReader(in, 5);
-		return cropNext(pr);
+		return cropNext(pr, false);
 	}
 	
-	private static Object cropNext(PeekReader pr) throws IOException {
+	private static Object cropNext(PeekReader pr, boolean inArrayOrObject) throws IOException {
 		pr.skipSpace();
 		if (pr.peek() == '"')
 			return cropString(pr);
@@ -255,6 +255,8 @@ public class JsonParser {
 			pr.skip(5);
 			return Boolean.FALSE;
 		}
+		else if (inArrayOrObject && ((pr.peek() == ',') || (pr.peek() == '}')))
+			return null;
 		else throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
 	}
 	
@@ -263,16 +265,18 @@ public class JsonParser {
 		pr.skipSpace();
 		Map map = new HashMap();
 		while (pr.peek() != '}') {
-			pr.skipSpace();
 			String key = cropString(pr);
 			pr.skipSpace();
 			if (pr.peek() != ':')
 				throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
 			pr.read(); // consume colon
-			map.put(key, cropNext(pr));
+			Object value = cropNext(pr, true);
+			map.put(key, value);
 			pr.skipSpace();
-			if (pr.peek() == ',')
-				pr.read(); // consume comma
+			if (pr.peek() == ',') {
+				pr.read(); // consume comma (also consumes a dangling one)
+				pr.skipSpace();
+			}
 			else if (pr.peek() != '}')
 				throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
 		}
@@ -285,10 +289,13 @@ public class JsonParser {
 		pr.skipSpace();
 		List array = new ArrayList();
 		while (pr.peek() != ']') {
-			array.add(cropNext(pr));
+			Object value = cropNext(pr, true);
+			array.add(value);
 			pr.skipSpace();
-			if (pr.peek() == ',')
-				pr.read(); // consume comma
+			if (pr.peek() == ',') {
+				pr.read(); // consume comma (also consumes a dangling one)
+				pr.skipSpace();
+			}
 			else if (pr.peek() != ']')
 				throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
 		}
