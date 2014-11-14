@@ -45,7 +45,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * the generic attribute name for retrieving the start index of an
-	 * Annotation as an Interger object via the getAttribute method, namely
+	 * Annotation as an Integer object via the getAttribute method, namely
 	 * 'START_INDEX'. Getting this attribute should never return null, though the
 	 * listing of attribute names should never contain this attribute name.
 	 */
@@ -53,7 +53,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * the generic attribute name for retrieving the size of an Annotation as an
-	 * Interger object via the getAttribute method, namely 'SIZE'. Getting this
+	 * Integer object via the getAttribute method, namely 'SIZE'. Getting this
 	 * attribute should never return null, though the listing of attribute names
 	 * should never contain this attribute name.
 	 */
@@ -61,7 +61,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * the generic attribute name for retrieving the end index of an Annotation
-	 * as an Interger object via the getAttribute method, namely 'END_INDEX'.
+	 * as an Integer object via the getAttribute method, namely 'END_INDEX'.
 	 * Getting this attribute should never return null, though the listing of
 	 * attribute names should never contain this attribute name.
 	 */
@@ -89,9 +89,9 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * Add an attribute to this Annotation. If the name is one of
-	 * START_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE and VALUE_ATTRIBUTE,
-	 * this method should ignore the invokation. If the name is
-	 * ANNOTATION_ID_ATTRIBUTE and the invokation is not ignored, the change
+	 * START_INDEX_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE and VALUE_ATTRIBUTE,
+	 * this method should ignore the invocation. If the name is
+	 * ANNOTATION_ID_ATTRIBUTE and the invocation is not ignored, the change
 	 * should also reflect in the return value of the getAnnotationID() method.
 	 * @param name the name for the attribute
 	 * @param value the value of the attribute
@@ -101,7 +101,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * Retrieve the value of an attribute. If the name is one of
-	 * START_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
+	 * START_INDEX_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
 	 * ANNOTATION_ID_ATTRIBUTE, this method should return the respective value as
 	 * described for these constants.
 	 * @param name the name of the attribute
@@ -112,7 +112,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * Retrieve the value of an attribute. If the name is one of
-	 * START_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
+	 * START_INDEX_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
 	 * ANNOTATION_ID_ATTRIBUTE, this method should return the respective value as
 	 * described for these constants.
 	 * @param name the name of the attribute
@@ -125,7 +125,7 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	
 	/**
 	 * Check if this object has a particular attribute. If the name is one of
-	 * START_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
+	 * START_INDEX_ATTRIBUTE, SIZE_ATTRIBUTE, END_INDEX_ATTRIBUTE, VALUE_ATTRIBUTE or
 	 * ANNOTATION_ID_ATTRIBUTE, this method should always return true.
 	 * @param name the name of the attribute
 	 * @return true if and only if this object has an attribute with the

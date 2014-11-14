@@ -35,6 +35,11 @@ package de.uka.ipd.idaho.gamta;
  */
 public interface Attributed {
 
+	/**	add a boolean-valued attribute to this object, setting it to <code>true</code> in some kind of way so at least <code>getAttribute()</code> returned a non-null value afterward, and <code>hasAttribute()</code> returns <code>true</code>
+	 * @param	name	the name for the attribute
+	 */
+	public abstract void setAttribute(String name);
+
 	/**	add an attribute to this object
 	 * @param	name	the name for the attribute
 	 * @param	value	the value of the attribute

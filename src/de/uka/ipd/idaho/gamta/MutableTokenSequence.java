@@ -138,7 +138,7 @@ public interface MutableTokenSequence extends TokenSequence, MutableCharSequence
 	 * @return the old leading whitespace of this MutableTokenSequence
 	 * @throws IllegalArgumentException if the specified whitespace char sequence contains non-whitespace characters
 	 */
-	public abstract java.lang.CharSequence setLeadingWhitespace(java.lang.CharSequence whitespace) throws IllegalArgumentException; 
+	public abstract CharSequence setLeadingWhitespace(CharSequence whitespace) throws IllegalArgumentException; 
 	
 	/**	change a Token's value. If the specified value String tokenizes to no or more than one Token under this TokenSequence's Tokenizer, implementations may either throw an IllegalArgumentException, or provide some "smart insert" behavior using the first Token as the new value at the specified index and inserting the remaining tokens after the specified index, or deleting the Token at the specified index, respectively. 
 	 * @param	value	the new value for the Token
@@ -146,7 +146,7 @@ public interface MutableTokenSequence extends TokenSequence, MutableCharSequence
 	 * @return the old value of the Token
 	 * @throws IllegalArgumentException if the specified value String tokenizes to no or more than one Token
 	 */
-	public abstract java.lang.CharSequence setValueAt(java.lang.CharSequence value, int index) throws IllegalArgumentException;
+	public abstract CharSequence setValueAt(CharSequence value, int index) throws IllegalArgumentException;
 	
 	/**	change the whitespace after a Token's value
 	 * @param	whitespace	the new whitespace after the Token
@@ -154,7 +154,7 @@ public interface MutableTokenSequence extends TokenSequence, MutableCharSequence
 	 * @return the old whitespace after the Token
 	 * @throws IllegalArgumentException if the specified whitespace char sequence contains non-whitespace characters
 	 */
-	public abstract java.lang.CharSequence setWhitespaceAfter(java.lang.CharSequence whitespace, int index) throws IllegalArgumentException;
+	public abstract CharSequence setWhitespaceAfter(CharSequence whitespace, int index) throws IllegalArgumentException;
 	
 	/**	remove a sequence of Tokens from this TokenSequence. Implementations of this method should not leave duplicate whitespace characters as a result of removing the Tokens in between. If there are whitespace chars to be removed, simple space chars (ASCII 32) should be removed prior to other whitespace chars. If the removal hampers the integrity of surrounding tokens (e.g. no whitespace remains between two token, which would be conflated as a result), implementations should insert a single space character for padding.  
 	 * @param	index	the index of the first Token to be removed
@@ -166,15 +166,15 @@ public interface MutableTokenSequence extends TokenSequence, MutableCharSequence
 	/**	tokenize a char sequence using this TokenSequence's Tokenizer and insert the resulting Tokens at the specified position. As opposed to the insertCharsAt() method, implementations of this method should not hamper surrounding tokens. For this purpose, they might extend the inserted char sequence with whitespace characters at the beginning and end in order to prevent inserted tokens from sticking to ones existing prior to the invokation of this method.
 	 * @param	tokens	the char sequence to be inserted
 	 * @param	index	the index to insert the Token at
-	 * @return the sequence of cars that was actually inserted, i.e. the specified one plus potential padding chars
+	 * @return the sequence of chars that was actually inserted, i.e. the specified one plus potential padding chars
 	 */
-	public abstract java.lang.CharSequence insertTokensAt(java.lang.CharSequence tokens, int index);
+	public abstract CharSequence insertTokensAt(CharSequence tokens, int index);
 	
 	/**	tokenize a char sequence using this TokenSequence's Tokenizer and append the resulting Tokens at the end of this TokenSequence. As opposed to the appendChars() method, implementations of this method should not hamper surrounding tokens. For this purpose, they might extend the appended char sequence with whitespace characters at the beginning in order to prevent inserted tokens from sticking to ones existing prior to the invokation of this method.
 	 * @param	tokens	the char sequence to be added
-	 * @return the sequence of cars that was actually appended, i.e. the specified one plus potential padding chars
+	 * @return the sequence of chars that was actually appended, i.e. the specified one plus potential padding chars
 	 */
-	public abstract java.lang.CharSequence addTokens(java.lang.CharSequence tokens);
+	public abstract CharSequence addTokens(CharSequence tokens);
 	
 	/**	clear the TokenSequence (i.e. remove all Tokens)
 	 */

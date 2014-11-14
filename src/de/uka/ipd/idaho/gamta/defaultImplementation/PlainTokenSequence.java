@@ -64,7 +64,7 @@ public class PlainTokenSequence implements TokenSequence {
 		}
 	}
 	
-	private class GamtaToken implements Token {
+	private class GamtaToken extends AbstractAttributed implements Token {
 		private int startOffset;
 		private int endOffset;
 		//	private String valueCache = null;	TODO: cache value
@@ -121,77 +121,6 @@ public class PlainTokenSequence implements TokenSequence {
 			return this.startOffset;
 		}
 		
-		private HashMap attributes = null; // initialize to null, create only on demand
-		
-		/** @see de.gamta.Attributed#clearAttributes()
-		 */
-		public void clearAttributes() {
-			if (this.attributes != null)
-				this.attributes.clear();
-		}
-		
-		/** @see de.gamta.Attributed#copyAttributes(de.gamta.Attributed)
-		 */
-		public void copyAttributes(Attributed source) {
-			if (source != null) {
-				String[] attributeNames = source.getAttributeNames();
-				if (this.attributes == null) //	initialize with appropriate capacity so resizing won't occur here
-					this.attributes = new HashMap(Math.min(((3 * attributeNames.length) / 2), 2)) ;
-				for (int a = 0; a < attributeNames.length; a++) 
-					this.attributes.put(attributeNames[a], source.getAttribute(attributeNames[a]));
-			}
-		}
-		
-		/** @see de.gamta.Attributed#getAttribute(java.lang.String, java.lang.Object)
-		 */
-		public Object getAttribute(String name, Object def) {
-			if (this.attributes == null)
-				return def;
-			return (this.attributes.containsKey(name) ? this.attributes.get(name) : def);
-		}
-		
-		/** @see de.gamta.Attributed#getAttribute(java.lang.String)
-		 */
-		public Object getAttribute(String name) {
-			if (this.attributes == null)
-				return null;
-			return this.attributes.get(name);
-		}
-		
-		/** @see de.gamta.Attributed#getAttributeNames()
-		 */
-		public String[] getAttributeNames() {
-			if (this.attributes == null)
-				return new String[0];
-			ArrayList names = new ArrayList(this.attributes.keySet());
-			Collections.sort(names);
-			return ((String[]) names.toArray(new String[names.size()]));
-		}
-		
-		/** @see de.gamta.Attributed#hasAttribute(java.lang.String)
-		 */
-		public boolean hasAttribute(String name) {
-			return ((this.attributes != null) && this.attributes.containsKey(name));
-		}
-		
-		/** @see de.gamta.Attributed#removeAttribute(java.lang.String)
-		 */
-		public Object removeAttribute(String name) {
-			if (this.attributes == null)
-				return null;
-			return this.attributes.remove(name);
-		}
-		
-		/** @see de.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
-		 */
-		public Object setAttribute(String name, Object value) {
-			if (this.attributes == null)
-				this.attributes = new HashMap(2);
-			if (value == null)
-				return this.removeAttribute(name);
-			else return this.attributes.put(name, value);
-		}
-
 		/** @see java.lang.Object#equals(java.lang.Object)
 		 */
 		public boolean equals(Object obj) {

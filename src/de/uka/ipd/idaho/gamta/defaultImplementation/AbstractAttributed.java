@@ -111,6 +111,12 @@ public class AbstractAttributed implements Attributed {
 		return value;
 	}
 	
+	/** @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+	 */
+	public void setAttribute(String name) {
+		this.setAttribute(name, "true");
+	}
+	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
 	 */
 	public Object setAttribute(String name, Object value) {

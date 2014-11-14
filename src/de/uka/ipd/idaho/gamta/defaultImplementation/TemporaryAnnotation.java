@@ -132,7 +132,8 @@ public class TemporaryAnnotation extends AbstractAttributed implements Standalon
 	 * @see de.uka.ipd.idaho.gamta.defaultImplementation.AbstractAttributed#setAttribute(java.lang.String, java.lang.Object)
 	 */
 	public Object setAttribute(String name, Object value) {
-		if (START_INDEX_ATTRIBUTE.equals(name) || SIZE_ATTRIBUTE.equals(name) || END_INDEX_ATTRIBUTE.equals(name) || ANNOTATION_VALUE_ATTRIBUTE.equals(name)) return value;
+		if (START_INDEX_ATTRIBUTE.equals(name) || SIZE_ATTRIBUTE.equals(name) || END_INDEX_ATTRIBUTE.equals(name) || ANNOTATION_VALUE_ATTRIBUTE.equals(name))
+			return value;
 		else if (ANNOTATION_ID_ATTRIBUTE.equals(name)) {
 			if ((value != null) && (value instanceof String) && (value.toString().trim().length() == this.annotationId.length())) {
 				String oldId = this.annotationId;

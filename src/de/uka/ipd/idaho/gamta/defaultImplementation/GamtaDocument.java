@@ -1155,6 +1155,28 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			return oldValue;
 		}
 		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			Object oldValue = this.getAttribute(name);
+			
+			this.data.setAttribute(name);
+			
+			//	notify listeners
+			QueriableAnnotation base = this.base;
+			while (base != GamtaDocument.this) {
+				if (base instanceof MutableAnnotationView) {
+					((MutableAnnotationView) base).notifyAnnotationAttributeChanged(this.data, name, oldValue);
+					return;
+				}
+				else if (base instanceof QueriableAnnotationView)
+					base = ((QueriableAnnotationView) base).base;
+				else base = GamtaDocument.this;
+			}
+			if (base == GamtaDocument.this)
+				GamtaDocument.this.notifyAnnotationAttributeChanged(this.data, name, oldValue);
+		}
+		/* (non-Javadoc)
 		 * @see de.gamta.defaultImplementation.AbstractAttributed#setAttribute(java.lang.String, java.lang.Object)
 		 */
 		public Object setAttribute(String name, Object value) {
@@ -1169,7 +1191,6 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 				}
 				else if (base instanceof QueriableAnnotationView)
 					base = ((QueriableAnnotationView) base).base;
-				
 				else base = GamtaDocument.this;
 			}
 			if (base == GamtaDocument.this)
@@ -1203,6 +1224,9 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		public MutableAnnotation addAnnotation(Annotation annotation) {
 			AnnotationBase ab = this.data.addAnnotation(annotation);
 			
+			//	check success
+			if (ab == null) return null;
+			
 			//	notify own listeners
 			this.notifyAnnotationAdded(ab);
 			
@@ -1214,6 +1238,9 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		 */
 		public MutableAnnotation addAnnotation(String type, int startIndex, int size) {
 			AnnotationBase ab = this.data.addAnnotation(type, startIndex, size);
+			
+			//	check success
+			if (ab == null) return null;
 			
 			//	notify own listeners
 			this.notifyAnnotationAdded(ab);
@@ -1636,6 +1663,12 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			return this.data.removeAttribute(name);
 		}
 		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			this.data.setAttribute(name);
+		}
+		/* (non-Javadoc)
 		 * @see de.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
 		 */
 		public Object setAttribute(String name, Object value) {
@@ -1643,9 +1676,8 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		}
 	}
 	
-	/**	the basic implementation of an Annotation at this Docuemnt, which backs the view(s)
-	 */
-	private class AnnotationBase extends AbstractAttributed {
+	//	the basic implementation of an Annotation at this Document, which backs the view(s)
+	class AnnotationBase extends AbstractAttributed {
 		private String type; // the type of the Annotation, corresponding to the XML element name
 		
 		private int absoluteStartIndex; // the index of this Annotation's first token in the TokenSequence of the surrounding GamtaDocument 
@@ -1659,7 +1691,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		
 		private Vector views = new Vector(); // the views currently refering to this AbbotationBase, for event notification purposes
 		
-		private AnnotationBase(String type, int startIndex, int size) {
+		AnnotationBase(String type, int startIndex, int size) {
 			if ((type == null) || (type.trim().length() == 0))
 				throw new IllegalArgumentException("'" + type + "' is not a valid Annotation type");
 			this.type = type;
@@ -1698,7 +1730,8 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		 * @see de.gamta.defaultImplementation.AbstractAttributed#setAttribute(java.lang.String, java.lang.Object)
 		 */
 		public Object setAttribute(String name, Object value) {
-			if (START_INDEX_ATTRIBUTE.equals(name) || SIZE_ATTRIBUTE.equals(name) || END_INDEX_ATTRIBUTE.equals(name) || ANNOTATION_VALUE_ATTRIBUTE.equals(name)) return value;
+			if (START_INDEX_ATTRIBUTE.equals(name) || SIZE_ATTRIBUTE.equals(name) || END_INDEX_ATTRIBUTE.equals(name) || ANNOTATION_VALUE_ATTRIBUTE.equals(name))
+				return value;
 			else if (ANNOTATION_ID_ATTRIBUTE.equals(name)) {
 				if ((value != null) && (value instanceof String) && (value.toString().trim().length() == this.annotationId.length())) {
 					String oldId = this.annotationId;
@@ -2004,95 +2037,51 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 				this.cause = cause;
 			}
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.Annotation#changeTypeTo(java.lang.String)
-		 */
-		private String changeTypeTo(String newType) {
+		String changeTypeTo(String newType) {
 			if ((newType == null) || (newType.trim().length() == 0))
 				throw new IllegalArgumentException("'" + newType + "' is not a valid Annotation type");
 			String oldType = this.type;
 			this.type = newType;
 			return oldType;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.Annotation#getAnnotationID()
-		 */
-		private String getAnnotationID() {
+		String getAnnotationID() {
 			return this.annotationId;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.Annotation#getEndIndex()
-		 */
-		private int getEndIndex() {
+		int getEndIndex() {
 			return (this.absoluteStartIndex + this.size);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.Annotation#getType()
-		 */
-		private String getType() {
+		String getType() {
 			return this.type;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.CharSpan#getEndOffset()
-		 */
-		private int getEndOffset() {
+		int getEndOffset() {
 			return this.lastToken().getEndOffset();
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#addChar(char)
-		 */
-		private void addChar(char ch) {
+		void addChar(char ch) {
 			modificationSource = this;
 			tokenData.insertChar(ch, this.getEndOffset());
 			modificationSource = null;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#addChars(java.lang.CharSequence)
-		 */
-		private void addChars(CharSequence chars) {
+		void addChars(CharSequence chars) {
 			modificationSource = this;
 			tokenData.insertChars(chars, this.getEndOffset());
 			modificationSource = null;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#addTokens(java.lang.CharSequence)
-		 */
-		private CharSequence addTokens(CharSequence tokens) {
+		CharSequence addTokens(CharSequence tokens) {
 			modificationSource = this;
 			CharSequence ch = tokenData.insertTokensAt(tokens, this.getEndIndex());
 			modificationSource = null;
 			return ch;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#charAt(int)
-		 */
-		private char charAt(int index) {
+		char charAt(int index) {
 			if (index >= this.length())
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.length());
 			return tokenData.charAt(index + this.getAbsoluteStartOffset());
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#clear()
-		 */
-		private void clear() {
+		void clear() {
 			modificationSource = this;
 			tokenData.removeTokensAt(this.absoluteStartIndex, this.size);
 			modificationSource = null;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#finalize()
-		 */
 		protected void finalize() throws Throwable {
 			
 			//	clean up views
@@ -2111,68 +2100,36 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			//	discart views
 			this.views.clear();
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#firstToken()
-		 */
-		private Token firstToken() {
+		Token firstToken() {
 			return tokenData.tokenAt(this.absoluteStartIndex);
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#firstValue()
-		 */
-		private String firstValue() {
+		String firstValue() {
 			return tokenData.valueAt(this.absoluteStartIndex);
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#getLeadingWhitespace()
-		 */
-		private String getLeadingWhitespace() {
+		String getLeadingWhitespace() {
 			return "";
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#getMutableSubsequence(int, int)
-		 */
-		private MutableTokenSequence getMutableSubsequence(int start, int size) {
+		MutableTokenSequence getMutableSubsequence(int start, int size) {
 			if ((start + size) > this.size)
 				throw new IndexOutOfBoundsException("" + start + "+" + size + " > " + this.size);
 			return tokenData.getMutableSubsequence((start + this.absoluteStartIndex), size);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#getSubsequence(int, int)
-		 */
-		private TokenSequence getSubsequence(int start, int size) {
+		TokenSequence getSubsequence(int start, int size) {
 			if ((start + size) > this.size)
 				throw new IndexOutOfBoundsException("" + start + "+" + size + " > " + this.size);
 			return tokenData.getSubsequence((start + this.absoluteStartIndex), size);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#getTokenizer()
-		 */
-		private Tokenizer getTokenizer() {
+		Tokenizer getTokenizer() {
 			return tokenData.getTokenizer();
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#getWhitespaceAfter(int)
-		 */
-		private String getWhitespaceAfter(int index) {
+		String getWhitespaceAfter(int index) {
 			if (index >= this.size)
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.size);
 			if ((index + 1) == this.size)
 				return "";
 			return tokenData.getWhitespaceAfter(index + this.absoluteStartIndex);
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#insertChar(char, int)
-		 */
-		private void insertChar(char ch, int offset) {
+		void insertChar(char ch, int offset) {
 //			if (offset > this.length())
 //				throw new IndexOutOfBoundsException("" + offset + " > " + this.length());
 			//	allow char modification in whitespace after last token
@@ -2182,11 +2139,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			tokenData.insertChar(ch, (offset + this.getAbsoluteStartOffset()));
 			modificationSource = null;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#insertChars(java.lang.CharSequence, int)
-		 */
-		private void insertChars(CharSequence chars, int offset) {
+		void insertChars(CharSequence chars, int offset) {
 //			if (offset > this.length())
 //				throw new IndexOutOfBoundsException("" + offset + " > " + this.length());
 			//	allow char modification in whitespace after last token
@@ -2196,11 +2149,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			tokenData.insertChars(chars, (offset + this.getAbsoluteStartOffset()));
 			modificationSource = null;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#insertTokensAt(java.lang.CharSequence, int)
-		 */
-		private CharSequence insertTokensAt(CharSequence tokens, int index) {
+		CharSequence insertTokensAt(CharSequence tokens, int index) {
 			if (index > this.size)
 				throw new IndexOutOfBoundsException("" + index + " > " + this.size);
 			modificationSource = this;
@@ -2208,32 +2157,16 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return ch;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#lastToken()
-		 */
-		private Token lastToken() {
+		Token lastToken() {
 			return tokenData.tokenAt(this.absoluteStartIndex + this.size - 1);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#lastValue()
-		 */
-		private String lastValue() {
+		String lastValue() {
 			return tokenData.valueAt(this.absoluteStartIndex + this.size - 1);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#length()
-		 */
-		private int length() {
+		int length() {
 			return (this.getEndOffset() - this.getAbsoluteStartOffset());
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#removeChar(int)
-		 */
-		private char removeChar(int offset) {
+		char removeChar(int offset) {
 			if ((offset + 1) > this.length())
 				throw new IndexOutOfBoundsException("" + offset + "+" + 1 + " > " + this.length());
 			modificationSource = this;
@@ -2241,11 +2174,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return c;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#removeChars(int, int)
-		 */
-		private CharSequence removeChars(int offset, int length) {
+		CharSequence removeChars(int offset, int length) {
 			if ((offset + length) > this.length())
 				throw new IndexOutOfBoundsException("" + offset + "+" + length + " > " + this.length());
 			modificationSource = this;
@@ -2253,11 +2182,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return ch;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#removeTokensAt(int, int)
-		 */
-		private TokenSequence removeTokensAt(int index, int size) {
+		TokenSequence removeTokensAt(int index, int size) {
 			if ((index + size) > this.size)
 				throw new IndexOutOfBoundsException("" + index + "+" + size + " > " + this.size);
 			modificationSource = this;
@@ -2265,11 +2190,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return ts;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#setChar(char, int)
-		 */
-		private char setChar(char ch, int offset) {
+		char setChar(char ch, int offset) {
 //			if ((offset + 1) > this.length())
 //				throw new IndexOutOfBoundsException("" + offset + "+" + 1 + " > " + this.length());
 			//	allow char modification in whitespace after last token
@@ -2280,11 +2201,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return c;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#setChars(java.lang.CharSequence, int, int)
-		 */
-		private CharSequence setChars(CharSequence chars, int offset, int length) {
+		CharSequence setChars(CharSequence chars, int offset, int length) {
 //			if ((offset + length) > this.length())
 //				throw new IndexOutOfBoundsException("" + offset + "+" + length + " > " + this.length());
 			//	allow char modification in whitespace after last token
@@ -2295,19 +2212,11 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return cs;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#setLeadingWhitespace(java.lang.CharSequence)
-		 */
-		private CharSequence setLeadingWhitespace(CharSequence whitespace) throws IllegalArgumentException {
+		CharSequence setLeadingWhitespace(CharSequence whitespace) throws IllegalArgumentException {
 			//	an annotation always starts at the first token and ends after the last one
 			return "";
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#setValueAt(java.lang.CharSequence, int)
-		 */
-		private CharSequence setValueAt(CharSequence value, int index) throws IllegalArgumentException {
+		CharSequence setValueAt(CharSequence value, int index) throws IllegalArgumentException {
 			if (index >= this.size)
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.size);
 			modificationSource = this;
@@ -2315,11 +2224,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return cs;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#setWhitespaceAfter(java.lang.CharSequence, int)
-		 */
-		private CharSequence setWhitespaceAfter(CharSequence whitespace, int index) throws IllegalArgumentException {
+		CharSequence setWhitespaceAfter(CharSequence whitespace, int index) throws IllegalArgumentException {
 			if (index >= this.size)
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.size);
 //			else if ((index+1) == this.size)
@@ -2329,93 +2234,49 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			modificationSource = null;
 			return cs;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#size()
-		 */
-		private int size() {
+		int size() {
 			return this.size;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#subSequence(int, int)
-		 */
-		private CharSequence subSequence(int start, int end) {
+		CharSequence subSequence(int start, int end) {
 			if (start < 0)
 				throw new IndexOutOfBoundsException("" + start + " < " + 0);
 			else if (end > this.length())
 				throw new IndexOutOfBoundsException("" + end + " > " + this.length());
 			return tokenData.subSequence((start + this.getAbsoluteStartOffset()), (end + this.getAbsoluteStartOffset()));
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#tokenAt(int)
-		 */
-		private Token tokenAt(int index) {
+		Token tokenAt(int index) {
 			if (index >= this.size)
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.size);
 			return tokenData.tokenAt(index + this.absoluteStartIndex);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#toString()
-		 */
-		private String getValue() {
+		String getValue() {
 			return tokenData.subSequence(this.getAbsoluteStartOffset(), this.getEndOffset()).toString();
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.defaultImplementation.GamtaTokenSequence#valueAt(int)
-		 */
-		private String valueAt(int index) {
+		String valueAt(int index) {
 			if (index >= this.size)
 				throw new IndexOutOfBoundsException("" + index + " >= " + this.size);
 			return tokenData.valueAt(index + this.absoluteStartIndex);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.MutableCharSequence#mutableSubSequence(int, int)
-		 */
-		private MutableCharSequence mutableSubSequence(int start, int end) {
+		MutableCharSequence mutableSubSequence(int start, int end) {
 			if (start < 0)
 				throw new IndexOutOfBoundsException("" + start + " < " + 0);
 			else if (end > this.length())
 				throw new IndexOutOfBoundsException("" + end + " > " + this.length());
 			return tokenData.mutableSubSequence((start + this.getAbsoluteStartOffset()), (end + this.getAbsoluteStartOffset()));
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.QueriableAnnotation#getAbsoluteStartIndex()
-		 */
-		private int getAbsoluteStartIndex() {
+		int getAbsoluteStartIndex() {
 			return this.absoluteStartIndex;
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.QueriableAnnotation#getAbsoluteStartOffset()
-		 */
-		private int getAbsoluteStartOffset() {
+		int getAbsoluteStartOffset() {
 			return this.firstToken().getStartOffset();
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.QueriableAnnotation#getAnnotations(java.lang.String)
-		 */
-		private AnnotationBase[] getAnnotations(String type) {
+		AnnotationBase[] getAnnotations(String type) {
 			return annotations.getAnnotations(this, type);
 		}
-
-		/* (non-Javadoc)
-		 * @see de.gamta.QueriableAnnotation#getAnnotationTypes()
-		 */
-		private String[] getAnnotationTypes() {
+		String[] getAnnotationTypes() {
 			return annotations.getAnnotationTypes(this);
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.MutableAnnotation#addAnnotation(de.gamta.Annotation)
-		 */
-		private AnnotationBase addAnnotation(Annotation annotation) {
+		AnnotationBase addAnnotation(Annotation annotation) {
 			
 			//	check parameter
 			if (annotation == null) return null;
@@ -2429,11 +2290,7 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			//	return Annotation
 			return ab;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.MutableAnnotation#addAnnotation(java.lang.String, int, int)
-		 */
-		private AnnotationBase addAnnotation(String type, int startIndex, int size) {
+		AnnotationBase addAnnotation(String type, int startIndex, int size) {
 			
 			//	create Annotation
 			AnnotationBase ab = this.addAnnotationAbsolute(type, startIndex, size);
@@ -2441,8 +2298,6 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			//	return Annotation
 			return ab;
 		}
-		
-		//	add an Annotation
 		private AnnotationBase addAnnotationAbsolute(String type, int startIndex, int size) {
 			//	check parameters
 			if ((startIndex < 0) || (size < 1)) return null;
@@ -2454,24 +2309,15 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 			//	return Annotation
 			return ab;
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.MutableAnnotation#removeAnnotation(de.gamta.Annotation)
-		 */
-		private AnnotationBase removeAnnotation(Annotation annotation) {
+		AnnotationBase removeAnnotation(Annotation annotation) {
 			return annotations.removeAnnotation(this.absoluteStartIndex, annotation);
 		}
-		
-		/* (non-Javadoc)
-		 * @see de.gamta.MutableAnnotation#removeTokens(de.gamta.Annotation)
-		 */
-		private TokenSequence removeTokens(Annotation annotation) {
+		TokenSequence removeTokens(Annotation annotation) {
 			modificationSource = this;
 			TokenSequence ts = this.removeTokensAt(annotation.getStartIndex(), annotation.size());
 			modificationSource = null;
 			return ts;
 		}
-		
 		private int compareTo(AnnotationBase ab) {
 			int c = (this.absoluteStartIndex - ab.absoluteStartIndex);
 			if (c != 0) return c;

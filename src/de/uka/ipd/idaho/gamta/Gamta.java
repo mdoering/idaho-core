@@ -399,7 +399,7 @@ public class Gamta extends StringUtils {
 	
 	/**
 	 * Obtain a new StandaloneAnnotation to a TokenSequence.
-	 * @param tokens the token sequence ot annotate
+	 * @param tokens the token sequence to annotate
 	 * @param type the type for the new annotation
 	 * @param startIndex the start index of the new annotation
 	 * @param size the size of the new annotation
@@ -423,7 +423,7 @@ public class Gamta extends StringUtils {
 	
 	/**
 	 * Obtain a new StandaloneAnnotation to a TokenSequence.
-	 * @param tokens the token sequence ot annotate
+	 * @param tokens the token sequence to annotate
 	 * @param model the annotation to copy data from
 	 * @return a new standalone annotation of the specified type, marking size
 	 *         tokens of the specified token sequence, starting from the
