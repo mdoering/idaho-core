@@ -53,6 +53,7 @@ public class AnnotationReader extends Reader {
 	
 	private QueriableAnnotation source;
 	private String indent = null;
+	private boolean outputIDs = false;
 	
 	private Annotation[] nestedAnnotations;
 	private Stack stack = new Stack();
@@ -81,9 +82,18 @@ public class AnnotationReader extends Reader {
 	 * @param source the DocumentPart to read from
 	 */
 	public AnnotationReader(QueriableAnnotation source) {
-		this(source, null, null, null);
+		this(source, false, null, null, null);
 	}
-
+	
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 */
+	public AnnotationReader(QueriableAnnotation source, boolean outputIDs) {
+		this(source, outputIDs, null, null, null);
+	}
+	
 	/**
 	 * Constructor
 	 * @param source the DocumentPart to read from
@@ -91,7 +101,18 @@ public class AnnotationReader extends Reader {
 	 *            (specifying null will result in no indentation)
 	 */
 	public AnnotationReader(QueriableAnnotation source, String indent) {
-		this(source, indent, null, null);
+		this(source, false, indent, null, null);
+	}
+	
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 */
+	public AnnotationReader(QueriableAnnotation source, boolean outputIDs, String indent) {
+		this(source, outputIDs, indent, null, null);
 	}
 	
 	/**
@@ -105,7 +126,22 @@ public class AnnotationReader extends Reader {
 	 *            attributes)
 	 */
 	public AnnotationReader(QueriableAnnotation source, Set typeFilter, Set attributeFilter) {
-		this(source, null, typeFilter, attributeFilter);
+		this(source, false, null, typeFilter, attributeFilter);
+	}
+	
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationReader(QueriableAnnotation source, boolean outputIDs, Set typeFilter, Set attributeFilter) {
+		this(source, outputIDs, null, typeFilter, attributeFilter);
 	}
 	
 	/**
@@ -121,7 +157,25 @@ public class AnnotationReader extends Reader {
 	 *            attributes)
 	 */
 	public AnnotationReader(QueriableAnnotation source, String indent, Set typeFilter, Set attributeFilter) {
+		this(source, false, indent, typeFilter, attributeFilter);
+	}
+	
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationReader(QueriableAnnotation source, boolean outputIDs, String indent, Set typeFilter, Set attributeFilter) {
 		this.source = source;
+		this.outputIDs = outputIDs;
 		this.indent = (((indent == null) || (indent.length() == 0)) ? null : indent);
 		this.attributeFilter = attributeFilter;
 		
@@ -161,10 +215,12 @@ public class AnnotationReader extends Reader {
 		this.lastToken = null;
 	}
 	
-	/** @see java.io.Reader#read(char[], int, int)
+	/*
+	 * @see java.io.Reader#read(char[], int, int)
 	 */
 	public int read(char[] cbuf, int off, int len) throws IOException {
-		if (this.source == null) throw new IOException("Stream closed");
+		if (this.source == null)
+			throw new IOException("Stream closed");
 		
 		if (this.bufferLevel < len) {
 			int added = this.fillBuffer((len - this.bufferLevel));
@@ -192,7 +248,7 @@ public class AnnotationReader extends Reader {
 		return len;
 	}
 	
-	/**	produce some Strings for the buffer
+	/*	produce some Strings for the buffer
 	 * @param	minChars	the minimum number of chars to produce
 	 * @return the number of chars actually produced (if less than minChars, the end is near)
 	 */
@@ -222,7 +278,7 @@ public class AnnotationReader extends Reader {
 					for (int i = 0; i < this.stack.size(); i++)
 						this.lineAssembler.append(this.indent);
 				
-				
+				//	store line
 				this.lineAssembler.append("</" + annotation.getType() + ">");
 				this.lineAssembler.append("\n");
 				this.lineBuffer.addLast(this.lineAssembler.toString());
@@ -266,7 +322,7 @@ public class AnnotationReader extends Reader {
 					for (int i = 0; i < this.stack.size(); i++)
 						this.lineAssembler.append(this.indent);
 				
-				this.lineAssembler.append(AnnotationUtils.produceStartTag(annotation, this.attributeFilter, true));
+				this.lineAssembler.append(AnnotationUtils.produceStartTag(annotation, this.outputIDs, this.attributeFilter, true));
 				
 				this.stack.push(annotation);
 				this.annotationPointer++;
@@ -286,7 +342,6 @@ public class AnnotationReader extends Reader {
 			
 			//	append current Token
 			String tokenValue = this.token.getValue();
-//			this.lineAssembler.append(this.prepareForXML(tokenValue));
 			this.lineAssembler.append(AnnotationUtils.escapeForXml(tokenValue));
 			this.lastWasLineBreak = false;
 			this.lastWasTag = false;
@@ -295,7 +350,8 @@ public class AnnotationReader extends Reader {
 			this.tokenIndex++;
 			
 			//	some token is left for triggering the stack flush, and we've written enough characters, return
-			if ((this.tokenIndex < this.source.size()) && (newChars >= minChars)) return newChars;
+			if ((this.tokenIndex < this.source.size()) && (newChars >= minChars))
+				return newChars;
 		}
 		
 		//	write end tags for Annotations not closed so far
@@ -327,16 +383,4 @@ public class AnnotationReader extends Reader {
 		
 		return newChars;
 	}
-//	
-//	private String prepareForXML(String string) {
-//		StringBuffer sb = new StringBuffer();
-//		for (int c = 0; c < string.length(); c++) {
-//			char ch = string.charAt(c);
-//			if (ch == '&' && !string.startsWith("&amp;", c) && !string.startsWith("&lt;", c) && !string.startsWith("&gt;", c)) sb.append("&amp;");
-//			else if (ch == '<') sb.append("&lt;");
-//			else if (ch == '>') sb.append("&gt;");
-//			else sb.append(ch);
-//		}
-//		return sb.toString();
-//	}
 }

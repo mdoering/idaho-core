@@ -66,7 +66,11 @@ public class GenericAnnotationWrapper implements Annotation {
 	public Object removeAttribute(String name) {
 		return this.annotationData.removeAttribute(name);
 	}
-	
+
+	public void setAttribute(String name) {
+		this.annotationData.setAttribute(name);
+	}
+
 	public Object setAttribute(String name, Object value) {
 		return this.annotationData.setAttribute(name, value);
 	}
@@ -247,6 +251,10 @@ public class GenericAnnotationWrapper implements Annotation {
 		
 		public Object removeAttribute(String name) {
 			return this.tokenData.removeAttribute(name);
+		}
+		
+		public void setAttribute(String name) {
+			this.tokenData.setAttribute(name);
 		}
 		
 		public Object setAttribute(String name, Object value) {

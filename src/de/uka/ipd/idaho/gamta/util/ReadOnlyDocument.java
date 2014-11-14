@@ -75,6 +75,10 @@ public class ReadOnlyDocument extends GenericQueriableAnnotationWrapper {
 		throw new RuntimeException(this.exceptionText);
 	}
 	
+	public void setAttribute(String name) {
+		throw new RuntimeException(this.exceptionText);
+	}
+	
 	public Object setAttribute(String name, Object value) {
 		throw new RuntimeException(this.exceptionText);
 	}
@@ -105,6 +109,10 @@ public class ReadOnlyDocument extends GenericQueriableAnnotationWrapper {
 		}
 		
 		public Object removeAttribute(String name) {
+			throw new RuntimeException(exceptionText);
+		}
+		
+		public void setAttribute(String name) {
 			throw new RuntimeException(exceptionText);
 		}
 		

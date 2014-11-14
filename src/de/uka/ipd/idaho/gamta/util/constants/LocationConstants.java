@@ -68,7 +68,7 @@ public interface LocationConstants extends NamedEntityConstants {
 	public static final String LOCATION_TYPE_ATTRIBUTE = "type";
 	
 	
-	/** the annotation type for marking up a geographical coordinate in the text of a document*/
+	/** the annotation type for marking a geographical coordinate in the text of a document*/
 	public static final String GEO_COORDINATE_TYPE = "geoCoordinate";
 	
 	/** the attribute holding the precision (in meters) of a single geographical coordinate in a respective annotation*/
@@ -97,4 +97,17 @@ public interface LocationConstants extends NamedEntityConstants {
 	
 	/** the value of the direction attribute indicating a west direction of a geographical coordinate*/
 	public static final String WEST_DIRECTION = "west";
+	
+	/** the attribute holding the name of an external data source used for geo-referencing*/
+	public static final String GEO_COORDINATE_SOURCE_ATTRIBUTE = "geoCoordinateSource";
+	
+	
+	/** the annotation type for marking the deviation from a location named in a document, i.e., the distance and direction */
+	public static final String LOCATION_DEVIATION_ANNOTATION_TYPE = "locationDeviation";
+	
+	/** the attribute holding the distance (in meters) of a location deviation */
+	public static final String DISTANCE_ATTRIBUTE = "distance";
+	
+	/** the attribute holding the bearing of a location deviation, in degrees counting clockwise from north */
+	public static final String BEARING_ATTRIBUTE = "bearing";
 }

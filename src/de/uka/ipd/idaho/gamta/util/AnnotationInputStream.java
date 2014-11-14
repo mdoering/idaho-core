@@ -62,7 +62,18 @@ public class AnnotationInputStream extends InputStream {
 	 *            bytes
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String charset) {
-		this(source, null, charset, null, null);
+		this(source, false, null, charset, null, null);
+	}
+	
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param charset the name of the charset to use for encoding the chars to
+	 *            bytes
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String charset) {
+		this(source, outputIDs, null, charset, null, null);
 	}
 
 	/**
@@ -71,7 +82,17 @@ public class AnnotationInputStream extends InputStream {
 	 * @param charset the charset to use for encoding the chars to bytes
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, Charset charset) {
-		this(source, null, charset, null, null);
+		this(source, false, null, charset, null, null);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param charset the charset to use for encoding the chars to bytes
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, Charset charset) {
+		this(source, outputIDs, null, charset, null, null);
 	}
 
 	/**
@@ -83,7 +104,20 @@ public class AnnotationInputStream extends InputStream {
 	 *            bytes
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String indent, String charset) {
-		this(source, indent, charset, null, null);
+		this(source, false, indent, charset, null, null);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 * @param charset the name of the charset to use for encoding the chars to
+	 *            bytes
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String indent, String charset) {
+		this(source, outputIDs, indent, charset, null, null);
 	}
 
 	/**
@@ -94,7 +128,19 @@ public class AnnotationInputStream extends InputStream {
 	 * @param charset the charset to use for encoding the chars to bytes
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String indent, Charset charset) {
-		this(source, indent, charset, null, null);
+		this(source, false, indent, charset, null, null);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 * @param charset the charset to use for encoding the chars to bytes
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String indent, Charset charset) {
+		this(source, outputIDs, indent, charset, null, null);
 	}
 
 	/**
@@ -110,7 +156,24 @@ public class AnnotationInputStream extends InputStream {
 	 *            attributes)
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String charset, Set typeFilter, Set attributeFilter) {
-		this(source, null, charset, typeFilter, attributeFilter);
+		this(source, false, null, charset, typeFilter, attributeFilter);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param charset the name of the charset to use for encoding the chars to
+	 *            bytes
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String charset, Set typeFilter, Set attributeFilter) {
+		this(source, outputIDs, null, charset, typeFilter, attributeFilter);
 	}
 
 	/**
@@ -125,7 +188,23 @@ public class AnnotationInputStream extends InputStream {
 	 *            attributes)
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, Charset charset, Set typeFilter, Set attributeFilter) {
-		this(source, null, charset, typeFilter, attributeFilter);
+		this(source, false, null, charset, typeFilter, attributeFilter);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param charset the charset to use for encoding the chars to bytes
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, Charset charset, Set typeFilter, Set attributeFilter) {
+		this(source, outputIDs, null, charset, typeFilter, attributeFilter);
 	}
 
 	/**
@@ -143,9 +222,28 @@ public class AnnotationInputStream extends InputStream {
 	 *            attributes)
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String indent, String charset, Set typeFilter, Set attributeFilter) {
-		this(source, indent, ((charset == null) ? Charset.defaultCharset() : Charset.forName(charset)), typeFilter, attributeFilter);
+		this(source, false, indent, ((charset == null) ? Charset.defaultCharset() : Charset.forName(charset)), typeFilter, attributeFilter);
 	}
 
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 * @param charset the name of the charset to use for encoding the chars to
+	 *            bytes
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String indent, String charset, Set typeFilter, Set attributeFilter) {
+		this(source, outputIDs, indent, ((charset == null) ? Charset.defaultCharset() : Charset.forName(charset)), typeFilter, attributeFilter);
+	}
+	
 	/**
 	 * Constructor
 	 * @param source the DocumentPart to read from
@@ -160,30 +258,52 @@ public class AnnotationInputStream extends InputStream {
 	 *            attributes)
 	 */
 	public AnnotationInputStream(QueriableAnnotation source, String indent, Charset charset, Set typeFilter, Set attributeFilter) {
-		this.annotationReader = new AnnotationReader(source, indent, typeFilter, attributeFilter);
+		this(source, false, indent, charset, typeFilter, attributeFilter);
+	}
+
+	/**
+	 * Constructor
+	 * @param source the DocumentPart to read from
+	 * @param outputIDs include annotation IDs in the output?
+	 * @param indent the String to insert for each level of indentation
+	 *            (specifying null will result in no indentation)
+	 * @param charset the charset to use for encoding the chars to bytes
+	 * @param typeFilter a set containing the types of the annotations to
+	 *            include in the output (specifying null will include all
+	 *            attributes)
+	 * @param attributeFilter a set containing the names of the attributes to
+	 *            include in the tags (specifying null will include all
+	 *            attributes)
+	 */
+	public AnnotationInputStream(QueriableAnnotation source, boolean outputIDs, String indent, Charset charset, Set typeFilter, Set attributeFilter) {
+		this.annotationReader = new AnnotationReader(source, outputIDs, indent, typeFilter, attributeFilter);
 		this.encoding = ((charset == null) ? Charset.defaultCharset() : charset);
 		this.byteBuffer = this.encoding.encode(CharBuffer.wrap("<?xml version=\"1.0\" encoding=\"" + this.encoding.name() + "\"?>\n"));
 	}
 	
-	/** @see java.io.Reader#close()
+	/* 
+	 * @see java.io.Reader#close()
 	 */
 	public void close() throws IOException {
 		this.annotationReader.close();
 	}
 	
-	/** @see java.io.InputStream#read()
+	/*
+	 * @see java.io.InputStream#read()
 	 */
 	public int read() throws IOException {
 		if ((this.byteBuffer == null) || (this.bbPosition == this.byteBuffer.limit())) {
 			char[] ch = new char[1024];
 			
 			int read = this.annotationReader.read(ch, 0, 1024);
-			if (read == -1) return -1;
+			if (read == -1)
+				return -1;
 			
 			this.byteBuffer = this.encoding.encode(CharBuffer.wrap(ch, 0, read));
 			this.bbPosition = 0;
 		}
-		if ((this.byteBuffer == null) || (this.bbPosition == this.byteBuffer.limit())) return -1;
+		if ((this.byteBuffer == null) || (this.bbPosition == this.byteBuffer.limit()))
+			return -1;
 		else return this.byteBuffer.get(this.bbPosition++);
 	}
 }

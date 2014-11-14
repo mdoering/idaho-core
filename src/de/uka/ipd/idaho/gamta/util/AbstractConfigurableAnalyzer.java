@@ -148,7 +148,7 @@ public abstract class AbstractConfigurableAnalyzer implements Analyzer, Analyzer
 	 * @param listName the name of the list to load
 	 * @return a StringVector containing the data loaded
 	 * @throws IOException if the dataPath is not set, or if any IOException
-	 *             occurrs while loading the list
+	 *             occurs while loading the list
 	 */
 	protected StringVector loadList(String listName) throws IOException {
 		if (this.dataProvider == null)

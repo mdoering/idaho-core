@@ -264,6 +264,12 @@ public class ImmutableTokenSequence implements TokenSequence {
 			throw new RuntimeException("Illegal modification of token attributes.");
 		}
 		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			throw new RuntimeException("Illegal modification of token attributes.");
+		}
+		/* (non-Javadoc)
 		 * @see de.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
 		 */
 		public Object setAttribute(String name, Object value) {

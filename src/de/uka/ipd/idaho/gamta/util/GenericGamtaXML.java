@@ -787,6 +787,13 @@ public class GenericGamtaXML extends TokenReceiver {
 			return this.attributes.remove(name);
 		}
 		
+		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			this.setAttribute(name, "true");
+		}
+		
 		/*
 		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
 		 */
@@ -1062,6 +1069,13 @@ public class GenericGamtaXML extends TokenReceiver {
 			if (this.startTagBuffer != null)
 				throw new IllegalStateException("Attributes can be modified only before reading from this stream.");
 			return this.attributes.remove(name);
+		}
+		
+		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			this.setAttribute(name, "true");
 		}
 		
 		/*

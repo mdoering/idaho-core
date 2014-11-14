@@ -346,6 +346,13 @@ public class ImmutableAnnotation implements QueriableAnnotation {
 	}
 
 	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+	 */
+	public void setAttribute(String name) {
+		throw new RuntimeException("Illegal modification of token attributes.");
+	}
+
+	/* (non-Javadoc)
 	 * @see de.gamta.defaultImplementation.AbstractAttributed#setAttribute(java.lang.String, java.lang.Object)
 	 */
 	public Object setAttribute(String name, Object value) {
@@ -459,6 +466,12 @@ public class ImmutableAnnotation implements QueriableAnnotation {
 		 * @see de.gamta.Attributed#removeAttribute(java.lang.String)
 		 */
 		public Object removeAttribute(String name) {
+			throw new RuntimeException("Illegal modification of token attributes.");
+		}
+		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
 			throw new RuntimeException("Illegal modification of token attributes.");
 		}
 		/* (non-Javadoc)

@@ -1370,6 +1370,10 @@ public class GPathEngine implements GPathConstants {
 			return this.source.removeAttribute(name);
 		}
 
+		public void setAttribute(String name) {
+			this.source.setAttribute(name);
+		}
+
 		public Object setAttribute(String name, Object value) {
 			return this.source.setAttribute(name, value);
 		}
@@ -2320,6 +2324,19 @@ public class GPathEngine implements GPathConstants {
 		 */
 		public String getAnnotationNestingOrder() {
 			return this.source.getAnnotationNestingOrder();
+		}
+		
+		/** @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
+		 */
+		public void setAttribute(String name) {
+			if (Annotation.START_INDEX_ATTRIBUTE.equals(name)) {}
+			else if (GPath.ABSOLUTE_START_INDEX_ATTRIBUTE.equals(name)) {}
+			else if (Annotation.SIZE_ATTRIBUTE.equals(name)) {}
+			else if (Annotation.END_INDEX_ATTRIBUTE.equals(name)) {}
+			else if (Annotation.ANNOTATION_VALUE_ATTRIBUTE.equals(name)) {}
+			else if (Annotation.ANNOTATION_ID_ATTRIBUTE.equals(name)) {}
+			else if (Token.PARAGRAPH_END_ATTRIBUTE.equals(name)) {}
+			else this.source.tokenAt(this.index).setAttribute(name);
 		}
 		
 		/** @see de.uka.ipd.idaho.gamta.Annotation#setAttribute(java.lang.String, java.lang.String)

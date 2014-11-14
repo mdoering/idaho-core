@@ -301,7 +301,7 @@ public class SgmlDocumentReader extends TokenReceiver {
 		private int start;
 		private int size = 1;
 		private TreeNodeAttributeSet attributes;
-		private AnnotationContainer(String type, int start, TreeNodeAttributeSet attributes) {
+		AnnotationContainer(String type, int start, TreeNodeAttributeSet attributes) {
 			this.type = type;
 			this.start = start;
 			this.attributes = attributes;

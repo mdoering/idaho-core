@@ -38,11 +38,14 @@ import java.util.LinkedList;
 import java.util.regex.PatternSyntaxException;
 
 import de.uka.ipd.idaho.gamta.Annotation;
+import de.uka.ipd.idaho.gamta.AnnotationListener;
 import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.Gamta;
 import de.uka.ipd.idaho.gamta.MutableAnnotation;
+import de.uka.ipd.idaho.gamta.MutableTokenSequence.TokenSequenceEvent;
 import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.TokenSequence;
+import de.uka.ipd.idaho.gamta.TokenSequenceListener;
 import de.uka.ipd.idaho.gamta.TokenSequenceUtils;
 import de.uka.ipd.idaho.gamta.Tokenizer;
 import de.uka.ipd.idaho.gamta.util.gPath.GPath;
@@ -390,19 +393,23 @@ public class AnnotationPatternMatcher {
 	
 	/**
 	 * An annotation index provides quick access to individual annotations by
-	 * type and start index to speed up matching.
+	 * type and start index to speed up matching. To assist garbage collection,
+	 * instances of this class should be dissolved via the
+	 * <code>dispose()</code> method once they are done with.
 	 * 
 	 * @author sautter
 	 */
 	public static class AnnotationIndex {
-		private HashMap index = new HashMap();
-		private AnnotationIndex defIndex;
-		private QueriableAnnotation data;
-		private HashSet dataRetrievedTypes;
+		HashMap index = new HashMap();
+		AnnotationIndex defIndex;
+		QueriableAnnotation data;
+		HashSet dataRetrievedTypes;
 		
 		/** Constructor
 		 */
-		public AnnotationIndex() {}
+		public AnnotationIndex() {
+			this(null, null);
+		}
 		
 		/**
 		 * Constructor
@@ -413,7 +420,8 @@ public class AnnotationPatternMatcher {
 		public AnnotationIndex(QueriableAnnotation data, AnnotationIndex defIndex) {
 			this.defIndex = defIndex;
 			this.data = data;
-			this.dataRetrievedTypes = new HashSet();
+			if (this.data != null)
+				this.dataRetrievedTypes = new HashSet();
 		}
 		
 		/**
@@ -459,6 +467,85 @@ public class AnnotationPatternMatcher {
 			}
 			return al;
 		}
+		
+		/**
+		 * Dispose of the annotation index.
+		 * @param disposeDefIndex also dispose of the default index?
+		 */
+		public void dispose(boolean disposeDefIndex) {
+			this.index.clear();
+			if (this.data != null) {
+				this.data = null;
+				this.dataRetrievedTypes.clear();
+				this.dataRetrievedTypes = null;
+			}
+			if (disposeDefIndex && (this.defIndex != null))
+				this.defIndex.dispose(disposeDefIndex);
+		}
+	}
+	
+	/**
+	 * An observing annotation index keeps track of updates to a wrapped
+	 * mutable annotation. To prevent resource leaks, instances of this class
+	 * have to be detached from the mutable annotation they observe via the
+	 * <code>dispose()</code> method once they are done with.<br>
+	 * Annotations added to the observed document after an instance of this
+	 * class has been attached are indexed right away.<br>
+	 * Updates to the document text clear the annotation index, but not any
+	 * underlying default.
+	 * 
+	 * @author sautter
+	 */
+	public static class ObservingAnnotationIndex extends AnnotationIndex implements AnnotationListener, TokenSequenceListener {
+		
+		/** Constructor
+		 * @param data the mutable annotation to observe and index
+		 * @param defIndex an additional annotation index that can provide
+		 *            further annotations (may be null)
+		 */
+		public ObservingAnnotationIndex(MutableAnnotation data, AnnotationIndex defIndex) {
+			super(data, defIndex);
+			data.addTokenSequenceListener(this);
+			data.addAnnotationListener(this);
+		}
+		public void tokenSequenceChanged(TokenSequenceEvent change) {
+			this.index.clear();
+			this.dataRetrievedTypes.clear();
+		}
+		public void annotationAdded(QueriableAnnotation doc, Annotation annotation) {
+			if (this.dataRetrievedTypes.contains(annotation.getType()))
+				this.getAnnotationList(annotation.getType(), annotation.getStartIndex(), true).add(annotation);
+		}
+		public void annotationRemoved(QueriableAnnotation doc, Annotation annotation) {
+			ArrayList al = this.getAnnotationList(annotation.getType(), annotation.getStartIndex(), false);
+			if (al == null)
+				return;
+			for (int a = 0; a < al.size(); a++) {
+				if (annotation.getAnnotationID().equals(((Annotation) al.get(a)).getAnnotationID()))
+					al.remove(a--);
+			}
+			if (al.isEmpty())
+				this.index.remove("" + annotation.getStartIndex() + " " + annotation.getType());
+		}
+		public void annotationTypeChanged(QueriableAnnotation doc, Annotation annotation, String oldType) {
+			if (this.dataRetrievedTypes.contains(annotation.getType()))
+				this.getAnnotationList(annotation.getType(), annotation.getStartIndex(), true).add(annotation);
+			ArrayList al = this.getAnnotationList(oldType, annotation.getStartIndex(), false);
+			if (al == null)
+				return;
+			for (int a = 0; a < al.size(); a++) {
+				if (annotation.getAnnotationID().equals(((Annotation) al.get(a)).getAnnotationID()))
+					al.remove(a--);
+			}
+			if (al.isEmpty())
+				this.index.remove("" + annotation.getStartIndex() + " " + oldType);
+		}
+		public void annotationAttributeChanged(QueriableAnnotation doc, Annotation annotation, String attributeName, Object oldValue) {}
+		public void dispose(boolean disposeDefIndex) {
+			((MutableAnnotation) this.data).removeTokenSequenceListener(this);
+			((MutableAnnotation) this.data).removeAnnotationListener(this);
+			super.dispose(disposeDefIndex);
+		}
 	}
 	
 	/**
@@ -492,7 +579,7 @@ public class AnnotationPatternMatcher {
 	 * annotation.
 	 * @param data the queriable annotation to match against
 	 * @param annotationIndex an index holding additional annotations belonging
-	 *            to the token sequence underneith the argument queriable
+	 *            to the token sequence underneath the argument queriable
 	 *            annotation
 	 * @param pattern the pattern to match
 	 * @return an array holding the matches of the pattern
@@ -508,7 +595,7 @@ public class AnnotationPatternMatcher {
 	 * annotation.
 	 * @param data the queriable annotation to match against
 	 * @param annotationIndex an index holding additional annotations belonging
-	 *            to the token sequence underneith the argument queriable
+	 *            to the token sequence underneath the argument queriable
 	 *            annotation
 	 * @param pattern the pattern to match
 	 * @return an array holding the matches of the pattern
@@ -658,40 +745,6 @@ public class AnnotationPatternMatcher {
 					step(tokens, matchStart, (matchFrom + annots[a].size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, patternLiteralMatchIndex, matches, matchDepth, matchTree);
 					matchTree.removeLast();
 				}
-//				boolean attribMatch = true;
-//				if (pattern[elementIndex].annotationAttributes != null) {
-//					String[] attribNames = pattern[elementIndex].annotationAttributes.getAttributeNames();
-//					for (int n = 0; n < attribNames.length; n++) {
-//						System.out.println(" - " + attribNames[n]);
-//						Object attribValueObj = annots[a].getAttribute(attribNames[n]);
-//						if (attribValueObj == null) {
-//							attribMatch = false;
-//							break;
-//						}
-//						String attribTest = pattern[elementIndex].annotationAttributes.getAttribute(attribNames[n]);
-//						System.out.println(getIndent(matchDepth) + " - test is " + attribTest);
-//						if ("*".equals(attribTest))
-//							continue;
-//						String attribValue = attribValueObj.toString();
-//						if (attribTest.startsWith("(") && attribTest.endsWith(")")) {
-//							if (!attribValue.matches(attribTest)) {
-//								attribMatch = false;
-//								System.out.println(getIndent(matchDepth) + " --> pattern match failed");
-//								break;
-//							}
-//						}
-//						else if (!attribTest.equalsIgnoreCase(attribValue)) {
-//							attribMatch = false;
-//							System.out.println(getIndent(matchDepth) + " --> value match failed");
-//							break;
-//						}
-//					}
-//				}
-//				if (attribMatch) {
-//					matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], annots[a]));
-//					step(tokens, matchStart, (matchFrom + annots[a].size()), pattern, elementIndex, (elementMatchCount + 1), annotationIndex, patternLiteralMatchIndex, matches, matchDepth, matchTree);
-//					matchTree.removeLast();
-//				}
 			}
 			return;
 		}
@@ -760,15 +813,15 @@ public class AnnotationPatternMatcher {
 		}
 	}
 	
-	private static ArrayList indents = new ArrayList();
-	private static String getIndent(int depth) {
-		if (indents.isEmpty())
-			indents.add("");
-		while (indents.size() <= depth)
-			indents.add(((String) indents.get(indents.size()-1)) + "  ");
-		return ((String) indents.get(depth));
-	}
-	
+//	private static ArrayList indents = new ArrayList();
+//	private static String getIndent(int depth) {
+//		if (indents.isEmpty())
+//			indents.add("");
+//		while (indents.size() <= depth)
+//			indents.add(((String) indents.get(indents.size()-1)) + "  ");
+//		return ((String) indents.get(depth));
+//	}
+//	
 	private static HashMap patternCache = new HashMap();
 	private static AnnotationPattern getPattern(Tokenizer tokenizer, String pattern) {
 		AnnotationPattern ap = ((AnnotationPattern) patternCache.get(pattern));
@@ -888,11 +941,21 @@ public class AnnotationPatternMatcher {
 		StringBuffer annotBuffer = new StringBuffer();
 		
 		//	read XML tag
+		boolean quoted = false;
 		while (pr.peek() != -1) {
 			int ch = pr.read();
-			annotBuffer.append((char) ch);
-			if (ch == '>')
-				break;
+			if (quoted) {
+				annotBuffer.append((char) ch);
+				if (ch == '"')
+					quoted = false;
+			}
+			else {
+				annotBuffer.append((char) ch);
+				if (ch == '"')
+					quoted = true;
+				else if (ch == '>')
+					break;
+			}
 		}
 		
 		//	parse and return XML tag
