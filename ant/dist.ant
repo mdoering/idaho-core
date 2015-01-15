@@ -32,6 +32,7 @@
 		<jar destfile="${jar.easyio}">
 			<fileset dir="${build.home}/classes" includes="**/easyIO/**/**.class"  excludes="**/easyIO/**/tools/**.class"/>
 			<fileset dir="${src.home}" includes="**/easyIO/**/**.java" excludes="**/easyIO/**/tools/**.java"/>
+			<fileset dir="${src.home}" includes="**/easyIO/**/**.gif"/>
 			<fileset dir="${src.home}" includes="**/easyIO/**/**.txt"/>
 			<fileset dir="." includes="LICENSE.txt"/>
 		</jar>
