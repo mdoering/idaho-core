@@ -243,6 +243,8 @@ public class TokenSequenceUtils {
 	 *         there is no such TokenSequence
 	 */
 	public static int indexOf(TokenSequence ts, TokenSequence tokens, int from, boolean caseSensitive) {
+		if (tokens.size() == 0)
+			return -1;
 		Token anchor = tokens.firstToken();
 		int s = indexOf(ts, anchor, from, caseSensitive);
 		while (s != -1) {
@@ -313,6 +315,8 @@ public class TokenSequenceUtils {
 	 *         there is no such TokenSequence
 	 */
 	public static int lastIndexOf(TokenSequence ts, TokenSequence tokens, int to, boolean caseSensitive) {
+		if (tokens.size() == 1)
+			return -1;
 		Token anchor = tokens.firstToken();
 		int s = lastIndexOf(ts, anchor, to, caseSensitive);
 		while (s != -1) {
