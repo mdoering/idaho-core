@@ -28,17 +28,17 @@
 package de.uka.ipd.idaho.easyIO.help;
 
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import de.uka.ipd.idaho.easyIO.streams.CharSequenceReader;
 import de.uka.ipd.idaho.htmlXmlUtil.Parser;
 import de.uka.ipd.idaho.htmlXmlUtil.TokenReceiver;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Html;
@@ -53,10 +53,13 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.Html;
  * @author sautter
  */
 public class DynamicHelpChapter extends HelpChapter {
-	
 	private static final Parser HTML_PARSER = new Parser(new Html());
 	
+	private Reader contentReader = null;
+	private File contentFile = null;
 	private URL contentUrl = null;
+	
+	private StringBuffer contentBuffer = null;
 	
 	/**	Constructor
 	 * @param	title		the title for this help chapter
@@ -74,10 +77,8 @@ public class DynamicHelpChapter extends HelpChapter {
 	 * @param	contentFile		the file to load the content form
 	 */
 	public DynamicHelpChapter(String title, File contentFile) {
-		super(title, ("<HTML>The content of this chapter will be loaded from<BR><TT>" + contentFile.toString() + "</TT><BR>on demand.</HTML>"));
-		try {
-			this.contentUrl = contentFile.toURL();
-		} catch (MalformedURLException mue) {}
+		super(title, ("<HTML>The content of this chapter will be loaded from<BR><TT>" + contentFile.getAbsolutePath() + "</TT><BR>on demand.</HTML>"));
+		this.contentFile = contentFile;
 	}
 	
 	/**	Constructor
@@ -89,51 +90,52 @@ public class DynamicHelpChapter extends HelpChapter {
 		this.contentUrl = contentUrl;
 	}
 	
+	/**	Constructor
+	 * @param	title		the title for this help chapter
+	 * @param	contentReader	the reader to load the content form
+	 */
+	public DynamicHelpChapter(String title, Reader contentReader) {
+		super(title, ("<HTML>The content of this chapter will be loaded on demand.</HTML>"));
+		this.contentReader = contentReader;
+	}
+	
 	/** @see de.uka.ipd.idaho.easyIO.help.HelpChapter#getTextReader()
 	 */
 	public Reader getTextReader() {
-		if (this.contentUrl == null) return super.getTextReader();
 		
+		//	we've loaded this one before
+		if (this.contentBuffer != null)
+			return new CharSequenceReader(this.contentBuffer);
+		
+		//	load and buffer content
 		try {
-			PipedOutputStream pos = new PipedOutputStream();
-			final OutputStreamWriter osw = new OutputStreamWriter(pos);
 			
-			final TokenReceiver tr = new TokenReceiver() {
+			//	create content reader
+			Reader contentReader;
+			if (this.contentReader != null)
+				contentReader = this.contentReader;
+			else if (this.contentFile != null)
+				contentReader = new InputStreamReader(new FileInputStream(this.contentFile));
+			else if (this.contentUrl != null)
+				contentReader = new InputStreamReader(this.contentUrl.openStream());
+			else contentReader = super.getTextReader();
+			
+			//	create content buffer
+			this.contentBuffer = new StringBuffer();
+			
+			//	stream content into buffer
+			HTML_PARSER.stream(new BufferedReader(contentReader), new TokenReceiver() {
 				public void storeToken(String token, int treeDepth) throws IOException {
-					if (!token.toLowerCase().startsWith("<meta ")) osw.write(token);
-					else if (token.toLowerCase().indexOf("content-type") == -1) osw.write(token);
+					if (!token.toLowerCase().startsWith("<meta "))
+						contentBuffer.append(token);
+					else if (token.toLowerCase().indexOf("content-type") == -1)
+						contentBuffer.append(token);
 				}
-				public void close() throws IOException {
-					osw.flush();
-					osw.close();
-				}
-			};
-			
-			PipedInputStream pis = new PipedInputStream(pos);
-			InputStreamReader isr = new InputStreamReader(pis);
-			
-			Thread writer = new Thread(new Runnable() {
-				public void run() {
-					try {
-						try {
-							Thread.sleep(10);
-						} catch (InterruptedException e) {}
-						HTML_PARSER.stream(contentUrl.openStream(), tr);
-					}
-					catch (IOException ioe) {
-						try {
-							tr.storeToken(text, 0);
-						} catch (IOException e) {}
-					}
-					finally {
-						try {
-							tr.close();
-						} catch (IOException e) {}
-					}
-				}
+				public void close() throws IOException {}
 			});
-			writer.start();
-			return isr;
+			
+			//	finally ...
+			return new CharSequenceReader(this.contentBuffer);
 		}
 		catch (Exception e) {
 			System.out.println("... ERROR");

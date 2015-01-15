@@ -65,6 +65,24 @@ public class Help extends JFrame implements HelpPanelListener {
 	/**	Constructor
 	 * @param	title			the title for the help window
 	 * @param	contentRoot		the root node of the help content tree
+	 * @param	rootIcon		the root icon
+	 */
+	public Help(String title, HelpChapter contentRoot, Image rootIcon) {
+		super((title == null) ? "Help" : title);
+		this.content = new HelpPanel(title, contentRoot, rootIcon);
+		this.content.addHelpPanelListener(this);
+		
+		//	adjust tree icon
+		if (rootIcon != null)
+			this.setIconImage(rootIcon);
+		
+		//	initialize
+		this.init();
+	}
+	
+	/**	Constructor
+	 * @param	title			the title for the help window
+	 * @param	contentRoot		the root node of the help content tree
 	 * @param	dataBaseUrl		the path where icon files etc. are located
 	 */
 	public Help(String title, HelpChapter contentRoot, String dataBaseUrl) {

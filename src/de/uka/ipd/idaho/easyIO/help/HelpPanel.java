@@ -33,6 +33,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
+import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -60,6 +61,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -123,7 +125,7 @@ public class HelpPanel extends JPanel {
 	private boolean isNavigating = false;
 	
 	private JEditorPane display = new JEditorPane("text/html", "<HTML>Help is coming</HTML>");
-	private JScrollPane displayBox = new JScrollPane(display);
+	private JScrollPane displayBox = new JScrollPane(this.display);
 	
 	private JSplitPane navigationDisplaySplit;
 	private boolean dividerLocationSet = false;
@@ -144,6 +146,31 @@ public class HelpPanel extends JPanel {
 	 */
 	public HelpPanel(String title, HelpChapter contentRoot) {
 		this(title, contentRoot, ((File) null));
+	}
+
+	/**	Constructor
+	 * @param	title			the title for the help window
+	 * @param	contentRoot		the root node of the help content tree
+	 * @param	rootIcon		the root icon
+	 */
+	public HelpPanel(String title, HelpChapter contentRoot, Image rootIcon) {
+		super(new BorderLayout(), true);
+		if (title != null) this.mainTitle = title;
+		this.rootChapter = contentRoot;
+		
+		//	initialize tree
+		this.navigation = new JTree(contentRoot);
+		this.navigation.setShowsRootHandles(true);
+		this.navigation.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		
+		//	select root chapter
+		this.navigation.setSelectionRow(0);
+		
+		//	adjust tree icons (open / closed book, book page)
+		this.navigation.setCellRenderer(new HelpCellRenderer(rootIcon));
+		
+		//	do remaining initialization
+		this.init();
 	}
 	
 	/**	Constructor
@@ -288,72 +315,77 @@ public class HelpPanel extends JPanel {
 	}
 	
 	private void displayChapter(HelpChapter chapter) {
-		if (chapter != null) {
-			
-			//	disable forward
-			this.forwardHistory.clear();
-			this.forwardButton.setEnabled(false);
-			
-			//	remember prevoius chapter
-			if ((this.currentChapter != null) && (this.currentChapter != chapter)) {
-				this.backHistory.push(this.currentChapter);
-				while (this.backHistory.size() > 10) this.backHistory.removeElementAt(0);
-				this.backButton.setEnabled(true);
-			}
-			
-			//	remember and display chapter
-			this.currentChapter = chapter;
-			this.displayCurrentChapter();
+		if (chapter == null)
+			return;
+		
+		//	disable forward
+		this.forwardHistory.clear();
+		this.forwardButton.setEnabled(false);
+		
+		//	remember prevoius chapter
+		if ((this.currentChapter != null) && (this.currentChapter != chapter)) {
+			this.backHistory.push(this.currentChapter);
+			while (this.backHistory.size() > 10)
+				this.backHistory.removeElementAt(0);
+			this.backButton.setEnabled(true);
 		}
+		
+		//	remember and display chapter
+		this.currentChapter = chapter;
+		this.displayCurrentChapter();
 	}
 	
 	private void displayCurrentChapter() {
-		if (this.currentChapter != null) {
-			
-			//	collect path in order to select chapter in tree
-			this.isNavigating = true; // keep tree listener from firing another update
-			ArrayList pathList = new ArrayList();
-			TreeNode chapter = this.currentChapter;
-			while (chapter != null) {
-				pathList.add(chapter);
-				chapter = chapter.getParent();
-			}
-			Collections.reverse(pathList);
-			this.navigation.setSelectionPath(new TreePath(pathList.toArray()));
-			this.isNavigating = false; // re-enable tree listener
-			
-			//	set title
-			String title = this.currentChapter.getTitle();
-			HelpChapter parentChapter = (HelpChapter) this.currentChapter.getParent();
-			while (parentChapter != null) {
-				title = parentChapter.getTitle() + " - " + title;
-				parentChapter = (HelpChapter) parentChapter.getParent();
-			}
-			this.notifyTitleChanged(this.mainTitle + " - " + title);
-			
-			//	set content
-			Thread reader = new Thread(new Runnable() {
-				public void run() {
-					try {
-						Reader r = currentChapter.getTextReader();
-						display.read(r, new HTMLDocument());
-						r.close();
-					}
-					catch (IOException ioe) {
-						ioe.printStackTrace();
-						display.setText("<HTML><TT>" + ioe.getClass().getName() + "</TT><BR>(" + ioe.getMessage() + ")<BR>while reading content, sorry.</HTML>");
-					}
+		if (this.currentChapter == null) {
+			this.notifyTitleChanged(this.mainTitle);
+			return;
+		}
+		
+		//	collect path in order to select chapter in tree
+		this.isNavigating = true; // keep tree listener from firing another update
+		ArrayList pathList = new ArrayList();
+		TreeNode chapter = this.currentChapter;
+		while (chapter != null) {
+			pathList.add(chapter);
+			chapter = chapter.getParent();
+		}
+		Collections.reverse(pathList);
+		this.navigation.setSelectionPath(new TreePath(pathList.toArray()));
+		this.isNavigating = false; // re-enable tree listener
+		
+		//	set title
+		String title = this.currentChapter.getTitle();
+		HelpChapter parentChapter = (HelpChapter) this.currentChapter.getParent();
+		while (parentChapter != null) {
+			title = parentChapter.getTitle() + " - " + title;
+			parentChapter = (HelpChapter) parentChapter.getParent();
+		}
+		this.notifyTitleChanged(this.mainTitle + " - " + title);
+		
+		//	set content
+		Thread reader = new Thread(new Runnable() {
+			public void run() {
+				try {
+					Reader r = currentChapter.getTextReader();
+					display.read(r, new HTMLDocument());
+					r.close();
 				}
-			});
-			reader.start();
-			
-			//	notify listeners
-			this.notifyChapterSelected(this.currentChapter);
-		} else this.notifyTitleChanged(this.mainTitle);
+				catch (IOException ioe) {
+					ioe.printStackTrace();
+					display.setText("<HTML><TT>" + ioe.getClass().getName() + "</TT><BR>(" + ioe.getMessage() + ")<BR>while reading content, sorry.</HTML>");
+				}
+			}
+		});
+		reader.start();
+		
+		//	notify listeners
+		this.notifyChapterSelected(this.currentChapter);
 	}
 	
 	private void back() {
-		if (this.backHistory.isEmpty()) this.backButton.setEnabled(false);
+		if (this.backHistory.isEmpty())
+			this.backButton.setEnabled(false);
+		
 		else {
 			
 			//	remember current chapter
@@ -362,13 +394,16 @@ public class HelpPanel extends JPanel {
 			
 			//	switch to prevoius chapter
 			this.currentChapter = ((HelpChapter) this.backHistory.pop());
-			if (this.backHistory.isEmpty()) this.backButton.setEnabled(false);
+			if (this.backHistory.isEmpty())
+				this.backButton.setEnabled(false);
 			this.displayCurrentChapter();
 		}
 	}
 	
 	private void forward() {
-		if (this.forwardHistory.isEmpty()) this.backButton.setEnabled(false);
+		if (this.forwardHistory.isEmpty())
+			this.backButton.setEnabled(false);
+		
 		else {
 			
 			//	remember current chapter
@@ -377,7 +412,8 @@ public class HelpPanel extends JPanel {
 			
 			//	switch to next chapter
 			this.currentChapter = ((HelpChapter) this.forwardHistory.pop());
-			if (this.forwardHistory.isEmpty()) this.forwardButton.setEnabled(false);
+			if (this.forwardHistory.isEmpty())
+				this.forwardButton.setEnabled(false);
 			this.displayCurrentChapter();
 		}
 	}
@@ -1023,6 +1059,18 @@ public class HelpPanel extends JPanel {
 		
 		private Icon rootIcon = null;
 		
+		HelpCellRenderer(Image rootIcon) {
+			String iconPackageName = HelpPanel.class.getName();
+			iconPackageName = (iconPackageName.substring(0, (iconPackageName.lastIndexOf('.') + 1)) + "icons.");
+			iconPackageName = iconPackageName.replace('.', '/');
+			try {
+				this.setClosedIcon(new ImageIcon(ImageIO.read(HelpPanel.class.getClassLoader().getResourceAsStream(iconPackageName + CLOSED_ICON_FILE_NAME))));
+				this.setOpenIcon(new ImageIcon(ImageIO.read(HelpPanel.class.getClassLoader().getResourceAsStream(iconPackageName + OPEN_ICON_FILE_NAME))));
+				this.setLeafIcon(new ImageIcon(ImageIO.read(HelpPanel.class.getClassLoader().getResourceAsStream(iconPackageName + LEAF_ICON_FILE_NAME))));
+			} catch (IOException ioe) { /* never gonna happen, but Java don't know */ }
+			this.rootIcon = new ImageIcon(rootIcon);
+		}
+		
 		HelpCellRenderer(File dataPath) {
 			this.setClosedIcon(new ImageIcon(Toolkit.getDefaultToolkit().getImage((new File(dataPath, HelpPanel.CLOSED_ICON_FILE_NAME)).toString())));
 			this.setOpenIcon(new ImageIcon(Toolkit.getDefaultToolkit().getImage((new File(dataPath, HelpPanel.OPEN_ICON_FILE_NAME)).toString())));
@@ -1042,7 +1090,8 @@ public class HelpPanel extends JPanel {
 		 */
 		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 			super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
-			if ((this.rootIcon != null) && (value != null) && (value instanceof TreeNode) && (((TreeNode) value).getParent() == null)) this.setIcon(this.rootIcon);
+			if ((this.rootIcon != null) && (value != null) && (value instanceof TreeNode) && (((TreeNode) value).getParent() == null))
+				this.setIcon(this.rootIcon);
 			return this;
 		}
 	}
