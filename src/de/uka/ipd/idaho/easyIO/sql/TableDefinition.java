@@ -46,7 +46,7 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
 
 /**
  * A generic definition of a table in a relational database. This class only
- * provides those data types that are named exacly the same in a variety of
+ * provides those data types that are named exactly the same in a variety of
  * different RDBMS, omitting the data types that are likely to cause trouble on
  * all but one RDBMS.
  * 
@@ -59,8 +59,8 @@ public class TableDefinition {
 //	public static final String BIT_DATATYPE = "BIT";
 //	
 //	//	int datatypes
-//	public static final String TINYINT_DATATYPE = "TINYINT";
-//	public static final String SMALLINT_DATATYPE = "SMALLINT";
+//	public static final String TINYINT_DATATYPE = "TINYINT"; // TODO this one should be possible to use
+//	public static final String SMALLINT_DATATYPE = "SMALLINT"; // TODO this one should be possible to use
 //	public static final String INT_DATATYPE = "INT";
 //	public static final String BIGINT_DATATYPE = "BIGINT";
 //	
@@ -84,7 +84,7 @@ public class TableDefinition {
 //	//	character datatypes
 //	public static final String CHAR_DATATYPE = "CHAR";
 //	public static final String VARCHAR_DATATYPE = "VARCHAR";
-//	public static final String TEXT_DATATYPE = "TEXT";
+//	public static final String TEXT_DATATYPE = "TEXT"; // TODO this one should be possible to use
 //	
 //	//	unicode character datatypes
 //	public static final String NCHAR_DATATYPE = "NCHAR";
@@ -258,12 +258,6 @@ public class TableDefinition {
 			this.tableName = parsed[0].substring(1);
 			for (int c = 1; c < parsed.length; c++)
 				this.addColumn(new TableColumnDefinition("#" + parsed[c]));
-//			StringVector parser = new StringVector();
-//			parser.parseAndAddElements(data.substring(1), "#");
-//			this.tableName = parser.remove(0);
-//			for (int i = 0; i < parser.size(); i++) {
-//				this.addColumn(new TableColumnDefinition("#" + parser.get(i)));
-//			}
 		}
 		
 		//	XML representation
@@ -397,47 +391,6 @@ public class TableDefinition {
 		return ("SELECT * FROM " + this.tableName + " WHERE 1=0;");
 	}
 
-//	/**
-//	 * @return a CREATE TABLE query to create the indexes SQT table
-//	 */
-//	public String getCreationQuery() {
-//		StringVector columnString = new StringVector();
-//		for (int c = 0; c < this.columns.size(); c++) {
-//			TableColumnDefinition tcd = ((TableColumnDefinition) this.columns.get(c));
-//			columnString.addElement(tcd.getCreationQuery());
-//		}
-//		return "CREATE TABLE " + this.tableName + " (" + columnString.concatStrings(", ") + ");";
-//	}
-//
-//	/**
-//	 * create ALTER TABLE queries to update an existing SQL table to this
-//	 * TableDefinition. Note: The queries won't drop or shorten columns, only 
-//	 * add or widen them.
-//	 * @param oldDef the old TableDefinition according to the existing SQL table
-//	 * @return a set of ALTER TABLE queries to update the SQL table
-//	 */
-//	public StringVector getUpdateQueries(TableDefinition oldDef) {
-//		StringVector queries = new StringVector();
-//		if (oldDef == null) {
-//			queries.addElement(this.getCreationQuery());
-//			return queries;
-//		}
-//		else {
-//			if (this.tableName.equalsIgnoreCase(oldDef.tableName) && !this.equals(oldDef)) {
-//				for (int c = 0; c < this.columns.size(); c++) {
-//					TableColumnDefinition tcd = ((TableColumnDefinition) this.columns.get(c));
-//					TableColumnDefinition oldTcd = oldDef.getColumn(tcd.getColumnName());
-//					if (!tcd.equals(oldTcd)) {
-//						String query = tcd.getUpdateQuery(oldTcd);
-//						if (query != null)
-//							queries.addElement("ALTER TABLE " + this.tableName + " " + query + ";");
-//					}
-//				}
-//			}
-//			return queries;
-//		}
-//	}
-//	
 	/**
 	 * Produce a CREATE TABLE query to create the SQT table. The argument
 	 * IoProvider supplies product specific database properties.
@@ -455,12 +408,6 @@ public class TableDefinition {
 		}
 		columnString.append(");");
 		return columnString.toString();
-//		StringVector columnString = new StringVector();
-//		for (int c = 0; c < this.columns.size(); c++) {
-//			TableColumnDefinition tcd = ((TableColumnDefinition) this.columns.get(c));
-//			columnString.addElement(tcd.getCreationQuery(syntax));
-//		}
-//		return "CREATE TABLE " + this.tableName + " (" + columnString.concatStrings(", ") + ");";
 	}
 	
 	/**
@@ -490,23 +437,6 @@ public class TableDefinition {
 		}
 		return ((String[]) queries.toArray(new String[queries.size()]));
 	}
-//	public StringVector getUpdateQueries(TableDefinition oldDef, Properties syntax) {
-//		StringVector queries = new StringVector();
-//		if (oldDef == null)
-//			queries.addElement(this.getCreationQuery(syntax));
-//		else if (this.tableName.equalsIgnoreCase(oldDef.tableName) && !this.equals(oldDef)) {
-//			for (int c = 0; c < this.columns.size(); c++) {
-//				TableColumnDefinition tcd = ((TableColumnDefinition) this.columns.get(c));
-//				TableColumnDefinition oldTcd = oldDef.getColumn(tcd.getColumnName());
-//				if (!tcd.equals(oldTcd)) {
-//					String query = tcd.getUpdateQuery(oldTcd, syntax);
-//					if (query != null)
-//						queries.addElement("ALTER TABLE " + this.tableName + " " + query + ";");
-//				}
-//			}
-//		}
-//		return queries;
-//	}
 	
 	/**
 	 * @see java.lang.Object#equals(java.lang.Object)

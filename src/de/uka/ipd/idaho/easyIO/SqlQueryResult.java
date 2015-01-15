@@ -37,11 +37,11 @@ import java.util.ArrayList;
  * An SqlQueryResult wraps a java.sqj.ResultSet. It is capable of copying the
  * complete result set to a two-dimensional array of Strings, closing the
  * backing ResultSet immediately. While this may take a lot of memory for large
- * results, it facilitates relesing backing resources as early as possible.
+ * results, it facilitates releasing backing resources as early as possible.
  * Thus, copying is recommended for small result sets that are worked on for
  * longer periods of time. In addition, copying can add backward navigation
- * capabilities to result sets that do not support this tzpe of navigation. To
- * accomodate to general Java, this class maps the 1, ..., n indexing style used
+ * capabilities to result sets that do not support this type of navigation. To
+ * accommodate to general Java, this class maps the 1, ..., n indexing style used
  * in SQL to the 0, ..., (n-1) indexing style common in Java.
  * 
  * @author sautter
@@ -373,13 +373,11 @@ public class SqlQueryResult {
 		if (this.success && (columnIndex >= 0) && (columnIndex < this.columnCount) && (this.currentRow >= 0) && (this.currentRow < this.rowCount)) {
 			if (this.copied)
 				return this.resultArray[columnIndex][this.currentRow];
-			else {
-				try {
-					return this.resultSet.getString(columnIndex + 1);
-				}
-				catch (SQLException sqle) {
-					return null;
-				}
+			else try {
+				return this.resultSet.getString(columnIndex + 1);
+			}
+			catch (SQLException sqle) {
+				return null;
 			}
 		}
 		else return null;
@@ -398,6 +396,90 @@ public class SqlQueryResult {
 			return string;
 		}
 		else return null;
+	}
+	
+	/** @see java.sql.ResultSet#getInt(java.lang.String)
+	 */
+	public int getInt(String columnName) {
+		return this.getInt(this.findColumn(columnName));
+	}
+	
+	/** @see java.sql.ResultSet#getInt(int)
+	 */
+	public int getInt(int columnIndex) {
+		String str = this.getString(columnIndex);
+		return (((str == null) || (str.length() == 0)) ? 0 : Integer.parseInt(str));
+	}
+	
+	/**	get the content of column col, row row in the resultArray
+	 * @param	rowIndex		the row index
+	 * @param	columnIndex		the column index
+	 * @return	the content of the indexed resultArray table field, if both indices are in range
+	 */
+	public int getInt(int rowIndex, int columnIndex) {
+		int store = this.currentRow;
+		if (this.goToRow(rowIndex)) {
+			int i = this.getInt(columnIndex);
+			this.goToRow(store);
+			return i;
+		}
+		else return 0;
+	}
+	
+	/** @see java.sql.ResultSet#getLong(java.lang.String)
+	 */
+	public long getLong(String columnName) {
+		return this.getLong(this.findColumn(columnName));
+	}
+	
+	/** @see java.sql.ResultSet#getLong(int)
+	 */
+	public long getLong(int columnIndex) {
+		String str = this.getString(columnIndex);
+		return (((str == null) || (str.length() == 0)) ? 0 : Long.parseLong(str));
+	}
+	
+	/**	get the content of column col, row row in the resultArray
+	 * @param	rowIndex		the row index
+	 * @param	columnIndex		the column index
+	 * @return	the content of the indexed resultArray table field, if both indices are in range
+	 */
+	public long getLong(int rowIndex, int columnIndex) {
+		int store = this.currentRow;
+		if (this.goToRow(rowIndex)) {
+			long l = this.getLong(columnIndex);
+			this.goToRow(store);
+			return l;
+		}
+		else return 0;
+	}
+	
+	/** @see java.sql.ResultSet#getDouble(java.lang.String)
+	 */
+	public double getDouble(String columnName) {
+		return this.getDouble(this.findColumn(columnName));
+	}
+	
+	/** @see java.sql.ResultSet#getDouble(int)
+	 */
+	public double getDouble(int columnIndex) {
+		String str = this.getString(columnIndex);
+		return (((str == null) || (str.length() == 0)) ? Double.NaN : Double.parseDouble(str));
+	}
+	
+	/**	get the content of column col, row row in the resultArray
+	 * @param	rowIndex		the row index
+	 * @param	columnIndex		the column index
+	 * @return	the content of the indexed resultArray table field, if both indices are in range
+	 */
+	public double getDouble(int rowIndex, int columnIndex) {
+		int store = this.currentRow;
+		if (this.goToRow(rowIndex)) {
+			double d = this.getDouble(columnIndex);
+			this.goToRow(store);
+			return d;
+		}
+		else return Double.NaN;
 	}
 	
 	/** @see java.sql.ResultSet#findColumn(java.lang.String)

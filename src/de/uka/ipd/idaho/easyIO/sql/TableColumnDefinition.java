@@ -31,7 +31,7 @@ package de.uka.ipd.idaho.easyIO.sql;
 import java.util.Properties;
 
 /**
- * A generic definition of a single coulmn of a table in a relational database.
+ * A generic definition of a single column of a table in a relational database.
  * This class is intended for use with instances of TableDefinition.
  * 
  * @author sautter
@@ -50,11 +50,6 @@ public class TableColumnDefinition implements Comparable {
 	 */
 	public TableColumnDefinition(String data) {
 		if (data.startsWith("#")) {
-//			StringVector parser = new StringVector();
-//			parser.parseAndAddElements(data.substring(1), ";");
-//			this.columnName = parser.get(0);
-//			this.dataType = parser.get(1);
-//			this.length = Integer.parseInt(parser.get(2));
 			String[] parsed = data.substring(1).split("\\s*\\;\\s*");
 			if (parsed.length != 3)
 				throw new IllegalArgumentException(data + " is not a valid argument to this constructor");
@@ -115,34 +110,6 @@ public class TableColumnDefinition implements Comparable {
 	public int getColumnLength() {
 		return this.length;
 	}
-//
-//	/**
-//	 * @return a part of a CREATE TABLE query to create the column the SQT table
-//	 */
-//	public String getCreationQuery() {
-//		StringBuffer assembler = new StringBuffer(this.columnName + " " + this.dataType + ((this.length > 0) ? ("(" + this.length + ")") : "") + " DEFAULT ");
-//		
-//		if (TableDefinition.isEscapedType(this.dataType))
-//			assembler.append("''");
-//		else assembler.append("0");
-//		
-//		return assembler.toString();
-//	}
-//	
-//	/**
-//	 * create an ALTER TABLE query to update the column in the SQT table
-//	 * @param oldDef the old TableColumnDefinition according to the existing SQL
-//	 *            table
-//	 * @return an ALTER TABLE query to update the column in the SQT table Note:
-//	 *         The query shorten columns, only add or extend them
-//	 */
-//	public String getUpdateQuery(TableColumnDefinition oldDef) {
-//		if ((oldDef == null) || !this.columnName.equalsIgnoreCase(oldDef.columnName))
-//			return "ADD " + this.getCreationQuery();
-//		else if (this.dataType.equalsIgnoreCase(oldDef.dataType) && (this.length > oldDef.length))
-//			return "ALTER COLUMN " + this.columnName + " " + this.dataType + ((this.length > 0) ? ("(" + this.length + ")") : "");
-//		else return null;
-//	}
 
 	/**
 	 * Create a part for a CREATE TABLE query that creates the column.
