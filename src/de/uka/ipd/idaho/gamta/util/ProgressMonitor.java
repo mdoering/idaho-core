@@ -41,7 +41,7 @@ public interface ProgressMonitor {
 	//	TODO use this in GoldenGATE's apply document processor methods
 	
 	/**
-	 * Dummy implementation printing steps and labels to System.out
+	 * Dummy implementation printing steps and infos to <code>System.out</code>
 	 */
 	public static final ProgressMonitor dummy = new ProgressMonitor() {
 		public void setBaseProgress(int baseProgress) {}
@@ -54,6 +54,38 @@ public interface ProgressMonitor {
 			System.out.println(text);
 		}
 	};
+	
+	/**
+	 * Synchronizing wrapper for arbitrary implementations of
+	 * <code>ProgressMonitor</code>. This wrapper is meant to save external
+	 * synchronization in parallelized code.
+	 */
+	public static class SynchronizedProgressMonitor implements ProgressMonitor {
+		private ProgressMonitor pm;
+		
+		/** Constructor
+		 * @param pm the <code>ProgressMonitor</code> to wrap and synchronize
+		 */
+		public SynchronizedProgressMonitor(ProgressMonitor pm) {
+			this.pm = pm;
+		}
+		
+		public synchronized void setStep(String step) {
+			this.pm.setStep(step);
+		}
+		public synchronized void setInfo(String info) {
+			this.pm.setInfo(info);
+		}
+		public synchronized void setBaseProgress(int baseProgress) {
+			this.pm.setBaseProgress(baseProgress);
+		}
+		public synchronized void setMaxProgress(int maxProgress) {
+			this.pm.setMaxProgress(maxProgress);
+		}
+		public synchronized void setProgress(int progress) {
+			this.pm.setProgress(progress);
+		}
+	}
 	
 	/**
 	 * Set the processing step, indicating a major phase of the monitored

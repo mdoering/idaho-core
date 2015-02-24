@@ -94,6 +94,12 @@ public interface LiteratureConstants {
 	/**	the annotation type for marking a citation in a document */
 	public static final String CITATION_TYPE = "citation";
 	
+	/**	the annotation type for marking a heading in a document */
+	public static final String HEADING_TYPE = "heading";
+	
+	/**	the annotation type for marking an emphasis in a document,  */
+	public static final String EMPHASIS_TYPE = "emphasis";
+	
 	/**	the annotation type for marking a bibliographic reference in a document*/
 	public static final String BIBLIOGRAPHIC_REFERENCE_TYPE = "bibRef";
 	
