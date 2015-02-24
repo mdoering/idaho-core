@@ -31,7 +31,10 @@ import java.io.BufferedReader;
 import java.io.FilterReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import de.uka.ipd.idaho.htmlXmlUtil.exceptions.ParseException;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 
 /**
@@ -40,15 +43,15 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
  * 
  * @author sautter
  */
-class LookaheadReader  extends FilterReader {
+class LookaheadReader extends FilterReader {
 	private char[] charBuffer;
 	private int bufferStart = 0;
 	private int bufferEnd;
 	private int lookahead;
 	LookaheadReader(Reader in, int lookahead) throws IOException {
 		super((in instanceof BufferedReader) ? ((BufferedReader) in) : new BufferedReader(in));
-		this.lookahead = lookahead;
-		this.charBuffer = new char[Math.max((this.lookahead * 2), 1024)];
+		this.lookahead = Math.max(lookahead, 256);
+		this.charBuffer = new char[Math.max((this.lookahead * 2), 2048)];
 	}
 	private void fillBuffer(int min) throws IOException {
 		if (this.bufferEnd == -1)
@@ -138,39 +141,48 @@ class LookaheadReader  extends FilterReader {
 		return peek;
 	}
 	boolean startsWith(String prefix, boolean caseSensitive) throws IOException {
-		if (this.lookahead < prefix.length())
+		return this.startsWith(prefix, caseSensitive, 0);
+	}
+	boolean startsWith(String prefix, boolean caseSensitive, int from) throws IOException {
+		if (this.lookahead < (from + prefix.length()))
 			return false;
 		this.fillBuffer(this.lookahead + 1);
-		if (this.bufferEnd < (this.bufferStart + prefix.length()))
+		if (this.bufferEnd < (this.bufferStart + from + prefix.length()))
 			return false;
 		for (int c = 0; c < prefix.length(); c++) {
-			if ((this.bufferStart + c) == this.bufferEnd)
+			if ((this.bufferStart + from + c) == this.bufferEnd)
 				return false;
-			if (caseSensitive ? (this.charBuffer[this.bufferStart + c] != prefix.charAt(c)) : (Character.toLowerCase(this.charBuffer[this.bufferStart + c]) != Character.toLowerCase(prefix.charAt(c))))
+			if (caseSensitive ? (this.charBuffer[this.bufferStart + from + c] != prefix.charAt(c)) : (Character.toLowerCase(this.charBuffer[this.bufferStart + from + c]) != Character.toLowerCase(prefix.charAt(c))))
 				return false;
 		}
 		return true;
 	}
 	int indexOf(char ch) throws IOException {
+		return this.indexOf(ch, 0);
+	}
+	int indexOf(char ch, int from) throws IOException {
 		this.fillBuffer(this.lookahead + 1);
 		if (this.bufferEnd == -1)
 			return -1;
-		for (int i = 0; i < (this.bufferEnd - this.bufferStart); i++) {
+		for (int i = from; i < (this.bufferEnd - this.bufferStart); i++) {
 			if (this.charBuffer[this.bufferStart + i] == ch)
 				return i;
 		}
 		return -1;
 	}
 	int indexOf(String infix) throws IOException {
+		return this.indexOf(infix, 0);
+	}
+	int indexOf(String infix, int from) throws IOException {
 		this.fillBuffer(this.lookahead + 1);
 		if (this.bufferEnd == -1)
 			return -1;
 		if (infix.length() == 0)
-			return 0;
-		if (this.lookahead < infix.length())
+			return from;
+		if (this.lookahead < (from + infix.length()))
 			return -1;
 		char infixStartChar = infix.charAt(0);
-		for (int i = 0; i < (this.bufferEnd - this.bufferStart); i++) {
+		for (int i = from; i < (this.bufferEnd - this.bufferStart); i++) {
 			if (this.charBuffer[this.bufferStart + i] != infixStartChar)
 				continue;
 			boolean match = true;
@@ -186,6 +198,30 @@ class LookaheadReader  extends FilterReader {
 				return i;
 		}
 		return -1;
+	}
+	int find(String pattern) throws IOException {
+		return this.find(pattern, 0);
+	}
+	int find(String pattern, final int from) throws IOException {
+		this.fillBuffer(this.lookahead + 1);
+		if (this.bufferEnd == -1)
+			return -1;
+		if (this.lookahead < from)
+			return -1;
+		Matcher m = Pattern.compile(pattern).matcher(new CharSequence() {
+			public int length() {
+				return (bufferEnd - (bufferStart + from));
+			}
+			public char charAt(int index) {
+				return charBuffer[bufferStart + from + index];
+			}
+			public CharSequence subSequence(int start, int end) {
+				return new String(charBuffer, (bufferStart + from + start), (end - start));
+			}
+		});
+		if (m.find())
+			return m.start();
+		else return -1;
 	}
 	
 	private static final char NULLCHAR = '\u0000';
@@ -231,9 +267,12 @@ class LookaheadReader  extends FilterReader {
 					break;
 				
 				//	un-opened quoter, consume it
-				if (grammar.correctErrors() && grammar.isTagAttributeValueQuoter((char) charSource.peek())) {
-					charSource.read();
-					break;
+				if (grammar.isTagAttributeValueQuoter((char) charSource.peek())) {
+					if (grammar.correctErrors()) {
+						charSource.read();
+						break;
+					}
+					else throw new ParseException("Invalid character '" + ((char) charSource.peek()) + "'");
 				}
 			}
 			

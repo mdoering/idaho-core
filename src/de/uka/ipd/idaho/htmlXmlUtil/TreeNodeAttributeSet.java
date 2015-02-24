@@ -33,6 +33,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Properties;
 
+import de.uka.ipd.idaho.htmlXmlUtil.exceptions.ParseException;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
 
@@ -246,9 +247,11 @@ public class TreeNodeAttributeSet {
 			
 			//	we have a value (tolerate missing separator if configured that way)
 			String attribValue;
-			if ((charSource.peek() == tagAttributeValueSeparator) || (grammar.correctErrors() && grammar.isTagAttributeValueQuoter((char) charSource.peek()))) {
+			if ((charSource.peek() == tagAttributeValueSeparator) || grammar.isTagAttributeValueQuoter((char) charSource.peek())) {
 				if (charSource.peek() == tagAttributeValueSeparator)
 					charSource.read();
+				else if (!grammar.correctErrors())
+					throw new ParseException("Invalid character '" + ((char) charSource.peek()) + "', expected '" + tagAttributeValueSeparator + "'");
 				skipWhitespace(charSource, grammar);
 				attribValue = LookaheadReader.cropAttributeValue(charSource, grammar, tagType, attribName, tagEnd, endTagMarker);
 			}

@@ -35,9 +35,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.net.URL;
 import java.util.Vector;
 
+import de.uka.ipd.idaho.htmlXmlUtil.exceptions.ParseException;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Html;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
@@ -51,6 +51,9 @@ import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
  * @author sautter
  */
 public class TokenSource {
+	
+	private static final boolean DEBUG = false;
+	
 	private final char tagStart;
 	private final char tagEnd;
 	private final char endTagMarker;
@@ -133,6 +136,7 @@ public class TokenSource {
 		//	refill buffer
 		while ((this.charSource.peek() != -1) && ((this.tokenBuffer.size() < this.tokenLookahead) || (awaitedEndTag != null))) {
 			String token = this.produceToken((awaitedEndTag == null) ? null : ("" + this.tagStart + "" + this.endTagMarker + "" + awaitedEndTag + "" + this.tagEnd));
+			if (DEBUG) System.out.println("TokenSource got token: " + token);
 			if (token.length() == 0)
 				continue;
 			
@@ -153,6 +157,7 @@ public class TokenSource {
 	}
 	
 	private String produceToken(String stopTag) throws IOException {
+		if (DEBUG) System.out.println("TokenSource: producing token" + ((stopTag == null) ? "" : (" up to '" + stopTag + "'")));
 		
 		//	end of input
 		if (this.charSource.peek() == -1)
@@ -252,22 +257,72 @@ public class TokenSource {
 			//	end of attributes
 			if ((this.charSource.peek() == this.tagEnd) || (this.charSource.peek() == this.endTagMarker))
 				break;
-//			System.out.println("Tag char: " + ((char) this.charSource.peek()) + " " + this.charSource.peek());
-//			System.out.println("Tag part: " + tag.toString());
+			if (DEBUG) {
+				System.out.println("Tag part: " + tag.toString());
+				System.out.println("Next char: " + ((char) this.charSource.peek()) + " " + this.charSource.peek());
+			}
 			
 			//	read attribute name
 			String attribName = LookaheadReader.cropName(this.charSource);
-//			System.out.println("Attrib name: " + attribName);
+			if (DEBUG) System.out.println("Attrib name: " + attribName);
 			this.skipWhitespace(false);
+			
+			/* if attribute name comes up empty, skip to next valid attribute
+			 * name or tag end, whichever is closer ... better to lose some
+			 * attribute than to lose the entire document */
+			if (attribName.length() == 0) {
+				if (DEBUG) System.out.println("Empty attrib name");
+				if (this.correctErrors) {
+					
+					//	seek tag end
+					int tagEndIndex = this.charSource.indexOf(this.tagEnd);
+					if (tagEndIndex == -1)
+						tagEndIndex = Integer.MAX_VALUE;
+					else {
+						int sTagEndIndex = this.charSource.indexOf(this.endTagMarker + "" + this.tagEnd);
+						if ((sTagEndIndex != -1) && (sTagEndIndex < tagEndIndex))
+							tagEndIndex = sTagEndIndex;
+						if (DEBUG) System.out.println(" - tag end is " + tagEndIndex + " out");
+					}
+					
+					//	seek attribute name
+					int attribNameIndex = this.charSource.find("[a-zA-Z\\_\\:][a-zA-Z0-9\\_\\:\\.\\-]*\\s*\\" + this.tagAttributeValueSeparator);
+					if (attribNameIndex == -1)
+						attribNameIndex = Integer.MAX_VALUE;
+					else if (DEBUG) System.out.println(" - next attrib name is " + attribNameIndex + " out");
+					
+					//	tag end is closer
+					if (tagEndIndex < attribNameIndex) {
+						if (DEBUG) System.out.println(" ==> skipping up to tag end");
+						this.charSource.skip(tagEndIndex);
+						continue;
+					}
+					
+					//	next attribute is closer
+					else if (attribNameIndex < tagEndIndex) {
+						if (DEBUG) System.out.println(" ==> skipping up next attrib name");
+						this.charSource.skip(attribNameIndex);
+						continue;
+					}
+					
+					//	found neither, quit
+					else break;
+				}
+				
+				//	we're not corecting errors ...
+				else throw new ParseException("Invalid character '" + ((char) this.charSource.peek()) + "', expected name");
+			}
 			
 			//	we have a value (tolerate missing separator if configured that way)
 			String attribValue;
-			if ((this.charSource.peek() == this.tagAttributeValueSeparator) || (this.correctErrors && this.grammar.isTagAttributeValueQuoter((char) this.charSource.peek()))) {
+			if ((this.charSource.peek() == this.tagAttributeValueSeparator) || this.grammar.isTagAttributeValueQuoter((char) this.charSource.peek())) {
 				if (this.charSource.peek() == this.tagAttributeValueSeparator)
 					this.charSource.read();
+				else if (!this.correctErrors)
+					throw new ParseException("Invalid character '" + ((char) this.charSource.peek()) + "', expected '" + this.tagAttributeValueSeparator + "'");
 				this.skipWhitespace(false);
 				attribValue = LookaheadReader.cropAttributeValue(this.charSource, this.grammar, tagType, attribName, this.tagEnd, this.endTagMarker);
-//				System.out.println("Attrib value: " + attribValue);
+				if (DEBUG) System.out.println("Attrib value: " + attribValue);
 			}
 			
 			//	we have a standalone attribute, substitute name for value
@@ -292,7 +347,7 @@ public class TokenSource {
 		this.skipWhitespace(true);
 		
 		//	finally ...
-//		System.out.println("Tag full: " + tag.toString());
+		if (DEBUG) System.out.println("Tag full: " + tag.toString());
 		return tag.toString();
 	}
 	
@@ -427,17 +482,19 @@ public class TokenSource {
 //		while (ts.hasMoreTokens())
 //			System.out.println("Token: '" + ts.retrieveToken() + "'");
 		Html html = new Html();
-		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), html);
+//		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), html);
+		File f = new File("E:/Projektdaten/Antfiles/Species  Camponotus (Camponotus) vagus - AntWeb.raw.htm");
+		InputStream in = new FileInputStream(f);
+		TokenSource ts = getTokenSource(in, html);
 		while (ts.hasMoreTokens()) {
 			String token = ts.retrieveToken();
-			System.out.println("Token: '" + token + "'");
-			if (html.isTag(token) && !html.isEndTag(token)) {
-				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
-				String[] ans = tnas.getAttributeNames();
-				for (int a = 0; a < ans.length; a++)
-					System.out.println(ans[a] + " = " + tnas.getAttribute(ans[a]));
-			}
+			if (!DEBUG) System.out.println("Token: '" + token + "'");
+//			if (html.isTag(token) && !html.isEndTag(token)) {
+//				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
+//				String[] ans = tnas.getAttributeNames();
+//				for (int a = 0; a < ans.length; a++)
+//					System.out.println(ans[a] + " = " + tnas.getAttribute(ans[a]));
+//			}
 		}
-		
 	}
 }
