@@ -617,7 +617,7 @@ public class Parser {
 							TreeNode lastNode = this.node;
 							this.node = this.node.getParent();
 							
-							//	if streaming, write end tag directly and clean up closed tag and it's content
+							//	if streaming, write end tag directly and clean up closed tag and its content
 							if (this.output != null)
 								this.output.storeToken(lastNode.getEndTag(grammar), this.stack.size() + 1);
 							if (this.stream)
@@ -626,7 +626,7 @@ public class Parser {
 						
 						//	if end tag(s) missing and not correcting errors, throw Exception
 						if (!correctErrors && (this.missingEndTags.size() > 0))
-							throw new MissingEndTagException("The following tag(s) have not been closed properly: <" + TreeTools.concatVector(missingEndTags, ">, <") + ">");
+							throw new MissingEndTagException("The following tag(s) have not been closed properly: <" + TreeTools.concatVector(this.missingEndTags, ">, <") + ">");
 						
 						//	rise one tree level and write end tag
 						if (!this.stack.empty())
@@ -848,6 +848,8 @@ public class Parser {
 //		Parser parser = new Parser(new Html());
 //		URL url = new URL("http://plazi.cs.umb.edu/GgServer/xslt/FC21C429805C81809F75E8BBA095EBF8");
 //		BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+////		File file = new File("E:/Projektdaten/PlaziWebPortal2015/Example - Portal.htm");
+////		BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
 //		
 //		//	the old way
 //		parser.stream(br, new TokenReceiver() {

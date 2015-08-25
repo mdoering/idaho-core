@@ -290,13 +290,6 @@ public class AttributeEditor extends JPanel {
 		annotationValueField.setBorder(BorderFactory.createLoweredBevelBorder());
 		if (attributed instanceof TokenSequence)
 			annotationValueField.setToolTipText(this.produceTooltipText((TokenSequence) attributed));
-//		//	display annotation's data (for giving users the context)
-//		JLabel annotationTypeField = new JLabel(this.attributed.getType());
-//		annotationTypeField.setBorder(BorderFactory.createLoweredBevelBorder());
-//		
-//		JLabel annotationValueField = new JLabel(this.attributed.getValue());
-//		annotationValueField.setBorder(BorderFactory.createLoweredBevelBorder());
-//		annotationValueField.setToolTipText(this.produceTooltipText(attributed));
 		
 		JPanel annotationDataPanel = new JPanel(new GridBagLayout());
 		gbc = new GridBagConstraints();
@@ -402,31 +395,6 @@ public class AttributeEditor extends JPanel {
 		return ("<HTML>" + lines.concatStrings("<BR>") + "</HTML>");
 	}
 	
-//	private String produceTooltipText(Annotation annotation) {
-//		if (annotation.length() < 100) return TokenSequenceUtils.concatTokens(annotation);
-//		
-//		StringVector lines = new StringVector();
-//		int startToken = 0;
-//		int lineLength = 0;
-//		Token lastToken = null;
-//		
-//		for (int t = 0; t < annotation.size(); t++) {
-//			Token token = annotation.tokenAt(t);
-//			lineLength += token.length();
-//			if (lineLength > 100) {
-//				lines.addElement(TokenSequenceUtils.concatTokens(annotation, startToken, (t - startToken + 1)));
-//				startToken = (t + 1);
-//				lineLength = 0;
-//			}
-//			else if (Gamta.insertSpace(lastToken, token))
-//				lineLength++;
-//		}
-//		if (startToken < annotation.size())
-//			lines.addElement(TokenSequenceUtils.concatTokens(annotation, startToken, (annotation.size() - startToken)));
-//		
-//		return ("<HTML>" + lines.concatStrings("<BR>") + "</HTML>");
-//	}
-//	
 	private void setAttribute() {
 		Object item;
 		
@@ -471,34 +439,6 @@ public class AttributeEditor extends JPanel {
 				
 				//	refresh input fields
 				this.resetAttributeNameField();
-				
-//				String modificationString = (this.annotationAttributeNames.contains(name) ? "set" : "add");
-//				
-//				//	check value
-//				if (AttributeUtils.isValidAttributeValue(value)) {
-//					
-//					//	set attribute
-//					this.annotationAttributeNames.addElementIgnoreDuplicates(name);
-//					this.annotationAttributeValues.put(name, value);
-//					
-//					//	update value lists
-//					this.getValueList(name).addElementIgnoreDuplicates(value);
-//					this.getValueFrequencyIndex(name).add(value);
-//					if (oldValue != null) {
-//						if (this.getValueFrequencyIndex(name).remove(oldValue))
-//							this.getValueList(name).removeAll(oldValue);
-//					}
-//					
-//					//	refresh attribute table
-//					this.attributeTable.revalidate();
-//					this.attributeTable.repaint();
-//					
-//					//	refresh input fields
-//					this.resetAttributeNameField();
-//				}
-//				
-//				//	show error message
-//				else JOptionPane.showMessageDialog(this, ("Cannot " + modificationString + " attribute. The specified value is invalid."), "Invalid Attribute Value", JOptionPane.ERROR_MESSAGE);
 			}
 			
 			//	show error message

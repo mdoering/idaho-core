@@ -1560,7 +1560,7 @@ public class Gamta extends StringUtils {
 			//	current token cannot belong to a match, stop adding tokens and do extraction
 			if (excludePunct.contains(currentValue) || ((exclude != null) && exclude.lookup(currentValue))) {
 				if (normalizedTokenSequence != null) {
-					addPreMatches(normalizedTokenSequence, preMatches, tokens, pattern, maxTokens, allowOverlap);
+					addPreMatches(normalizedTokenSequence, preMatches, tokens, pattern, maxTokens, startExclude, allowOverlap);
 					normalizedTokenSequence.tokens.clear();
 					normalizedTokenSequence = null;
 					last = null;
@@ -1576,7 +1576,7 @@ public class Gamta extends StringUtils {
 				
 				//	add whitespace to current sequence
 				else if ((last != null) && (normalize ? insertSpace(last, current) : (tokens.getWhitespaceAfter(t-1).length() != 0)))
-					normalizedTokenSequence.appendWhitespace((!ignoreLinebreaks && last.hasAttribute(Token.PARAGRAPH_END_ATTRIBUTE)) ? "\n" : " ");
+					normalizedTokenSequence.appendWhitespace((!ignoreLinebreaks && last.hasAttribute(Token.PARAGRAPH_END_ATTRIBUTE)) ? "\r\n" : " ");
 				
 				//	append current token
 				normalizedTokenSequence.appendToken(currentValue);
@@ -1588,8 +1588,7 @@ public class Gamta extends StringUtils {
 		
 		//	process last sequence
 		if (normalizedTokenSequence != null) {
-			addPreMatches(normalizedTokenSequence, preMatches, tokens, pattern, maxTokens, allowOverlap);
-			normalizedTokenSequence.tokens.clear();
+			addPreMatches(normalizedTokenSequence, preMatches, tokens, pattern, maxTokens, startExclude, allowOverlap);
 			normalizedTokenSequence = null;
 		}
 		
@@ -1620,7 +1619,7 @@ public class Gamta extends StringUtils {
 	
 	private static Map patternCache = Collections.synchronizedMap(new HashMap());
 	
-	private static void addPreMatches(MatchTokenSequence normalizedTokenSequence, ArrayList preMatches, TokenSequence tokens, Pattern pattern, int maxTokens, boolean allowOverlap) {
+	private static void addPreMatches(MatchTokenSequence normalizedTokenSequence, ArrayList preMatches, TokenSequence tokens, Pattern pattern, int maxTokens, Dictionary startExclude, boolean allowOverlap) {
 		int matchingStartOffset;
 		int matchStartOffset, matchEndOffset;
 		MatchToken startMt, endMt;
@@ -1653,8 +1652,8 @@ public class Gamta extends StringUtils {
 			startMt = normalizedTokenSequence.tokenAtOffset(matchStartOffset);
 			if (startMt != null) { // this may happen if regex matches the empty string
 				
-				//	current match starts at token start
-				if (startMt.startOffset == matchStartOffset) {
+				//	current match starts at token start, and is not filtered
+				if ((startMt.startOffset == matchStartOffset) && ((startExclude == null) || !startExclude.lookup(startMt.value))) {
 					matchEndOffset = matcher.end();
 					endMt = normalizedTokenSequence.tokenAtOffset(matchEndOffset - 1);
 					if (endMt != null) { // this may happen if regex matches the empty string

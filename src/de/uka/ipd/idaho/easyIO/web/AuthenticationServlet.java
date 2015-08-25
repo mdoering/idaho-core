@@ -36,10 +36,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.tanesha.recaptcha.ReCaptcha;
-import net.tanesha.recaptcha.ReCaptchaFactory;
-import net.tanesha.recaptcha.ReCaptchaImpl;
-import net.tanesha.recaptcha.ReCaptchaResponse;
 import de.uka.ipd.idaho.easyIO.EasyIO;
 import de.uka.ipd.idaho.easyIO.IoProvider;
 import de.uka.ipd.idaho.easyIO.SqlQueryResult;
@@ -67,9 +63,10 @@ public class AuthenticationServlet extends HtmlServlet {
 	private String authProviderName = "SelfRegAuth";
 	private String authProviderLabel = "Self Registration Service";
 	
-	private String reCaptchaPublicKey;
-	private String reCaptchaPrivateKey;
-	private boolean useReCaptcha = false;
+//	private String reCaptchaPublicKey;
+//	private String reCaptchaPrivateKey;
+//	private boolean useReCaptcha = false;
+	private ReCAPTCHA reCaptcha;
 	
 	/* (non-Javadoc)
 	 * @see de.uka.ipd.idaho.easyIO.web.HtmlServlet#doInit()
@@ -99,9 +96,12 @@ public class AuthenticationServlet extends HtmlServlet {
 		this.io.indexColumn((this.authProviderName + "Data"), USER_NAME_PARAMETER);
 		
 		//	load reCAPTCHA keys
-		this.reCaptchaPublicKey = this.getSetting("reCaptchaPublicKey", this.reCaptchaPublicKey);
-		this.reCaptchaPrivateKey = this.getSetting("reCaptchaPrivateKey", this.reCaptchaPrivateKey);
-		this.useReCaptcha = ((this.reCaptchaPublicKey != null) && (this.reCaptchaPrivateKey != null));
+//		this.reCaptchaPublicKey = this.getSetting("reCaptchaPublicKey", this.reCaptchaPublicKey);
+//		this.reCaptchaPrivateKey = this.getSetting("reCaptchaPrivateKey", this.reCaptchaPrivateKey);
+//		this.useReCaptcha = ((this.reCaptchaPublicKey != null) && (this.reCaptchaPrivateKey != null));
+		String reCaptchaPublicKey = this.getSetting("reCaptchaPublicKey");
+		String reCaptchaPrivateKey = this.getSetting("reCaptchaPrivateKey");
+		this.reCaptcha = (((reCaptchaPublicKey != null) && (reCaptchaPrivateKey != null)) ? new ReCAPTCHA(reCaptchaPublicKey, reCaptchaPrivateKey, true) : null);
 		
 		//	register authentication provider
 		this.webAppHost.addAuthenticationProvider(new AsAuthProvider());
@@ -717,14 +717,21 @@ public class AuthenticationServlet extends HtmlServlet {
 	}
 	
 	private boolean checkReCaptcha(HttpServletRequest request) throws IOException {
-		if (!this.useReCaptcha)
+//		if (!this.useReCaptcha)
+//			return true;
+		if (this.reCaptcha == null)
 			return true;
-		String remoteAddr = request.getRemoteAddr();
-		ReCaptchaImpl reCaptcha = new ReCaptchaImpl();
-		reCaptcha.setPrivateKey(this.reCaptchaPrivateKey);
+		
+		String clientAddr = request.getHeader("x-forwarded-for");
+		if (clientAddr == null)
+			clientAddr = request.getRemoteAddr();
+//		ReCaptcha reCaptcha = ReCaptchaFactory.newReCaptcha(this.reCaptchaPublicKey, this.reCaptchaPrivateKey, false);
+		
 		String challenge = request.getParameter("recaptcha_challenge_field");
 		String response = request.getParameter("recaptcha_response_field");
-		ReCaptchaResponse reCaptchaResponse = reCaptcha.checkAnswer(remoteAddr, challenge, response);
+//		ReCaptchaResponse reCaptchaResponse = reCaptcha.checkAnswer(clientAddr, challenge, response);
+		ReCAPTCHA.Response reCaptchaResponse = this.reCaptcha.checkAnswer(clientAddr, challenge, response);
+		
 		return reCaptchaResponse.isValid();
 	}
 	
@@ -754,10 +761,15 @@ public class AuthenticationServlet extends HtmlServlet {
 		bw.write("<td class=\"" + this.authProviderName + "_CreateAccountFieldCell\">");
 		bw.write("<input type=\"text\" id=\"userName_field\" name=\"userName\" value=\"" + ((userName == null) ? "" : userName) + "\" tabindex=\"1\">");
 		bw.write("</td>");
-		if (this.useReCaptcha) {
+//		if (this.useReCaptcha) {
+//			bw.write("<td class=\"" + this.authProviderName + "_CreateAccountReCaptchaCell\" rowspan=\"3\">");
+//			ReCaptcha reCaptcha = ReCaptchaFactory.newReCaptcha(this.reCaptchaPublicKey, this.reCaptchaPrivateKey, true);
+//			bw.write(reCaptcha.createRecaptchaHtml(null, null));
+//			bw.write("</td>");
+//		}
+		if (this.reCaptcha != null) {
 			bw.write("<td class=\"" + this.authProviderName + "_CreateAccountReCaptchaCell\" rowspan=\"3\">");
-			ReCaptcha reCaptcha = ReCaptchaFactory.newReCaptcha(this.reCaptchaPublicKey, this.reCaptchaPrivateKey, true);
-			bw.write(reCaptcha.createRecaptchaHtml(null, null));
+			bw.write(this.reCaptcha.createRecaptchaHtml(null, null));
 			bw.write("</td>");
 		}
 		bw.write("</tr>"); bw.newLine();

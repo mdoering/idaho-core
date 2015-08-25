@@ -273,7 +273,7 @@ public class ProgressMonitorPanel extends JPanel implements ControllingProgressM
 			this.pauseResumeButton.setPreferredSize(this.buttonSize);
 		if (this.abortButton != null)
 			this.abortButton.setPreferredSize(this.buttonSize);
-		this.validate();
+		this.revalidate();
 		this.repaint();
 	}
 	
@@ -322,7 +322,7 @@ public class ProgressMonitorPanel extends JPanel implements ControllingProgressM
 		System.out.println(step);
 		try {
 			this.step.setText("<HTML><B>" + step + "</B></HTML>");
-			this.step.validate();
+//			this.step.validate();
 		}
 		catch (Exception e) {} // we have to do this due to some weird runtime behavior in Swing
 		catch (Error e) {} // we have to do this due to some weird runtime behavior in Swing
@@ -344,7 +344,7 @@ public class ProgressMonitorPanel extends JPanel implements ControllingProgressM
 		infoText.append("</HTML>");
 		try {
 			this.info.setText(infoText.toString());
-			this.info.validate();
+//			this.info.validate();
 		}
 		catch (Exception e) {} // we have to do this due to some weird runtime behavior in Swing
 		catch (Error e) {} // we have to do this due to some weird runtime behavior in Swing

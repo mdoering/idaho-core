@@ -45,13 +45,13 @@ import de.uka.ipd.idaho.htmlXmlUtil.accessories.IoTools;
 public class Html extends StandardGrammar {
 	
 	//	HTML specific data
-	private final String tagTypeToParentTypesMappingStrings[] = {
-			"p:address;applet;blockquote;body;button;center;del;dd;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;td;th",
-			"noframes:applet;blockquote;body;button;center;dd;del;div;span;fieldset;form;frameset;iframe;ins;li;map;noscript;object;td;th",
-			"h6:h5:h4:h3:h2:h1:table:ul:ol:menu:dl:dir:pre:noscript:hr:div:center:blockquote:address:applet;blockquote;body;button;center;dd;del;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;td;th",
-			"isindex:applet;blockquote;body;center;dd;del;div;span;fieldset;form;head;iframe;ins;li;map;noframes;noscript;object;td;th",
-			"fieldset:applet;blockquote;body;center;dd;del;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;td;th",
-			"form:applet;blockquote;body;center;dd;del;div;span;fieldset;iframe;ins;li;map;noframes;noscript;object;table;td;th;tr",
+	private static final String tagTypeToParentTypesMappingStrings[] = {
+			"p:address;applet;blockquote;body;button;center;del;dd;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;header;nav;main;article;section;footer;aside;address;td;th",
+			"noframes:applet;blockquote;body;button;center;dd;del;div;span;fieldset;form;frameset;iframe;ins;li;map;noscript;object;header;nav;main;article;section;footer;aside;address;td;th",
+			"h6:h5:h4:h3:h2:h1:table:ul:ol:menu:dl:dir:pre:noscript:hr:div:center:header:nav:main:article:section:footer:aside:address:blockquote:address:applet;blockquote;body;button;center;dd;del;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;header;nav;main;article;section;footer;aside;address;td;th",
+			"isindex:applet;blockquote;body;center;dd;del;div;span;fieldset;form;head;iframe;ins;li;map;noframes;noscript;object;header;nav;main;article;section;footer;aside;address;td;th",
+			"fieldset:applet;blockquote;body;center;dd;del;div;span;fieldset;form;iframe;ins;li;map;noframes;noscript;object;header;nav;main;article;section;footer;aside;address;td;th",
+			"form:applet;blockquote;body;center;dd;del;div;span;fieldset;iframe;ins;li;map;noframes;noscript;object;header;nav;main;article;section;footer;aside;address;table;td;th;tr",
 			"param:applet;object",
 			"col:colgroup;table",
 			"dd:dt:dl",
@@ -70,17 +70,17 @@ public class Html extends StandardGrammar {
 			"th:td:tr;form",
 		};
 		
-	private final String tagTypeTranslationStrings[] = {
+	private static final String tagTypeTranslationStrings[] = {
 			"htm:html",
 		};
 	
-	private final String singularTagTypesString = "area;base;br;hr;img;input;isindex;link;meta;param";
+	private static final String singularTagTypesString = "area;base;br;hr;img;input;isindex;link;meta;param";
 	
-	private final String subsequentEndTagsAllowedTypesString = "frameset;ul;ol;dl";
+	private static final String subsequentEndTagsAllowedTypesString = "frameset;ul;ol;dl;div";
 	
-	private final String whitespaceFreeValueAttributesString = "align;clear;columns;colspan;dataformatas;dir;for;frame;frameborder;headers;http-equiv;id;maxlength;method;name;nohref;rows;rowspan;rules;scheme;scope;scrolling;shape;span;start;tabindex;type;valign;valuetype;width";
+	private static final String whitespaceFreeValueAttributesString = "align;clear;columns;colspan;dataformatas;dir;for;frame;frameborder;headers;http-equiv;id;maxlength;method;name;nohref;rows;rowspan;rules;scheme;scope;scrolling;shape;span;start;tabindex;type;valign;valuetype;width";
 	
-	private final String[] characterEncodingsString = {
+	private static final String[] characterEncodingsString = {
 			"\" &quot;",
 			"' &apos;",
 			"& &amp;",
@@ -331,7 +331,7 @@ public class Html extends StandardGrammar {
 			"› &rsaquo;",
 			"? ?"
 		};
-	private final String characterCodesString = "&nbsp;";
+	private static final String characterCodesString = "&nbsp;";
 //	private final String characterDecCodeCharsString = "0,1,2,3,4,5,6,7,8,9,;";
 //	private final String characterHexCodeCharsString = "0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f,;";
 	
@@ -356,8 +356,8 @@ public class Html extends StandardGrammar {
 	public Html() {
 		
 		//	initialize tag type --> parent tag types mappings
-		for (int i = 0; i < this.tagTypeToParentTypesMappingStrings.length; i++) {
-			String s = this.tagTypeToParentTypesMappingStrings[i].toLowerCase();
+		for (int i = 0; i < tagTypeToParentTypesMappingStrings.length; i++) {
+			String s = tagTypeToParentTypesMappingStrings[i].toLowerCase();
 			int split = s.lastIndexOf(":");
 			if ((split > -1) && (split < (s.length() - 2))) {
 				
@@ -377,8 +377,8 @@ public class Html extends StandardGrammar {
 		}
 		
 		//	initialize tag type translation
-		for (int i = 0; i < this.tagTypeTranslationStrings.length; i++) {
-			String s = this.tagTypeTranslationStrings[i].toLowerCase();
+		for (int i = 0; i < tagTypeTranslationStrings.length; i++) {
+			String s = tagTypeTranslationStrings[i].toLowerCase();
 			int split = s.lastIndexOf(":");
 			if ((split > -1) && (split < (s.length() - 2))) {
 				
@@ -393,20 +393,20 @@ public class Html extends StandardGrammar {
 		}
 		
 		//	initialize singular tag types
-		String[] t = IoTools.parseString(this.singularTagTypesString.toLowerCase(), ";");
+		String[] t = IoTools.parseString(singularTagTypesString.toLowerCase(), ";");
 		for (int i = 0; i < t.length; i++) this.singularTagTypes.add(t[i]);
 		
 		//	initialize tag types that's end tags may be subsequent
-		t = IoTools.parseString(this.subsequentEndTagsAllowedTypesString.toLowerCase(), ";");
+		t = IoTools.parseString(subsequentEndTagsAllowedTypesString.toLowerCase(), ";");
 		for (int i = 0; i < t.length; i++) this.subsequentEndTagsAllowedTypes.add(t[i]);
 		
 		//	initialize parameters that's values may not contain whitespaces, even if quoted
-		t = IoTools.parseString(this.whitespaceFreeValueAttributesString.toLowerCase(), ";");
+		t = IoTools.parseString(whitespaceFreeValueAttributesString.toLowerCase(), ";");
 		for (int i = 0; i < t.length; i++) this.whitespaceFreeValueAttributes.add(t[i]);
 		
 		//	initialize character encoding and decoding
-		for (int i = 0; i < this.characterEncodingsString.length; i++) {
-			String s = this.characterEncodingsString[i];
+		for (int i = 0; i < characterEncodingsString.length; i++) {
+			String s = characterEncodingsString[i];
 			this.characterCodes.add(s.substring(2));
 			this.characterEncodings.setProperty(s.substring(0, 1), s.substring(2));
 			this.characterDecodings.setProperty(s.substring(2), s.substring(0, 1));
@@ -418,7 +418,7 @@ public class Html extends StandardGrammar {
 		this.charLookahead = Math.max(this.charLookahead, (2 + "textarea".length() + 1));
 		
 		//	initialize character code list
-		t = IoTools.parseString(this.characterCodesString.toLowerCase(), ",");
+		t = IoTools.parseString(characterCodesString.toLowerCase(), ",");
 		for (int i = 0; i < t.length; i++) this.characterCodes.add(t[i]);
 //		
 //		//	initialize character decimal code list
@@ -679,7 +679,7 @@ public class Html extends StandardGrammar {
 					//	clear collector and store end tag
 					collector.delete(0, collector.length());
 					lastPreservedPart = currentPart;
-					index ++;
+					index++;
 				}
 				
 				//	there can be no script within a script
@@ -713,7 +713,7 @@ public class Html extends StandardGrammar {
 					//	clear collector and store end tag
 					collector.delete(0, collector.length());
 					lastPreservedPart = currentPart;
-					index ++;
+					index++;
 				}
 				
 				//	there can be no style within a style
@@ -730,34 +730,36 @@ public class Html extends StandardGrammar {
 			//	check subsequent equal end tags
 			else if (this.isEndTag(currentPart) && currentPart.equalsIgnoreCase(lastPreservedPart) && !this.subsequentEndTagsAllowedTypes.contains(this.getType(currentPart).toLowerCase()))
 				ts.removeElementAt(index);
-				
+			
 			//	repair badly marked comments
 			else if (currentPart.startsWith("<!-") && currentPart.endsWith("->")) {
-				if (!currentPart.startsWith("<!--")) currentPart = "<!--" + currentPart.substring(3);
-				if (!currentPart.endsWith("-->")) currentPart = currentPart.substring(0, (currentPart.length() - 2)) + "-->";
+				if (!currentPart.startsWith("<!--"))
+					currentPart = "<!--" + currentPart.substring("<!-".length());
+				if (!currentPart.endsWith("-->"))
+					currentPart = currentPart.substring(0, (currentPart.length() - "->".length())) + "-->";
 				ts.setElementAt(currentPart, index);
 				lastPreservedPart = currentPart;
-				index ++;
+				index++;
 			}
 			
-			//	reassemble parsed styles
+			//	reassemble parsed scripts
 			else if (this.isTag(currentPart) && !this.isEndTag(currentPart) && this.getType(currentPart).equalsIgnoreCase("script")) {
 				inScript = true;
 				lastPreservedPart = currentPart;
-				index ++;
+				index++;
 			}
 			
 			//	reassemble parsed styles
 			else if (this.isTag(currentPart) && !this.isEndTag(currentPart) && this.getType(currentPart).equalsIgnoreCase("style")) {
 				inStyle = true;
 				lastPreservedPart = currentPart;
-				index ++;
+				index++;
 			}
 			
 			//	otherwise add the part
 			else {
 				lastPreservedPart = currentPart;
-				index ++;
+				index++;
 			}
 		}
 	}

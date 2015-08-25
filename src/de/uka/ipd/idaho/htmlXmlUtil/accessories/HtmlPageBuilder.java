@@ -42,6 +42,7 @@ import javax.servlet.http.HttpServletResponse;
 import de.uka.ipd.idaho.htmlXmlUtil.Parser;
 import de.uka.ipd.idaho.htmlXmlUtil.TokenReceiver;
 import de.uka.ipd.idaho.htmlXmlUtil.TreeNodeAttributeSet;
+import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Html;
 
 /**
@@ -184,7 +185,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 	}
 	
 	/** HTML grammar for extracting type information from tokens, etc */
-	protected static Html html = new Html();
+	protected static Grammar html = new Html();
 	
 	/** HTML-configured parser for handling web page templates */
 	protected static Parser htmlParser = new Parser(html);
@@ -385,7 +386,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 				//	check for link
 				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
 				String href = tnas.getAttribute("href");
-				if ((href != null) && (href.indexOf("://") == -1) && tnas.getAttribute("rel", "").toLowerCase().endsWith("stylesheet")) {
+				if ((href != null) && (href.indexOf("://") == -1) && (tnas.getAttribute("rel", "").toLowerCase().endsWith("stylesheet") || tnas.getAttribute("rel", "").toLowerCase().endsWith("icon") || tnas.getAttribute("rel", "").toLowerCase().endsWith("shortcut"))) {
 					href = this.adjustLink(href);
 					if (!href.equals(tnas.getAttribute("href"))) {
 						tnas.setAttribute("href", href);
@@ -430,8 +431,8 @@ public class HtmlPageBuilder extends TokenReceiver {
 				//	write token
 				this.write(token);
 				
-				// do not insert line break after hyperlink tags, bold tags, and span tags
-				if (!"a".equalsIgnoreCase(type) && !"b".equalsIgnoreCase(type) && !"span".equalsIgnoreCase(type))
+				// do not insert line break after hyperlink tags, bold and italics tags, and span tags
+				if (!"a".equalsIgnoreCase(type) && !"b".equalsIgnoreCase(type) && !"i".equalsIgnoreCase(type) && !"span".equalsIgnoreCase(type))
 					this.newLine();
 				
 				//	remember being in hyperlink (for auto-activation)

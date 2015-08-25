@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 /**
@@ -105,6 +106,32 @@ public class CountingSet implements Set {
 	 */
 	public boolean contains(Object obj) {
 		return this.content.containsKey(obj);
+	}
+	
+	/**
+	 * Retrieve the smallest element in the set.
+	 * @return the smallest element in the set
+	 * @throws UnsupportedOperationException if the content <code>Map</code> is
+	 *            not a <code>SortedMap</code>
+	 * @see java.util.SortedSet#first()
+	 */
+	public Object first() {
+		if (this.content instanceof SortedMap)
+			return ((SortedMap) this.content).firstKey();
+		else throw new UnsupportedOperationException("The method first() only works if the content Map is a SortedMap");
+	}
+	
+	/**
+	 * Retrieve the largest element in the set.
+	 * @return the largest element in the set
+	 * @throws UnsupportedOperationException if the content <code>Map</code> is
+	 *            not a <code>SortedMap</code>
+	 * @see java.util.SortedSet#last()
+	 */
+	public Object last() {
+		if (this.content instanceof SortedMap)
+			return ((SortedMap) this.content).lastKey();
+		else throw new UnsupportedOperationException("The method last() only works if the content Map is a SortedMap");
 	}
 	
 	/**

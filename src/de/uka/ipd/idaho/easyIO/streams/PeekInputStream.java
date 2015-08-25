@@ -78,8 +78,8 @@ public class PeekInputStream extends FilterInputStream {
 		}
 		if (this.bufferStart == this.bufferEnd)
 			this.bufferEnd = -1;
-		//	TODO_not consider using small char buffer instead of char-by-char reading
-		//	==> looking inside BufferedReader, the single char read() method looks like the best choice
+		//	TODO_not consider using small byte buffer instead of byte-by-byte reading
+		//	==> looking inside BufferedInputStream, the single byte read() method looks like the best choice
 	}
 	private int convertByte(int b) {
 		return ((b < 0) ? (b + 256) : b);
@@ -166,10 +166,9 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Skip all leading whitespace, i.e., all leading characters whose byte
-	 * value is 0x20 or less. This method only stops if either reaches the
-	 * first char with a byte value greater than 0x20, or the end of the
-	 * stream.
+	 * Skip all leading whitespace, i.e., all leading bytes whose value is 0x20
+	 * or less. This method only stops if either reaches the first byte with a
+	 * value greater than 0x20, or the end of the stream.
 	 * @throws IOException
 	 */
 	public void skipSpace() throws IOException {
@@ -180,7 +179,7 @@ public class PeekInputStream extends FilterInputStream {
 	/**
 	 * Retrieve the next byte from this input stream, but without
 	 * consuming it.
-	 * @return the next character
+	 * @return the next byte
 	 * @see java.io.InputStream#read()
 	 */
 	public int peek() throws IOException {
@@ -189,7 +188,7 @@ public class PeekInputStream extends FilterInputStream {
 	
 	/**
 	 * Retrieve the index-th byte from the input stream, but without consuming
-	 * it or any characters before it. If there are fewer than
+	 * it or any bytes before it. If there are fewer than
 	 * <code>index</code> bytes left in the stream, this method returns
 	 * -1.
 	 * @param index the index of the byte to inspect
@@ -208,12 +207,12 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Retrieve up to <code>byte.length</code> characters from the stream into
-	 * a char array, but without consuming them. If the length of the argument
-	 * array is greater than the maximum lookahead handed to the constructor,
-	 * the latter is the limit.
+	 * Retrieve up to <code>byte.length</code> bytes from the stream into an
+	 * array, but without consuming them. If the length of the argument array
+	 * is greater than the maximum lookahead handed to the constructor, the
+	 * latter is the limit.
 	 * @param b the buffer array to fill
-	 * @return the number of characters written into the argument array
+	 * @return the number of bytes written into the argument array
 	 * @see java.io.InputStream#read(byte[])
 	 */
 	public int peek(byte[] b) throws IOException {
@@ -221,13 +220,13 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Retrieve up to <code>byte.length</code> characters from the stream into
-	 * a char array, starting at the index-th character, but without consuming
-	 * them. If the length of the argument array is greater than the maximum
-	 * lookahead handed to the constructor, the latter is the limit.
-	 * @param index the index of the first character to inspect
+	 * Retrieve up to <code>byte.length</code> bytes from the stream into an
+	 * array, starting at the index-th byte, but without consuming them. If the
+	 * length of the argument array is greater than the maximum lookahead
+	 * handed to the constructor, the latter is the limit.
+	 * @param index the index of the first byte to inspect
 	 * @param b the buffer array to fill
-	 * @return the number of characters written into the argument array
+	 * @return the number of bytes written into the argument array
 	 * @see java.io.InputStream#read(byte[])
 	 */
 	public int peek(int index, byte[] b) throws IOException {
@@ -235,14 +234,13 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Retrieve up to <code>len</code> characters from the stream into a char
-	 * array, but without consuming them. If <code>len</code> is greater than
-	 * the maximum lookahead handed to the constructor, the latter is the
-	 * limit.
+	 * Retrieve up to <code>len</code> bytes from the stream into an array, but
+	 * without consuming them. If <code>len</code> is greater than the maximum
+	 * lookahead handed to the constructor, the latter is the limit.
 	 * @param b the buffer array to fill
 	 * @param off the offset from which to fill the array.
 	 * @param len the maximum number of bytes to read.
-	 * @return the number of characters written into the argument array
+	 * @return the number of bytes written into the argument array
 	 * @see java.io.InputStream#read(byte[], int, int)
 	 */
 	public int peek(byte[] b, int off, int len) throws IOException {
@@ -250,15 +248,15 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Retrieve up to <code>len</code> characters from the stream into a char
-	 * array, starting at the index-th character, but without consuming them.
-	 * If <code>len</code> is greater than the maximum lookahead handed to the
+	 * Retrieve up to <code>len</code> bytes from the stream into an array,
+	 * starting at the index-th byte, but without consuming them. If
+	 * <code>len</code> is greater than the maximum lookahead handed to the
 	 * constructor, the latter is the limit.
 	 * @param index the index of the first byte to inspect
 	 * @param b the buffer array to fill
 	 * @param off the offset from which to fill the array.
 	 * @param len the maximum number of bytes to read.
-	 * @return the number of characters written into the argument array
+	 * @return the number of bytes written into the argument array
 	 * @see java.io.InputStream#read(byte[], int, int)
 	 */
 	public int peek(int index, byte[] b, int off, int len) throws IOException {
@@ -319,13 +317,13 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Test if the next <code>prefix.length()</code> characters in this stream
-	 * are the same as the argument prefix. If the argument prefix is longer
-	 * than the maximum lookahead handed to the constructor, this method simply
-	 * returns false.
+	 * Test if the next <code>prefix.length()</code> bytes in this stream are
+	 * the same as the byte representation of the argument prefix in the
+	 * argument encoding. If the argument prefix is longer than the maximum
+	 * lookahead handed to the constructor, this method simply returns false.
 	 * @param prefix the prefix to test
 	 * @param encoding the character encoding to use
-	 * @return true if if the next <code>prefix.length()</code> characters in
+	 * @return true if if the next <code>prefix.length()</code> bytes in
 	 *         this stream are the same as the argument prefix
 	 */
 	public boolean startsWith(String prefix, String encoding) throws IOException {
@@ -333,14 +331,15 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Test if the next <code>prefix.length()</code> characters, starting from
-	 * <code>from</code>, in this stream are the same as the argument prefix.
-	 * If the argument prefix is longer than the maximum lookahead handed to
-	 * the constructor, this method simply returns false.
+	 * Test if the next <code>prefix.length()</code> bytes, starting from
+	 * <code>from</code>, in this stream are the same as the byte representation
+	 * of the argument prefix in the argument encoding. If the argument prefix
+	 * is longer than the maximum lookahead handed to the constructor, this
+	 * method simply returns false.
 	 * @param prefix the prefix to test
 	 * @param encoding the character encoding to use
 	 * @param from the index to start the comparison from
-	 * @return true if if the next <code>prefix.length()</code> characters in
+	 * @return true if if the next <code>prefix.length()</code> bytes in
 	 *         this stream are the same as the argument prefix
 	 */
 	public boolean startsWith(String prefix, String encoding, int from) throws IOException {
@@ -349,9 +348,9 @@ public class PeekInputStream extends FilterInputStream {
 	
 	/**
 	 * Find the offset of the next byte equaling the argument one. This method
-	 * checks at most the lookahead length of characters, and thus the offset
-	 * returned is always less than the lookahead. If the character is not
-	 * found within this range, this method returns -1.
+	 * checks at most the lookahead length of bytes, and thus the offset
+	 * returned is always less than the lookahead. If the byte is not found
+	 * within this range, this method returns -1.
 	 * @param b the byte to find
 	 * @return the offset the argument byte first occurs at, or -1 if it is
 	 *         not found
@@ -363,9 +362,9 @@ public class PeekInputStream extends FilterInputStream {
 	
 	/**
 	 * Find the offset of the next byte equaling the argument one. This method
-	 * checks at most the lookahead length of characters, and thus the offset
-	 * returned is always less than the lookahead. If the character is not
-	 * found within this range, this method returns -1.
+	 * checks at most the lookahead length of bytes, and thus the offset
+	 * returned is always less than the lookahead. If the byte is not found
+	 * within this range, this method returns -1.
 	 * @param b the byte to find
 	 * @param from the index to start the search from
 	 * @return the offset the argument byte first occurs at, or -1 if it is
@@ -395,7 +394,6 @@ public class PeekInputStream extends FilterInputStream {
 	 * offset returned is always less than the lookahead. If the byte sequence
 	 * is not found within this range, this method returns -1.
 	 * @param infix the byte sequence to find
-	 * @param encoding the character encoding to use
 	 * @return the offset the argument byte sequence first occurs at, or -1 if
 	 *         it is not found
 	 * @throws IOException
@@ -437,10 +435,11 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Find the offset of the next character equaling the argument one. This
-	 * method checks at most the lookahead length of characters, and thus the
-	 * offset returned is always less than the lookahead. If the character is
-	 * not found within this range, this method returns -1.
+	 * Find the offset of the next bytes equaling the byte representation of
+	 * the argument characters in the argument encoding. This method checks at
+	 * most the lookahead length of bytes, and thus the offset returned is
+	 * always less than the lookahead. If the bytes are not found within this
+	 * range, this method returns -1.
 	 * @param infix the infix string to find
 	 * @param encoding the character encoding to use
 	 * @return the offset the argument character first occurs at, or -1 if it
@@ -452,10 +451,11 @@ public class PeekInputStream extends FilterInputStream {
 	}
 	
 	/**
-	 * Find the offset of the next character equaling the argument one. This
-	 * method checks at most the lookahead length of characters, and thus the
-	 * offset returned is always less than the lookahead. If the character is
-	 * not found within this range, this method returns -1.
+	 * Find the offset of the next bytes equaling the byte representation of
+	 * the argument characters in the argument encoding. This method checks at
+	 * most the lookahead length of bytes, and thus the offset returned is
+	 * always less than the lookahead. If the character is not found within
+	 * this range, this method returns -1.
 	 * @param infix the infix string to find
 	 * @param encoding the character encoding to use
 	 * @param from the index to start the search from

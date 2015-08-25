@@ -76,7 +76,7 @@ public class FormDataReceiver {
 		/** the total number of bytes in the stream */
 		public final int fieldLength;
 		
-		/** true if value chached in file, false if in memory */
+		/** true if value cached in file, false if in memory */
 		public final boolean isFileBased;
 		
 		private int bytesRead = 0;

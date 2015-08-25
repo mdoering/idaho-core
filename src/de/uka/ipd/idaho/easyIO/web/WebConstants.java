@@ -40,5 +40,4 @@ public interface WebConstants {
 	 * or JavaScript files) as sub paths of this path.
 	 */
 	public static final String RESOURCE_PATH = "resources";
-	
 }

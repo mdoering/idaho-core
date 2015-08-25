@@ -36,10 +36,6 @@ package de.uka.ipd.idaho.gamta.util;
  */
 public interface ProgressMonitor {
 	
-	//	TODO use this everywhere, wherever there are local implementations
-	
-	//	TODO use this in GoldenGATE's apply document processor methods
-	
 	/**
 	 * Dummy implementation printing steps and infos to <code>System.out</code>
 	 */
@@ -84,6 +80,43 @@ public interface ProgressMonitor {
 		}
 		public synchronized void setProgress(int progress) {
 			this.pm.setProgress(progress);
+		}
+	}
+	
+	/**
+	 * Wrapper for arbitrary implementations of <code>ProgressMonitor</code>.
+	 * This wrapper internally holds base and max progress, looping it through
+	 * to the <code>setProgress()</code> method of the wrapped instance. This
+	 * facilitates consistent progress indication across multiple code sections
+	 * that all use the <code>setBaseProgress()</code> and
+	 * <code>setMaxProgress()</code> methods.
+	 */
+	public static class CascadingProgressMonitor implements ProgressMonitor {
+		private ProgressMonitor pm;
+		private int baseProgress = 0;
+		private int maxProgress = 100;
+		
+		/** Constructor
+		 * @param pm the <code>ProgressMonitor</code> to wrap and synchronize
+		 */
+		public CascadingProgressMonitor(ProgressMonitor pm) {
+			this.pm = pm;
+		}
+		
+		public void setStep(String step) {
+			this.pm.setStep(step);
+		}
+		public void setInfo(String info) {
+			this.pm.setInfo(info);
+		}
+		public void setBaseProgress(int baseProgress) {
+			this.baseProgress = baseProgress;
+		}
+		public void setMaxProgress(int maxProgress) {
+			this.maxProgress = maxProgress;
+		}
+		public void setProgress(int progress) {
+			this.pm.setProgress(this.baseProgress + (((this.maxProgress - this.baseProgress) * progress) / 100));
 		}
 	}
 	

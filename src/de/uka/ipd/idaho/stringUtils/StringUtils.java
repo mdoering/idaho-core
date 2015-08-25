@@ -1902,6 +1902,8 @@ public class StringUtils {
 		baseCharMappings.put("guillemotright", new Character('"'));
 		baseCharMappings.put("guilsinglleft", new Character('"'));
 		baseCharMappings.put("guilsinglright", new Character('"'));
+		baseCharMappings.put("dotlessi", new Character('i'));
+		baseCharMappings.put("dotlessj", new Character('j'));
 		
 		//	initialize ligatures, including Roman numbers
 		mapSuffixLigatures("paren", ")");

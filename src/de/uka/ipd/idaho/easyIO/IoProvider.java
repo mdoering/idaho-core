@@ -208,7 +208,9 @@ public interface IoProvider {
 	 * or the referenced column does not exist, this method will not add the
 	 * foreign key constraint and simply return false.
 	 * @param table the name of the table
-	 * @param column the name of the primary key column
+	 * @param column the name of the foreign key column
+	 * @param refTable the name of the referenced table
+	 * @param refColumn the name of the referenced column
 	 * @return true if the primary key was created or existed before, false
 	 *         otherwise
 	 */

@@ -31,6 +31,8 @@ import java.io.FilterReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -391,6 +393,14 @@ public class AnnotationPatternMatcher {
 		}
 	}
 	
+	private static final Comparator matchTreeOrder = new Comparator() {
+		public int compare(Object obj1, Object obj2) {
+			MatchTree mt1 = ((MatchTree) obj1);
+			MatchTree mt2 = ((MatchTree) obj2);
+			return AnnotationUtils.compare(mt1.match, mt2.match);
+		}
+	};
+	
 	/**
 	 * An annotation index provides quick access to individual annotations by
 	 * type and start index to speed up matching. To assist garbage collection,
@@ -576,7 +586,7 @@ public class AnnotationPatternMatcher {
 	 * Attempt to match an annotation pattern against a queriable annotation.
 	 * The children of the argument queriable annotation will be indexed
 	 * automatically. The argument annotation index can contain further
-	 * annotation.
+	 * annotations.
 	 * @param data the queriable annotation to match against
 	 * @param annotationIndex an index holding additional annotations belonging
 	 *            to the token sequence underneath the argument queriable
@@ -592,7 +602,7 @@ public class AnnotationPatternMatcher {
 	 * Attempt to match an annotation pattern against a queriable annotation.
 	 * The children of the argument queriable annotation will be indexed
 	 * automatically. The argument annotation index can contain further
-	 * annotation.
+	 * annotations.
 	 * @param data the queriable annotation to match against
 	 * @param annotationIndex an index holding additional annotations belonging
 	 *            to the token sequence underneath the argument queriable
@@ -657,8 +667,12 @@ public class AnnotationPatternMatcher {
 				mtit.remove();
 		}
 		
+		//	sort matches
+		MatchTree[] mts = ((MatchTree[]) matches.toArray(new MatchTree[matches.size()]));
+		Arrays.sort(mts, matchTreeOrder);
+		
 		//	finally ...
-		return ((MatchTree[]) matches.toArray(new MatchTree[matches.size()]));
+		return mts;
 	}
 	
 	private static void indexPatternLiteralMatches(TokenSequence tokens, AnnotationPatternElement ape, AnnotationIndex patternLiteralMatchIndex, HashSet indexedPatternLiteralMatchTypes) {

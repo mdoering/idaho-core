@@ -91,14 +91,21 @@ public interface LiteratureConstants {
 	/**	the annotation type for marking a caption in a document (captions of a figure, table, or something else)*/
 	public static final String CAPTION_TYPE = "caption";
 	
-	/**	the annotation type for marking a citation in a document */
+	/**	the annotation type for marking a citation in a document
+	 * @deprecated use bibRef for references, and CITATION_TYPE_SUFFIX for in-text citations */
 	public static final String CITATION_TYPE = "citation";
+	
+	/**	the annotation type suffix for marking a citation in a document, e.g. a bibRefCitation or a figureCitation*/
+	public static final String CITATION_TYPE_SUFFIX = "Citation";
 	
 	/**	the annotation type for marking a heading in a document */
 	public static final String HEADING_TYPE = "heading";
 	
-	/**	the annotation type for marking an emphasis in a document,  */
+	/**	the annotation type for marking an emphasis in a document */
 	public static final String EMPHASIS_TYPE = "emphasis";
+	
+	/**	the annotation type for marking a parenthesis in a document, e.g. a standalone text box or a note, which is not part of the main document text*/
+	public static final String PARENTHESIS_TYPE = "parenthesis";
 	
 	/**	the annotation type for marking a bibliographic reference in a document*/
 	public static final String BIBLIOGRAPHIC_REFERENCE_TYPE = "bibRef";
