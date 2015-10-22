@@ -27,6 +27,7 @@
  */
 package de.uka.ipd.idaho.gamta.util.swing;
 
+import java.awt.Component;
 import java.awt.Dialog;
 import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
@@ -34,7 +35,9 @@ import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
+import javax.swing.Icon;
 import javax.swing.JDialog;
+import javax.swing.JOptionPane;
 
 /**
  * Factory for dialogs. This factory returns dialogs that have the currently
@@ -83,7 +86,7 @@ public class DialogFactory {
 	 * JDialog modal to that window.
 	 * @param title the title for the dialog
 	 * @param modal should the dialog be modal?
-	 * @return a dialog with the currently focussed frame or dialog as its owner
+	 * @return a dialog with the currently focused frame or dialog as its owner
 	 */
 	public static JDialog produceDialog(String title, boolean modal) {
 		Window activeWindow = getTopWindow();
@@ -110,5 +113,193 @@ public class DialogFactory {
 		else dialog = new JDialog(((Frame) null), title, modal);
 		
 		return dialog;
+	}
+	
+	/**
+	 * Object displaying prompts to users.
+	 * 
+	 * @author sautter
+	 */
+	public static interface PromptProvider {
+		
+		/**
+		 * Show an alert message to a user.
+		 * @param message the <code>Object</code> to display
+		 * @param title the title string for the dialog
+		 * @param messageType the type of message to be displayed:
+		 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+		 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+		 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+		 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+		 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+		 * @param icon an icon to display in the dialog that helps the user
+		 *                  identify the kind of message that is being displayed
+		 * @see javax.swing.JOptionPane#showMessageDialog(Component, Object, String, int, Icon)
+		 */
+		public abstract void alert(Object message, String title, int messageType, Icon icon);
+		
+		/**
+		 * Show a prompt asking a user for confirmation and possibly other input.
+		 * @param message the <code>Object</code> to display
+		 * @param title the title string for the dialog
+		 * @param optionType an int designating the options available on the dialog:
+		 *          <code>JOptionPane.YES_NO_OPTION</code>,
+		 *          <code>JOptionPane.YES_NO_CANCEL_OPTION</code>,
+		 *          or <code>JOptionPane.OK_CANCEL_OPTION</code>
+		 * @param messageType the type of message to be displayed:
+		 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+		 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+		 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+		 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+		 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+		 * @param icon an icon to display in the dialog that helps the user
+		 *                  identify the kind of message that is being displayed
+		 * @return an int indicating the option selected by the user
+		 * @see javax.swing.JOptionPane#showConfirmDialog(Component, Object, String, int, int, Icon)
+		 */
+		public abstract int confirm(Object message, String title, int optionType, int messageType, Icon icon);
+	}
+	
+	/**
+	 * Retrieve the current prompt provider.
+	 * @return the current prompt provider
+	 */
+	public static PromptProvider getPromptProvider() {
+		return promptProvider;
+	}
+	
+	/**
+	 * Set the prompt provider to use for <code>alert()</code> and
+	 * <code>confirm()</code> methods. Setting the prompt provider to
+	 * <code>null</code> reverts this class to the default behavior, i.e.,
+	 * using <code>JOptionPane</code>.
+	 * @param pp the prompt provider to use
+	 */
+	public static void setPromptProvider(PromptProvider pp) {
+		promptProvider = pp;
+	}
+	
+	private static PromptProvider promptProvider;
+	
+	/**
+	 * Show an alert message to a user. If no <code>PromptProvider</code> is
+	 * registered, this method loops through to <code>JOptionPane</code>. If
+	 * a <code>PromptProvider</code> is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @see javax.swing.JOptionPane#showMessageDialog(Component, Object, String, int)
+	 */
+	public static void alert(Object message, String title) {
+		alert(message, title, JOptionPane.PLAIN_MESSAGE, null);
+	}
+	
+	/**
+	 * Show an alert message to a user. If no <code>PromptProvider</code> is
+	 * registered, this method loops through to <code>JOptionPane</code>. If
+	 * a <code>PromptProvider</code> is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @param messageType the type of message to be displayed:
+	 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+	 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+	 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+	 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+	 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+	 * @see javax.swing.JOptionPane#showMessageDialog(Component, Object, String, int)
+	 */
+	public static void alert(Object message, String title, int messageType) {
+		alert(message, title, messageType, null);
+	}
+	
+	/**
+	 * Show an alert message to a user. If no <code>PromptProvider</code> is
+	 * registered, this method loops through to <code>JOptionPane</code>. If
+	 * a <code>PromptProvider</code> is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @param messageType the type of message to be displayed:
+	 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+	 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+	 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+	 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+	 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+	 * @param icon an icon to display in the dialog that helps the user
+	 *                  identify the kind of message that is being displayed
+	 * @see javax.swing.JOptionPane#showMessageDialog(Component, Object, String, int, Icon)
+	 */
+	public static void alert(Object message, String title, int messageType, Icon icon) {
+		if (promptProvider == null)
+			JOptionPane.showMessageDialog(getTopWindow(), message, title, messageType, icon);
+		else promptProvider.alert(message, title, messageType, icon);
+	}
+	
+	/**
+	 * Show a prompt asking a user for confirmation and possibly other input.
+	 * If no <code>PromptProvider</code> is registered, this method loops
+	 * through to <code>JOptionPane</code>. If a <code>PromptProvider</code>
+	 * is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @param optionType an int designating the options available on the dialog:
+	 *          <code>JOptionPane.YES_NO_OPTION</code>,
+	 *          <code>JOptionPane.YES_NO_CANCEL_OPTION</code>,
+	 *          or <code>JOptionPane.OK_CANCEL_OPTION</code>
+	 * @return an int indicating the option selected by the user
+	 * @see javax.swing.JOptionPane#showConfirmDialog(Component, Object, String, int, int)
+	 */
+	public static int confirm(Object message, String title, int optionType) {
+		return confirm(message, title, optionType, JOptionPane.PLAIN_MESSAGE, null);
+	}
+	
+	/**
+	 * Show a prompt asking a user for confirmation and possibly other input.
+	 * If no <code>PromptProvider</code> is registered, this method loops
+	 * through to <code>JOptionPane</code>. If a <code>PromptProvider</code>
+	 * is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @param optionType an int designating the options available on the dialog:
+	 *          <code>JOptionPane.YES_NO_OPTION</code>,
+	 *          <code>JOptionPane.YES_NO_CANCEL_OPTION</code>,
+	 *          or <code>JOptionPane.OK_CANCEL_OPTION</code>
+	 * @param messageType the type of message to be displayed:
+	 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+	 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+	 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+	 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+	 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+	 * @return an int indicating the option selected by the user
+	 * @see javax.swing.JOptionPane#showConfirmDialog(Component, Object, String, int, int)
+	 */
+	public static int confirm(Object message, String title, int optionType, int messageType) {
+		return confirm(message, title, optionType, messageType, null);
+	}
+	
+	/**
+	 * Show a prompt asking a user for confirmation and possibly other input.
+	 * If no <code>PromptProvider</code> is registered, this method loops
+	 * through to <code>JOptionPane</code>. If a <code>PromptProvider</code>
+	 * is registered, it is used.
+	 * @param message the <code>Object</code> to display
+	 * @param title the title string for the dialog
+	 * @param optionType an int designating the options available on the dialog:
+	 *          <code>JOptionPane.YES_NO_OPTION</code>,
+	 *          <code>JOptionPane.YES_NO_CANCEL_OPTION</code>,
+	 *          or <code>JOptionPane.OK_CANCEL_OPTION</code>
+	 * @param messageType the type of message to be displayed:
+	 *          <code>JOptionPane.ERROR_MESSAGE</code>,
+	 *          <code>JOptionPane.INFORMATION_MESSAGE</code>,
+	 *          <code>JOptionPane.WARNING_MESSAGE</code>,
+	 *          <code>JOptionPane.QUESTION_MESSAGE</code>,
+	 *          or <code>JOptionPane.PLAIN_MESSAGE</code>
+	 * @param icon an icon to display in the dialog that helps the user
+	 *                  identify the kind of message that is being displayed
+	 * @return an int indicating the option selected by the user
+	 * @see javax.swing.JOptionPane#showConfirmDialog(Component, Object, String, int, int, Icon)
+	 */
+	public static int confirm(Object message, String title, int optionType, int messageType, Icon icon) {
+		if (promptProvider == null)
+			return JOptionPane.showConfirmDialog(getTopWindow(), message, title, optionType, messageType, icon);
+		else return promptProvider.confirm(message, title, optionType, messageType, icon);
 	}
 }
