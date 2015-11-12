@@ -452,6 +452,7 @@ public class AnnotationPatternMatcher {
 			for (int a = 0; a < annots.length; a++)
 				this.getAnnotationList(type, annots[a].getStartIndex(), true).add(annots[a]);
 		}
+		
 		Annotation[] getAnnotations(String type, int startIndex) {
 			ArrayList al = this.getAnnotationList(type, startIndex, false);
 			if ((al == null) && (this.data != null) && this.dataRetrievedTypes.add(type)) {
@@ -468,14 +469,30 @@ public class AnnotationPatternMatcher {
 			}
 			return ((al == null) ? new Annotation[0] : ((Annotation[]) al.toArray(new Annotation[al.size()])));
 		}
+		
 		ArrayList getAnnotationList(String type, int startIndex, boolean create) {
 			String alk = ("" + startIndex + " " + type);
 			ArrayList al = ((ArrayList) this.index.get(alk));
 			if ((al == null) && create) {
-				al = new ArrayList(2);
+				al = new AnnotationIndexList();
 				this.index.put(alk, al);
 			}
 			return al;
+		}
+		
+		private static class AnnotationIndexList extends ArrayList {
+			AnnotationIndexList() {
+				super(2);
+			}
+			public boolean add(Object obj) {
+				if (this.size() == 0)
+					return super.add(obj);
+				for (int a = 0; a < this.size(); a++) {
+					if (((Annotation) obj).size() == ((Annotation) this.get(a)).size())
+						return false;
+				}
+				return super.add(obj);
+			}
 		}
 		
 		/**
@@ -668,14 +685,6 @@ public class AnnotationPatternMatcher {
 			step(tokens, s, s, ap.elements, 0, 0, annotationIndex, patternLiteralMatchIndex, matches, matchTree);
 			matchTree.clear();
 		}
-//		
-//		//	filter out duplicate matches
-//		HashSet matchIDs = new HashSet();
-//		for (Iterator mtit = matches.iterator(); mtit.hasNext();) {
-//			MatchTree mt = ((MatchTree) mtit.next());
-//			if (!matchIDs.add(mt.match.getType() + "@" + mt.match.getStartIndex() + "-" + mt.match.getEndIndex()))
-//				mtit.remove();
-//		}
 		
 		//	sort matches
 		MatchTree[] mts = ((MatchTree[]) matches.toArray(new MatchTree[matches.size()]));
