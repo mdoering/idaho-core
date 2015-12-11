@@ -27,10 +27,7 @@
  */
 package de.uka.ipd.idaho.easyIO.utilities;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -49,6 +46,9 @@ import de.uka.ipd.idaho.easyIO.streams.PeekReader;
  * @author sautter
  */
 public abstract class SqlDumpReader {
+	private int insertCount = 0;
+	private int recordCount = 0;
+	private int insertRecordCount = 0;
 	
 	/** Constructor
 	 */
@@ -58,25 +58,48 @@ public abstract class SqlDumpReader {
 	 * Handle a line of an SQL dump that is not an INSERT INTO statement. Such
 	 * lines may be comments, CREATE TABLE statements or parts thereof, or
 	 * statements that add constraints. While important for exploring an SQL
-	 * dump, they can be largely ignored on content extraction.
+	 * dump, they can be largely ignored on content extraction. This default
+	 * implementation prints out the argument line, preceded by the total
+	 * number of inserted records if the previous lines were insert statements.
 	 * @param line the line to handle
 	 */
-	public abstract void handleNonInsertLine(String line);
+	public void handleNonInsertLine(String line) {
+		if (this.insertCount != 0)
+			System.out.println(" [" + this.insertCount + " insert lines with " + this.insertRecordCount + " records]");
+		this.recordCount = 0;
+		this.insertCount = 0;
+		this.insertRecordCount = 0;
+		System.out.println(line);
+	}
 	
 	/**
 	 * Handle a single record to be inserted into a table. The argument record
 	 * is raw, i.e., still contains escape characters. To parse a record into
-	 * individual fields, use the <code>parseRecord()</code> method.
+	 * individual fields, use the <code>parseRecord()</code> method. This
+	 * default implementation prints out the first three records of the first
+	 * 10 insert statements per table, and afterwards simply keeps the counts.
 	 * @param tableName the name of the table the record is inserted into
 	 * @param record the record to handle
 	 */
-	public abstract void handleInsertRecord(String tableName, String record);
+	public void handleInsertRecord(String tableName, String record) {
+		if ((this.insertCount < 10) && (this.recordCount < 3))
+			System.out.println(record + " ==> " + tableName);
+		this.recordCount++;
+		this.insertRecordCount++;
+	}
 	
 	/**
-	 * Handle the end of a single insert statement.
+	 * Handle the end of a single insert statement. This default implementation
+	 * prints the number of records in the just terminated statements for the
+	 * first 10 insert statements per table.
 	 * @param tableName the table the insertion is directed at
 	 */
-	public abstract void handleInsertStatementEnd(String tableName);
+	public void handleInsertStatementEnd(String tableName) {
+		if (this.insertCount < 10)
+			System.out.println(" [" + this.recordCount + " records]");
+		this.insertCount++;
+		this.recordCount = 0;
+	}
 	
 	/**
 	 * Read an SQL dump. If the argument SQL dump reader instance is null, a
@@ -92,7 +115,7 @@ public abstract class SqlDumpReader {
 		
 		//	make sure we have an event receiver
 		if (sdr == null)
-			sdr = new ExplorerSqlDumpReader();
+			sdr = new SqlDumpReader() {};
 		
 		//	parse through SQL dump
 		PeekReader pr = new PeekReader(r, 256);
@@ -102,7 +125,7 @@ public abstract class SqlDumpReader {
 			//	handle line breaks
 			if (pr.peek() == '\r')
 				pr.read();
-			else if (pr.peek() == '\n')
+			if (pr.peek() == '\n')
 				pr.read();
 			
 			//	handle INSERT INTO statements
@@ -113,7 +136,7 @@ public abstract class SqlDumpReader {
 				String rd = null;
 				
 				//	read data portion of statement to next line break
-				while ((pr.peek() != '\n') && (pr.peek() != '\r')) {
+				while ((pr.peek() != '\n') && (pr.peek() != '\r') && (pr.peek() != -1)) {
 					pr.skipSpace();
 					
 					//	skip over record separator
@@ -138,7 +161,7 @@ public abstract class SqlDumpReader {
 				}
 				
 				//	read to end of line
-				while ((pr.peek() != '\n') && (pr.peek() != '\r'))
+				while ((pr.peek() != '\n') && (pr.peek() != '\r') && (pr.peek() != -1))
 					System.out.print((char) pr.read());
 				while ((pr.peek() == '\n') || (pr.peek() == '\r'))
 					pr.read();
@@ -148,7 +171,7 @@ public abstract class SqlDumpReader {
 			else {
 				insertTableName = null;
 				StringBuffer nil = new StringBuffer();
-				while ((pr.peek() != '\n') && (pr.peek() != '\r'))
+				while ((pr.peek() != '\n') && (pr.peek() != '\r') && (pr.peek() != -1))
 					nil.append((char) pr.read());
 				sdr.handleNonInsertLine(nil.toString());
 				while ((pr.peek() == '\n') || (pr.peek() == '\r'))
@@ -161,73 +184,50 @@ public abstract class SqlDumpReader {
 	 * Parse a single insert record into individual column values.
 	 * @param record the record to parse
 	 * @return an array holding the individual fields
-	 * @throws IOException
 	 */
-	public static String[] parseRecordData(String record) throws IOException {
+	public static String[] parseRecordData(String record) {
 		ArrayList recordParts = new ArrayList();
-		PeekReader pr = new PeekReader(new StringReader(record), 256);
-		pr.read(); // consume opening '('
-		while (pr.peek() != ')') {
-			
-			//	skip over field separator
-			if (pr.peek() == ',')
-				pr.read();
-			
-			//	read string value
-			else if (pr.peek() == '\'') {
-				String str = cropString(pr, false);
-				if (str.startsWith("'"))
-					str = str.substring("'".length());
-				if (str.endsWith("'"))
-					str = str.substring(0, (str.length() - "'".length()));
-				recordParts.add(str);
+		try {
+			PeekReader pr = new PeekReader(new StringReader(record), 256);
+			if (pr.peek() == '(')
+				pr.read(); // consume opening '('
+			while ((pr.peek() != ')') && (pr.peek() != -1)) {
+				
+				//	skip over field separator
+				if (pr.peek() == ',')
+					pr.read();
+				
+				//	read string value
+				else if (pr.peek() == '\'') {
+					String str = cropString(pr, false);
+					if (str.startsWith("'"))
+						str = str.substring("'".length());
+					if (str.endsWith("'"))
+						str = str.substring(0, (str.length() - "'".length()));
+					recordParts.add(str);
+				}
+				
+				//	read other value
+				else recordParts.add(cropNonQuoted(pr));
 			}
-			
-			//	read other value
-			else recordParts.add(cropNonQuoted(pr));
-		}
-		pr.read(); // consume closing ')'
+			if (pr.peek() == ')')
+				pr.read(); // consume closing ')'
+		} catch (IOException ioe) { /* never gonna happen with a StringReader, but Java don't know */ }
 		return ((String[]) recordParts.toArray(new String[recordParts.size()]));
 	}
 	
-	private static class ExplorerSqlDumpReader extends SqlDumpReader {
-		int insertCount = 0;
-		int recordCount = 0;
-		int insertRecordCount = 0;
-		public void handleNonInsertLine(String line) {
-			if (this.insertCount != 0)
-				System.out.println(" [" + this.insertCount + " insert lines with " + this.insertRecordCount + " records]");
-			this.recordCount = 0;
-			this.insertCount = 0;
-			this.insertRecordCount = 0;
-			System.out.println(line);
-		}
-		public void handleInsertRecord(String tableName, String record) {
-			if ((this.insertCount < 10) && (this.recordCount < 3))
-				System.out.println(record + " ==> " + tableName);
-			this.recordCount++;
-			this.insertRecordCount++;
-		}
-		public void handleInsertStatementEnd(String tableName) {
-			if (this.insertCount < 10)
-				System.out.println(" [" + this.recordCount + " records]");
-			this.insertCount++;
-			this.recordCount = 0;
-		}
-	}
-	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception {
-		File colPath = new File("E:/Install/CoL");
-		File colSqlDump = new File(colPath, "col2015ac.sql");
-		readSqlDump(new InputStreamReader(new FileInputStream(colSqlDump), "UTF-8"), null);
-	}
-	
+//	/**
+//	 * @param args
+//	 */
+//	public static void main(String[] args) throws Exception {
+//		File colPath = new File("E:/Install/CoL");
+//		File colSqlDump = new File(colPath, "col2015ac.sql");
+//		readSqlDump(new InputStreamReader(new FileInputStream(colSqlDump), "UTF-8"), null);
+//	}
+//	
 	private static String cropInsertHeader(PeekReader pr) throws IOException {
 		StringBuffer ih = new StringBuffer();
-		while (pr.peek() != '(')
+		while ((pr.peek() != '(')  && (pr.peek() != -1))
 			ih.append((char) pr.read());
 		return ih.toString();
 	}
@@ -241,7 +241,7 @@ public abstract class SqlDumpReader {
 	
 	private static String cropRecordData(PeekReader pr) throws IOException {
 		StringBuffer rd = new StringBuffer();
-		while (pr.peek() != ')') {
+		while ((pr.peek() != ')') && (pr.peek() != -1)) {
 			if (pr.peek() == '\'')
 				rd.append(cropString(pr, true));
 			else rd.append((char) pr.read());
