@@ -88,14 +88,14 @@ public interface LiteratureConstants {
 	/**	the annotation type for marking a footnote in a document*/
 	public static final String FOOTNOTE_TYPE = "footnote";
 	
-	/**	the annotation type for marking a caption in a document (captions of a figure, table, or something else)*/
+	/**	the annotation type for marking a caption in a document (captions of a figure, table, or something else) */
 	public static final String CAPTION_TYPE = "caption";
 	
 	/**	the annotation type for marking a citation in a document
 	 * @deprecated use bibRef for references, and CITATION_TYPE_SUFFIX for in-text citations */
 	public static final String CITATION_TYPE = "citation";
 	
-	/**	the annotation type suffix for marking a citation in a document, e.g. a bibRefCitation or a figureCitation*/
+	/**	the annotation type suffix for marking a citation in a document, e.g. a bibRefCitation or a figureCitation */
 	public static final String CITATION_TYPE_SUFFIX = "Citation";
 	
 	/**	the annotation type for marking a heading in a document */
@@ -104,16 +104,19 @@ public interface LiteratureConstants {
 	/**	the annotation type for marking an emphasis in a document */
 	public static final String EMPHASIS_TYPE = "emphasis";
 	
-	/**	the annotation type for marking a parenthesis in a document, e.g. a standalone text box or a note, which is not part of the main document text*/
+	/**	the annotation type for marking a parenthesis in a document, e.g. a standalone text box, which is not part of the main document text */
 	public static final String PARENTHESIS_TYPE = "parenthesis";
 	
-	/**	the annotation type for marking a bibliographic reference in a document*/
+	/**	the annotation type for marking an explanatory note associated with a table in a document */
+	public static final String TABLE_NOTE_TYPE = "tableNote";
+	
+	/**	the annotation type for marking a bibliographic reference in a document */
 	public static final String BIBLIOGRAPHIC_REFERENCE_TYPE = "bibRef";
 	
-	/**	the annotation type for marking a group of bibliographic references in a document*/
+	/**	the annotation type for marking a group of bibliographic references in a document */
 	public static final String BIBLIOGRAPHIC_REFERENCE_GROUP_TYPE = "bibRefGroup";
 	
-	/** the attribute for a citation or bib_ref holding the link to to the cited document*/
+	/** the attribute for a citation or bib_ref holding the link to to the cited document */
 	public static final String CITED_PUBLICATION_URL_ATTRIBUTE = "publicationUrl";
 	
 	
