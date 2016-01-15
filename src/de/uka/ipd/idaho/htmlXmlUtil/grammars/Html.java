@@ -76,7 +76,7 @@ public class Html extends StandardGrammar {
 	
 	private static final String singularTagTypesString = "area;base;br;hr;img;input;isindex;link;meta;param";
 	
-	private static final String subsequentEndTagsAllowedTypesString = "frameset;ul;ol;dl;div";
+	private static final String subsequentEndTagsAllowedTypesString = "frameset;ul;ol;dl;div;span";
 	
 	private static final String whitespaceFreeValueAttributesString = "align;clear;columns;colspan;dataformatas;dir;for;frame;frameborder;headers;http-equiv;id;maxlength;method;name;nohref;rows;rowspan;rules;scheme;scope;scrolling;shape;span;start;tabindex;type;valign;valuetype;width";
 	
@@ -466,7 +466,7 @@ public class Html extends StandardGrammar {
 	 */
 	public boolean isSingularTagType(String type) {
 		String t = this.getType(type).toLowerCase();
-		return (this.singularTagTypes.contains(t));
+		return this.singularTagTypes.contains(t);
 	}
 	
 	/** @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#valueMayContainWhitespace(String, String)
@@ -515,38 +515,6 @@ public class Html extends StandardGrammar {
 		return ((c == '\'') ? "'" : this.characterEncodings.getProperty(("" + c), ("" + c)));
 	}
 	
-//	/** inverse of getCharCode(char c)
-//	 */
-//	public String getPlainChar(String charCode) {
-//		
-//		//	decode hex code
-//		if (charCode.startsWith("&#x")) {
-//			if (charCode.endsWith(";"))
-//				charCode = charCode.substring(0, (charCode.length() - 1));
-//			try {
-//				return ("" + ((char) Integer.parseInt(charCode.substring(3), 16)));
-//			}
-//			catch (NumberFormatException e) {
-//				return charCode;
-//			}
-//		}
-//		
-//		//	handle dec encoding
-//		else if (charCode.startsWith("&#")) {
-//			if (charCode.endsWith(";"))
-//				charCode = charCode.substring(0, (charCode.length() - 1));
-//			try {
-//				return ("" + ((char) Integer.parseInt(charCode.substring(2))));
-//			}
-//			catch (NumberFormatException e) {
-//				return charCode;
-//			}
-//		}
-//		
-//		//	handle specialized code
-//		else return this.characterDecodings.getProperty(charCode, charCode);
-//	}
-	
 	/* (non-Javadoc)
 	 * @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#getPlainChar(java.lang.String)
 	 */
@@ -555,53 +523,13 @@ public class Html extends StandardGrammar {
 		return ((ch == null) ? super.getPlainChar(code) : ch.charAt(0));
 	}
 	
-
 	/* (non-Javadoc)
 	 * @see de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar#isCharCode(java.lang.String)
 	 */
 	public boolean isCharCode(String code) {
 		return (this.characterDecodings.containsKey(code) || super.isCharCode(code));
 	}
-//	/** @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#isCharCode(String)
-//	 */
-//	public boolean isCharCode(String string) {
-//		
-//		String code = string.toLowerCase();
-//		
-//		//	handle known codes
-//		if (this.characterCodes.contains(code.toLowerCase()))
-//			return true;
-//		
-//		//	handle hex codes
-//		if (code.startsWith("&#x")) {
-//			int index = 3;
-//			while (index < code.length() && (index < 8)) {
-//				if (!this.characterHexCodeChars.contains(code.substring(index, (index+1))))
-//					return false;
-//				if ((index > 3) && (code.charAt(index) == ';'))
-//					return true;
-//				index ++;
-//			}
-//			return false;
-//		}
-//		
-//		//	handle dec codes
-//		if (code.startsWith("&#")) {
-//			int index = 2;
-//			while (index < code.length() && (index < 8)) {
-//				if (!this.characterDecCodeChars.contains(code.substring(index, (index+1))))
-//					return false;
-//				if ((index > 2) && (code.charAt(index) == ';'))
-//					return true;
-//				index ++;
-//			}
-//			return false;
-//		}
-//		
-//		//	handle standard case
-//		return false;
-//	}
-
+	
 	/**
 	 * This implementation escapes a string for HTML - in particular, it escapes
 	 * &lt;, &gt;, and &quot;, but not &amp; if it occurs in a string without
@@ -665,12 +593,12 @@ public class Html extends StandardGrammar {
 					//	store script content, surround it by comment marks if no already so
 					if (collector.length() > 0) {
 						String script = collector.toString().trim();
-						if (script.startsWith("<!--"))
-							script = "//" + script;
-						else if (!script.startsWith("//<!--"))
-							script = "//<!--\r\n" + script;
-						if (!script.endsWith("-->"))
-							script = script + "\r\n//-->";
+//						if (script.startsWith("<!--"))
+//							script = "//" + script;
+//						else if (!script.startsWith("//<!--"))
+//							script = "//<!--\r\n" + script;
+//						if (!script.endsWith("-->"))
+//							script = script + "\r\n//-->";
 						
 						ts.insertElementAt(script, index);
 						index++;
@@ -703,8 +631,10 @@ public class Html extends StandardGrammar {
 					//	store style content, surround it by comment marks if no already so
 					if (collector.length() > 0) {
 						String style = collector.toString().trim();
-						if (!(style.startsWith("//") && style.substring(2).trim().startsWith("<!--")) && !style.startsWith("<!--")) style = "<!--\n" + style;
-						if (!style.endsWith("-->")) style = style + "\n//-->";
+//						if (!(style.startsWith("//") && style.substring(2).trim().startsWith("<!--")) && !style.startsWith("<!--"))
+//							style = "<!--\n" + style;
+//						if (!style.endsWith("-->"))
+//							style = style + "\n//-->";
 						
 						ts.insertElementAt(style, index);
 						index++;

@@ -72,7 +72,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 
 		/**
 		 * Obtain the relative path leading from an HTTP request's context path
-		 * (the part of a URL identifying the application to send a requst to,
+		 * (the part of a URL identifying the application to send a request to,
 		 * usually the first step after the server name and port) to specific
 		 * data items, like stylesheets or JavaScript files.
 		 * @return the relative data path
@@ -91,7 +91,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 		
 		/**
 		 * Retrieve an array holding the addresses of JavaScript files to reference
-		 * in a page head. If an address includes a protocol, eg 'http://', it is
+		 * in a page head. If an address includes a protocol, e.g. 'http://', it is
 		 * interpreted as absolute. Otherwise, it is interpreted relative to the
 		 * servlet's data path.
 		 * @return an array holding the addresses of JavaScript files to reference
@@ -101,7 +101,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 		
 		/**
 		 * Retrieve the address of an image file to reference as the page icon
-		 * in a page head. If an address includes a protocol, eg 'http://', it
+		 * in a page head. If an address includes a protocol, e.g. 'http://', it
 		 * is interpreted as absolute. Otherwise, it is interpreted relative to
 		 * the servlet's data path. If this method returns null, the pages will
 		 * not have an icon. The file has to be a .ico file to work in IE; most
@@ -300,7 +300,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 	}
 	
 	/**
-	 * Write a string and a subsequent lin break to the page being built.
+	 * Write a string and a subsequent line break to the page being built.
 	 * This method is equivalent to first invoking write() and then
 	 * newLine().
 	 * @param s the string to write
@@ -799,7 +799,7 @@ public class HtmlPageBuilder extends TokenReceiver {
 	 * 'include') delegate here, except for 'includeFile'. This default
 	 * implementation simply adds an XML comment indicating that the
 	 * specified tag has not been understood, thus effectively ignoring the
-	 * signal tag alltogether. Sub classes should overwrite this method to
+	 * signal tag altogether. Sub classes should overwrite this method to
 	 * filter out their specific signal tags and delegate to this
 	 * implementation for ones that they do not understand.
 	 * @param type the type of the signal tag
