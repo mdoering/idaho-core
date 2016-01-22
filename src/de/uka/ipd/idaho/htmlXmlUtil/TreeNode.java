@@ -74,7 +74,7 @@ public class TreeNode {
 	public static final String PROCESSING_INSTRUCTION_NODE_TYPE = "PcInstruction";
 	
 	/**
-	 * Type for atttribute nodes. This type is only used in DOM compatibility
+	 * Type for attribute nodes. This type is only used in DOM compatibility
 	 * mode, otherwise a TreeNode returns its attributes as plain strings.
 	 */
 	public static final String ATTRIBUTE_NODE_TYPE = "PcAttribute";
@@ -143,7 +143,7 @@ public class TreeNode {
 	 * @param	oldChild	the child node to be replaced
 	 * @param	newChild	the node to replace the child node with
 	 * 	Note: 	If the node to be replaced is NULL or is not a child of this node, 
-	 * 			the new node is added to this nodes chil nodes without removing another node
+	 * 			the new node is added to this nodes child nodes without removing another node
 	 */
 	public void replaceChildNode(TreeNode oldChild, TreeNode newChild) {
 		boolean replaced = (newChild != null);

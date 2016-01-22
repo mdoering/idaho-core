@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URL;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -324,6 +325,14 @@ public class HtmlPageBuilder extends TokenReceiver {
 				String includeFile = as.getAttribute("file");
 				if (includeFile != null) 
 					this.includeFile(includeFile);
+			}
+			
+			//	URL based inclusion
+			else if ("includeUrl".equals(type)) {
+				TreeNodeAttributeSet as = TreeNodeAttributeSet.getTagAttributes(token, html);
+				String includeUrl = as.getAttribute("url");
+				if (includeUrl != null) 
+					this.includeUrl(includeUrl);
 			}
 			
 			//	other inclusion marker
@@ -723,9 +732,9 @@ public class HtmlPageBuilder extends TokenReceiver {
 	}
 	
 	/**
-	 * Write the content of a file to a page. This method expects the
-	 * specified file to contain HTML code, and it writes out the content of
-	 * the body tag, thus ignoring all information in the file's head. The
+	 * Write the content of a file to the page being built. This method expects
+	 * the specified file to contain HTML code, and it writes out the content
+	 * of the body tag, thus ignoring all information in the file's head. The
 	 * specified file is first searched for in the servlet's data path; if
 	 * it is not found there, it is searched in the surrounding web-app's
 	 * context path. If it is not found there, either, a respective error
@@ -775,6 +784,47 @@ public class HtmlPageBuilder extends TokenReceiver {
 			if (is != null)
 				is.close();
 		}
+	}
+	
+	/**
+	 * Write the content of an HTML page retrieved from a URL to the page being
+	 * built. This method expects the specified URL to point to an HTML page,
+	 * and it writes out the content of the body tag, thus ignoring all
+	 * information in the file's head.
+	 * @param url the URL of the HTML page to include
+	 * @throws IOException
+	 */
+	protected void includeUrl(String url) throws IOException {
+		this.newLine();
+		InputStream is = null;
+		try {
+			if (url.startsWith("./"))
+				url = (this.request.getContextPath() + url.substring(".".length()));
+			if (url.startsWith("/"))
+				url = ("http://localhost:" + this.request.getLocalPort() + url);
+			is = (new URL(url)).openStream();
+			TokenReceiver fr = new TokenReceiver() {
+				private boolean inBody = false;
+				public void close() throws IOException {}
+				public void storeToken(String token, int treeDepth) throws IOException {
+					if (html.isTag(token) && "body".equalsIgnoreCase(html.getType(token))) {
+						if (html.isEndTag(token))
+							this.inBody = false;
+						else this.inBody = true;
+					}
+					else if (this.inBody) HtmlPageBuilder.this.storeToken(token, 0);
+				}
+			};
+			htmlParser.stream(is, fr);
+		}
+		catch (IOException ioe) {
+			this.writeExceptionAsXmlComment(("exception including '" + url + "'"), ioe);
+		}
+		finally {
+			if (is != null)
+				is.close();
+		}
+		this.newLine();
 	}
 	
 	/**
