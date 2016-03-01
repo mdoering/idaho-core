@@ -29,6 +29,7 @@ package de.uka.ipd.idaho.gamta.util.swing;
 
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -43,7 +44,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.TreeMap;
 
 import javax.swing.BorderFactory;
 import javax.swing.DefaultComboBoxModel;
@@ -53,10 +55,6 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.TableModel;
 import javax.swing.text.JTextComponent;
 
 import de.uka.ipd.idaho.gamta.Annotation;
@@ -67,12 +65,12 @@ import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.Token;
 import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.TokenSequenceUtils;
-import de.uka.ipd.idaho.stringUtils.StringIndex;
+import de.uka.ipd.idaho.gamta.util.CountingSet;
 import de.uka.ipd.idaho.stringUtils.StringVector;
 
 /**
- * An editor widget for manipulating the attributes of an Attributed object in a
- * GUI
+ * An editor widget for manipulating the attributes of an Attributed object in
+ * a GUI
  * 
  * @author sautter
  */
@@ -81,18 +79,15 @@ public class AttributeEditor extends JPanel {
 	private static final String DUMMY_ATTRIBUTE_NAME = "Attribute Name";
 	private static final String DUMMY_ATTRIBUTE_VALUE = "Attribute Value";
 	
-	private JTable attributeTable = new JTable();
+	private AttributeTablePanel attributeTable = new AttributeTablePanel();
 	
 	private JComboBox attributeNameField = new JComboBox();
 	private JComboBox attributeValueField = new JComboBox();
 	
-	private StringVector contextAttributeNames = new StringVector();
-	private HashMap contextAttributeValuesByNames = new HashMap();
-	private HashMap contextAttributeValueFrequenciesByNames = new HashMap();
+	private TreeMap contextAttributeValueSetsByName = new TreeMap();
 	
 	private Attributed attributed;
-	private StringVector annotationAttributeNames = new StringVector();
-	private HashMap annotationAttributeValues = new HashMap();
+	private TreeMap attributes = new TreeMap();
 	
 	private boolean nameFieldKeyPressed = false;
 	private boolean valueFieldKeyPressed = false;
@@ -119,7 +114,7 @@ public class AttributeEditor extends JPanel {
 	/**
 	 * Constructor
 	 * @param token the Token whose attributes to edit
-	 * @param context the context token sequence, eg the document the token
+	 * @param context the context token sequence, e.g. the document the token
 	 *            belongs to (will be used to provide attribute name and value
 	 *            suggestions)
 	 */
@@ -141,7 +136,7 @@ public class AttributeEditor extends JPanel {
 	 * @param attributed the attribute bearing object whose attributes to edit
 	 * @param type the type of the attributed object (may be null)
 	 * @param value the string value of the attributed object (may be null)
-	 * @param context the context, eg attributed objects similar to the one
+	 * @param context the context, e.g. attributed objects similar to the one
 	 *            whose attributes to edit (will be used to provide attribute
 	 *            name and value suggestions, may be null)
 	 */
@@ -152,21 +147,16 @@ public class AttributeEditor extends JPanel {
 		//	store attributes of annotation being edited
 		String[] attributeNames = attributed.getAttributeNames();
 		Arrays.sort(attributeNames, String.CASE_INSENSITIVE_ORDER);
-		for (int n = 0; n < attributeNames.length; n++) {
-			this.annotationAttributeNames.addElement(attributeNames[n]);
-			this.annotationAttributeValues.put(attributeNames[n], this.attributed.getAttribute(attributeNames[n]));
-		}
+		for (int n = 0; n < attributeNames.length; n++)
+			this.attributes.put(attributeNames[n], this.attributed.getAttribute(attributeNames[n]));
 		
-		//	get and index attributes and values of all annotations of same type as the edited one (for offering suggestions)
-		for (int a = 0; (context != null) && (a < context.length); a++) {
-			attributeNames = context[a].getAttributeNames();
+		//	get and index attributes and values of all context objects (for offering suggestions)
+		for (int c = 0; (context != null) && (c < context.length); c++) {
+			attributeNames = context[c].getAttributeNames();
 			for (int n = 0; n < attributeNames.length; n++) {
-				this.contextAttributeNames.addElementIgnoreDuplicates(attributeNames[n]);
-				Object attributeValue = context[a].getAttribute(attributeNames[n]);
-				if (attributeValue != null) {
-					this.getValueList(attributeNames[n]).addElementIgnoreDuplicates(attributeValue.toString());
-					this.getValueFrequencyIndex(attributeNames[n]).add(attributeValue.toString());
-				}
+				Object attributeValue = context[c].getAttribute(attributeNames[n]);
+				if (attributeValue != null)
+					this.getValueSet(attributeNames[n]).add(attributeValue.toString());
 			}
 		}
 		
@@ -208,9 +198,8 @@ public class AttributeEditor extends JPanel {
 		
 		this.attributeValueField.getEditor().getEditorComponent().addFocusListener(new FocusAdapter() {
 			public void focusGained(FocusEvent fe) {
-				if (DUMMY_ATTRIBUTE_VALUE.equals(attributeValueField.getSelectedItem())) {
+				if (DUMMY_ATTRIBUTE_VALUE.equals(attributeValueField.getSelectedItem()))
 					attributeValueField.setSelectedItem("");
-				}
 			}
 		});
 		((JTextComponent) this.attributeValueField.getEditor().getEditorComponent()).addKeyListener(new KeyAdapter() {
@@ -229,7 +218,7 @@ public class AttributeEditor extends JPanel {
 		});
 		
 		//	initialize buttons
-		JButton setAttributeButton = new JButton("Add / Set Attribute");
+		JButton setAttributeButton = new JButton(" Add / Set Attribute ");
 		setAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
 		setAttributeButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
@@ -237,50 +226,10 @@ public class AttributeEditor extends JPanel {
 			}
 		});
 		
-		JButton removeAttributeButton = new JButton("Remove Attribute");
-		removeAttributeButton.setBorder(BorderFactory.createRaisedBevelBorder());
-		removeAttributeButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ae) {
-				removeAttribute();
-			}
-		});
-		
-		JButton clearAttributesButton = new JButton("Clear Attributes");
-		clearAttributesButton.setBorder(BorderFactory.createRaisedBevelBorder());
-		clearAttributesButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ae) {
-				clearAttributes();
-			}
-		});
-		
-		JPanel attributeButtonPanel = new JPanel(new GridBagLayout(), true);
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.weightx = 1;
-		gbc.weighty = 0;
-		gbc.gridwidth = 1;
-		gbc.gridheight = 1;
-		gbc.gridx = 0;
-		gbc.insets.top = 5;
-		gbc.insets.left = 5;
-		gbc.insets.right = 5;
-		gbc.insets.bottom = 5;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.anchor = GridBagConstraints.NORTH;
-		
-		gbc.gridy = 0;
-		attributeButtonPanel.add(this.attributeNameField, gbc.clone());
-		gbc.gridy++;
-		attributeButtonPanel.add(this.attributeValueField, gbc.clone());
-		gbc.gridy++;
-		attributeButtonPanel.add(setAttributeButton, gbc.clone());
-		gbc.gridy++;
-		attributeButtonPanel.add(removeAttributeButton, gbc.clone());
-		gbc.gridy++;
-		attributeButtonPanel.add(clearAttributesButton, gbc.clone());
-		gbc.gridy++;
-		gbc.weighty = 1;
-		attributeButtonPanel.add(new JPanel(), gbc.clone());
-		
+		JPanel attributeButtonPanel = new JPanel(new BorderLayout(), true);
+		attributeButtonPanel.add(this.attributeNameField, BorderLayout.CENTER);
+		attributeButtonPanel.add(setAttributeButton, BorderLayout.EAST);
+		attributeButtonPanel.add(this.attributeValueField, BorderLayout.SOUTH);
 		
 		//	display annotation's data (for giving users the context)
 		JLabel annotationTypeField = new JLabel((type == null) ? "generic" : type);
@@ -292,7 +241,7 @@ public class AttributeEditor extends JPanel {
 			annotationValueField.setToolTipText(this.produceTooltipText((TokenSequence) attributed));
 		
 		JPanel annotationDataPanel = new JPanel(new GridBagLayout());
-		gbc = new GridBagConstraints();
+		GridBagConstraints gbc = new GridBagConstraints();
 		gbc.weightx = 0;
 		gbc.weighty = 0;
 		gbc.gridwidth = 1;
@@ -310,64 +259,54 @@ public class AttributeEditor extends JPanel {
 		gbc.gridwidth = 3;
 		annotationDataPanel.add(annotationValueField, gbc.clone());
 		
-		//	set up attribute table
-		this.attributeTable.setModel(new AttributeEditorTableModel());
-		this.attributeTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		this.attributeTable.addMouseListener(new MouseAdapter() {
-			public void mouseClicked(MouseEvent me) {
-				if (me.getClickCount() > 1) {
-					int rowIndex = attributeTable.getSelectedRow();
-					if (rowIndex != -1) attributeNameField.setSelectedItem(annotationAttributeNames.get(rowIndex));
-				}
-			}
-		});
+		//	wrap and initialize attribute table
 		JScrollPane attributeTableBox = new JScrollPane(this.attributeTable);
 		attributeTableBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		attributeTableBox.setViewportBorder(BorderFactory.createLoweredBevelBorder());
+		this.attributeTable.updateAttributes();
 		
 		//	put the whole stuff together
 		this.setLayout(new BorderLayout());
 		this.add(annotationDataPanel, BorderLayout.NORTH);
 		this.add(attributeTableBox, BorderLayout.CENTER);
-		this.add(attributeButtonPanel, BorderLayout.EAST);
+		this.add(attributeButtonPanel, BorderLayout.SOUTH);
 	}
 	
 	private void resetAttributeNameField() {
-		this.contextAttributeNames.sortLexicographically(false, false);
-		this.attributeNameField.setModel(new DefaultComboBoxModel(this.contextAttributeNames.toStringArray()));
+		this.attributeNameField.setModel(new DefaultComboBoxModel((String[]) this.contextAttributeValueSetsByName.keySet().toArray(new String[this.contextAttributeValueSetsByName.size()])));
 		this.attributeNameField.setSelectedItem(DUMMY_ATTRIBUTE_NAME);
 	}
 	
 	private void resetAttributeValueField() {
-		Object nameItem = this.attributeNameField.getSelectedItem();
-		if ((nameItem == null) || DUMMY_ATTRIBUTE_NAME.equals(nameItem)) {
+		Object nameObj = this.attributeNameField.getSelectedItem();
+		if ((nameObj == null) || DUMMY_ATTRIBUTE_NAME.equals(nameObj)) {
 			this.attributeValueField.setModel(new DefaultComboBoxModel(new String[0]));
 			this.attributeValueField.setSelectedItem(DUMMY_ATTRIBUTE_VALUE);
 		}
 		else {
-			StringVector values = this.getValueList(nameItem.toString());
+			AttributeValueSet values = this.getValueSet(nameObj.toString());
 			this.attributeValueField.setModel(new DefaultComboBoxModel(values.toStringArray()));
-			Object value = this.annotationAttributeValues.get(nameItem.toString());
+			Object value = this.attributes.get(nameObj.toString());
 			this.attributeValueField.setSelectedItem((value == null) ? DUMMY_ATTRIBUTE_VALUE : value);
 		}
 	}
 	
-	private StringVector getValueList(String attributeName) {
-		StringVector values = ((StringVector) this.contextAttributeValuesByNames.get(attributeName));
+	private AttributeValueSet getValueSet(String attributeName) {
+		AttributeValueSet values = ((AttributeValueSet) this.contextAttributeValueSetsByName.get(attributeName));
 		if (values == null) {
-			values = new StringVector();
-			this.contextAttributeValuesByNames.put(attributeName, values);
+			values = new AttributeValueSet();
+			this.contextAttributeValueSetsByName.put(attributeName, values);
 		}
 		return values;
 	}
 	
-	private StringIndex getValueFrequencyIndex(String attributeName) {
-		StringIndex valueIndex = ((StringIndex) this.contextAttributeValueFrequenciesByNames.get(attributeName));
-		if (valueIndex == null) {
-			valueIndex = new StringIndex(true);
-			this.contextAttributeValueFrequenciesByNames.put(attributeName, valueIndex);
+	private class AttributeValueSet extends CountingSet {
+		AttributeValueSet() {
+			super(new TreeMap());
 		}
-		return valueIndex;
+		String[] toStringArray() {
+			return ((String[]) this.toArray(new String[this.elementCount()]));
+		}
 	}
 	
 	private String produceTooltipText(TokenSequence tokens) {
@@ -396,227 +335,186 @@ public class AttributeEditor extends JPanel {
 	}
 	
 	private void setAttribute() {
-		Object item;
 		
+		//	get name
 		String name = null;
-		item = attributeNameField.getSelectedItem();
-		if (item != null) name = item.toString();
+		Object nameObj = attributeNameField.getSelectedItem();
+		if (nameObj != null)
+			name = nameObj.toString().trim();
+		if ((name == null) || (name.length() == 0) || DUMMY_ATTRIBUTE_NAME.equals(name))
+			return;
 		
+		//	get value
 		String value = null;
-		item = attributeValueField.getSelectedItem();
-		if (item != null) value = item.toString();
+		Object valueObj = attributeValueField.getSelectedItem();
+		if (valueObj != null)
+			value = valueObj.toString();
+		if ((value == null) || (value.length() == 0) || DUMMY_ATTRIBUTE_VALUE.equals(value))
+			return;
 		
-		if ((name != null) && (name.length() != 0) && (value != null) && !DUMMY_ATTRIBUTE_NAME.equals(name) && !DUMMY_ATTRIBUTE_VALUE.equals(value)) {
+		//	name OK?
+		if (AttributeUtils.isValidAttributeName(name)) {
 			
 			//	get old value
 			String oldValue = null;
-			item = this.annotationAttributeValues.get(name);
-			if (item != null) oldValue = item.toString();
+			Object oldValueObj = this.attributes.get(name);
+			if (oldValueObj != null)
+				oldValue = oldValueObj.toString();
 			
-			//	name OK
-			if (AttributeUtils.isValidAttributeName(name)) {
-				
-				/*
-				 * not checking the value any more ... all values are valid,
-				 * only require appropriate escaping
-				 */
-				
-				//	set attribute
-				this.annotationAttributeNames.addElementIgnoreDuplicates(name);
-				this.annotationAttributeValues.put(name, value);
-				
-				//	update value lists
-				this.getValueList(name).addElementIgnoreDuplicates(value);
-				this.getValueFrequencyIndex(name).add(value);
-				if (oldValue != null) {
-					if (this.getValueFrequencyIndex(name).remove(oldValue))
-						this.getValueList(name).removeAll(oldValue);
-				}
-				
-				//	refresh attribute table
-				this.attributeTable.revalidate();
-				this.attributeTable.repaint();
-				
-				//	refresh input fields
-				this.resetAttributeNameField();
-			}
-			
-			//	show error message
-			else JOptionPane.showMessageDialog(this, "Cannot add attribute. The specified name is invalid.", "Invalid Attribute Name", JOptionPane.ERROR_MESSAGE);
-		}
-	}
-	
-	private void removeAttribute() {
-		int rowIndex = attributeTable.getSelectedRow();
-		if (rowIndex != -1) {
-			
-			//	get name to remove
-			String name = this.annotationAttributeNames.get(rowIndex);
-			
-			//	get value
-			String value = null;
-			Object valueItem = this.annotationAttributeValues.get(name);
-			if (valueItem != null) value = valueItem.toString();
-			
-			//	update data
-			this.annotationAttributeNames.removeAll(name);
-			this.annotationAttributeValues.remove(name);
+			//	set attribute
+			this.attributes.put(name, value);
 			
 			//	update value lists
-			if (value != null) {
-				if (this.getValueFrequencyIndex(name).remove(value))
-					this.getValueList(name).removeAll(value);
-			}
+			this.getValueSet(name).add(value);
+			if (oldValue != null)
+				this.getValueSet(name).remove(oldValue);
 			
 			//	refresh attribute table
-			this.attributeTable.revalidate();
-			this.attributeTable.repaint();
+			this.attributeTable.updateAttributes();
 			
 			//	refresh input fields
 			this.resetAttributeNameField();
 		}
+		
+		//	show error message
+		else JOptionPane.showMessageDialog(this, "Cannot add attribute. The specified name is invalid.", "Invalid Attribute Name", JOptionPane.ERROR_MESSAGE);
 	}
 	
-	private void clearAttributes() {
-		if (JOptionPane.showConfirmDialog(this, "Really remove all attributes?", "Confirm Clear Attributes", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-			while (!this.annotationAttributeNames.isEmpty()) {
-				
-				//	get name to remove
-				String name = this.annotationAttributeNames.lastElement();
-				
-				//	get value
-				String value = null;
-				Object valueItem = this.annotationAttributeValues.get(name);
-				if (valueItem != null) value = valueItem.toString();
-				
-				//	update data
-				this.annotationAttributeNames.removeAll(name);
-				this.annotationAttributeValues.remove(name);
-				
-				//	update value lists
-				if (value != null) {
-					if (this.getValueFrequencyIndex(name).remove(value))
-						this.getValueList(name).removeAll(value);
-				}
-			}
-			
-			//	refresh attribute table
-			this.attributeTable.revalidate();
-			this.attributeTable.repaint();
-			
-			//	refresh input fields
-			this.resetAttributeNameField();
-		}
+	private void removeAttribute(String name) {
+		
+		//	get value
+		String value = null;
+		Object valueObj = this.attributes.get(name);
+		if (valueObj != null)
+			value = valueObj.toString();
+		
+		//	update data
+		this.attributes.remove(name);
+		
+		//	update value lists
+		if (value != null)
+			this.getValueSet(name).removeAll(value);
+		
+		//	refresh attribute table
+		this.attributeTable.updateAttributes();
+		
+		//	refresh input fields
+		this.resetAttributeNameField();
 	}
 	
 	/**
-	 * write the changes made in the editor through to the annotation being
-	 * edited
+	 * Write the changes made in the editor through to the annotation being
+	 * edited.
 	 * @return true if there were any changes to be written, false otherwise
 	 */
 	public boolean writeChanges() {
 		boolean modified = false;
 		
-		StringVector oldAnnotationAttributeNames = new StringVector();
-		oldAnnotationAttributeNames.addContentIgnoreDuplicates(this.attributed.getAttributeNames());
-		
-		StringVector toRemove = oldAnnotationAttributeNames.without(this.annotationAttributeNames);
-		for (int r = 0; r < toRemove.size(); r++) {
-			modified = true;
-			this.attributed.removeAttribute(toRemove.get(r));
-		}
-		
-		StringVector toCheck = oldAnnotationAttributeNames.intersect(this.annotationAttributeNames);
-		for (int c = 0; c < toCheck.size(); c++) {
-			String name = toCheck.get(c);
-			Object oldValue = this.attributed.getAttribute(name);
-			Object newValue = this.annotationAttributeValues.get(name);
-			
+		String[] oldAttributeNames = this.attributed.getAttributeNames();
+		for (int a = 0; a < oldAttributeNames.length; a++) {
+			Object newValue = this.attributes.get(oldAttributeNames[a]);
 			if (newValue == null) {
-				if (oldValue != null) {
+				this.attributed.removeAttribute(oldAttributeNames[a]);
+				modified = true;
+			}
+			else {
+				Object oldValue = this.attributed.getAttribute(oldAttributeNames[a]);
+				if ((oldValue == null) || !newValue.equals(oldValue)) {
+					this.attributed.setAttribute(oldAttributeNames[a], newValue);
 					modified = true;
-					this.attributed.removeAttribute(name);
 				}
 			}
-			else if ((oldValue == null) || !newValue.equals(oldValue)) {
-				modified = true;
-				this.attributed.setAttribute(name, newValue);
-			}
 		}
 		
-		StringVector toAdd = this.annotationAttributeNames.without(oldAnnotationAttributeNames);
-		for (int a = 0; a < toAdd.size(); a++) {
-			String name = toAdd.get(a);
-			Object value = this.annotationAttributeValues.get(name);
-			if (value != null) {
-				modified = true;
+		for (Iterator anit = this.attributes.keySet().iterator(); anit.hasNext();) {
+			String name = ((String) anit.next());
+			if (!this.attributed.hasAttribute(name)) {
+				Object value = this.attributes.get(name);
 				this.attributed.setAttribute(name, value);
+				modified = true;
 			}
 		}
 		
 		return modified;
 	}
 	
-	/**
-	 * table model for displaying annotation attributes
-	 * 
-	 * @author sautter
-	 */
-	private class AttributeEditorTableModel implements TableModel {
+	private class AttributeTablePanel extends JPanel {
+		private ArrayList lines = new ArrayList();
+		private JPanel spacer = new JPanel();
 		
-		/** @see javax.swing.table.TableModel#getColumnCount()
-		 */
-		public int getColumnCount() {
-			return 2;
+		AttributeTablePanel() {
+			super(new GridBagLayout(), true);
 		}
-
-		/** @see javax.swing.table.TableModel#getRowCount()
-		 */
-		public int getRowCount() {
-			return annotationAttributeNames.size();
-		}
-
-		/** @see javax.swing.table.TableModel#isCellEditable(int, int)
-		 */
-		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			return false;
-		}
-
-		/** @see javax.swing.table.TableModel#getColumnClass(int)
-		 */
-		public Class getColumnClass(int columnIndex) {
-			return String.class;
-		}
-
-		/** @see javax.swing.table.TableModel#getValueAt(int, int)
-		 */
-		public Object getValueAt(int rowIndex, int columnIndex) {
-			if ((rowIndex >= 0) && (rowIndex < annotationAttributeNames.size())) {
-				String aName = annotationAttributeNames.get(rowIndex);
-				return ((columnIndex == 0) ? aName : annotationAttributeValues.get(aName));
-			} else return null;
-		}
-
-		/** @see javax.swing.table.TableModel#setValueAt(java.lang.Object, int, int)
-		 */
-		public void setValueAt(Object newValue, int rowIndex, int columnIndex) {}
-
-		/** @see javax.swing.table.TableModel#getColumnName(int)
-		 */
-		public String getColumnName(int columnIndex) {
-			switch (columnIndex) {
-				case 0:	return "Name";
-				case 1:	return "Value";
+		
+		void updateAttributes() {
+			this.lines.clear();
+			for (Iterator anit = attributes.keySet().iterator(); anit.hasNext();) {
+				String name = ((String) anit.next());
+				Object value = attributes.get(name);
+				this.lines.add(new AttributeTableLine(name, value));
 			}
-			return null;
+			this.layoutLines();
 		}
-
-		/** @see javax.swing.table.TableModel#addTableModelListener(javax.swing.event.TableModelListener)
-		 */
-		public void addTableModelListener(TableModelListener l) {}
-
-		/** @see javax.swing.table.TableModel#removeTableModelListener(javax.swing.event.TableModelListener)
-		 */
-		public void removeTableModelListener(TableModelListener l) {}
+		
+		void layoutLines() {
+			this.removeAll();
+			
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.insets.top = 0;
+			gbc.insets.bottom = 0;
+			gbc.insets.left = 0;
+			gbc.insets.right = 0;
+			gbc.weighty = 0;
+			gbc.gridy = 0;
+			gbc.gridheight = 1;
+			gbc.gridwidth = 1;
+			gbc.fill = GridBagConstraints.BOTH;
+			
+			for (int l = 0; l < this.lines.size(); l++) {
+				AttributeTableLine line = ((AttributeTableLine) this.lines.get(l));
+				gbc.gridx = 0;
+				gbc.weightx = 0;
+				this.add(line.removeButton, gbc.clone());
+				gbc.gridx = 1;
+				gbc.weightx = 1;
+				this.add(line.displayLabel, gbc.clone());
+				gbc.gridy++;
+			}
+			
+			gbc.gridx = 0;
+			gbc.weightx = 1;
+			gbc.weighty = 1;
+			gbc.gridwidth = 2;
+			this.add(this.spacer, gbc.clone());
+			
+			this.validate();
+			this.repaint();
+		}
+		
+		private class AttributeTableLine {
+			JButton removeButton;
+			JLabel displayLabel;
+			AttributeTableLine(final String name, Object value) {
+				this.removeButton = new JButton("<HTML>&nbsp;<B>X</B>&nbsp;</HTML>");
+				this.removeButton.setToolTipText("Remove attribute '" + name + "'");
+				this.removeButton.setBorder(BorderFactory.createRaisedBevelBorder());
+				this.removeButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent ae) {
+						removeAttribute(name);
+						lines.remove(AttributeTableLine.this);
+						layoutLines();
+					}
+				});
+				this.displayLabel = new JLabel("<HTML>&nbsp;<B>" + name + "</B>: " + value.toString() + "</HTML>");
+				this.displayLabel.setOpaque(true);
+				this.displayLabel.setBackground(Color.WHITE);
+				this.displayLabel.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+				this.displayLabel.addMouseListener(new MouseAdapter() {
+					public void mouseClicked(MouseEvent me) {
+						attributeNameField.setSelectedItem(name);
+					}
+				});
+			}
+		}
 	}
 }

@@ -100,7 +100,7 @@ public class AnnotationAttributeEditor extends JPanel {
 	public AnnotationAttributeEditor(Annotation annotation) {
 		this(annotation, null);
 	}
-
+	
 	/**
 	 * Constructor
 	 * @param annotation the Annotation whose attributes to edit
