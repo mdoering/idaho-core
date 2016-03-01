@@ -52,6 +52,17 @@ public interface ProgressMonitor {
 	};
 	
 	/**
+	 * Dummy implementation swallowing all updates
+	 */
+	public static final ProgressMonitor silent = new ProgressMonitor() {
+		public void setBaseProgress(int baseProgress) {}
+		public void setMaxProgress(int maxProgress) {}
+		public void setProgress(int progress) {}
+		public void setStep(String importStep) {}
+		public void setInfo(String text) {}
+	};
+	
+	/**
 	 * Synchronizing wrapper for arbitrary implementations of
 	 * <code>ProgressMonitor</code>. This wrapper is meant to save external
 	 * synchronization in parallelized code.
