@@ -117,9 +117,6 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 	private final void initCopy(QueriableAnnotation original) {
 		
 		//	copy tokens
-//		this.tokenData = Gamta.newTokenSequence(original.subSequence(0, original.length()), original.getTokenizer());
-//		for (int t = 0; t < original.size(); t++)
-//			this.tokenData.tokenAt(t).copyAttributes(original.tokenAt(t));
 		this.tokenData = Gamta.copyTokenSequence(original);
 		
 		//	copy attributes
@@ -133,8 +130,14 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		//	copy Annotations (including annotation ID)
 		Annotation[] annotations = original.getAnnotations();
 		for (int a = 0; a < annotations.length; a++) {
-			if (!DocumentRoot.DOCUMENT_TYPE.equals(annotations[a].getType()))
-				this.addAnnotation(annotations[a]).setAttribute(ANNOTATION_ID_ATTRIBUTE, annotations[a].getAnnotationID());
+			if (DocumentRoot.DOCUMENT_TYPE.equals(annotations[a].getType()))
+				continue;
+			Annotation annot = this.addAnnotation(annotations[a]);
+			if (annot == null) {
+				System.out.println("GamtaDocument: could not copy annotation " + annotations[a].getType() + " at " + annotations[a].getStartIndex() + "-" + annotations[a].getEndIndex());
+				System.out.println("  " + annotations[a].toXML());
+			}
+			else annot.setAttribute(ANNOTATION_ID_ATTRIBUTE, annotations[a].getAnnotationID());
 		}
 		
 		//	copy annotation nesting order
@@ -637,11 +640,12 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		//	create AnnotationBase
 		AnnotationBase ab = this.addAnnotationAbsolute(annotation.getType(), annotation.getStartIndex(), annotation.size());
 		
-		//	if successful, copy attributes
-		if (ab != null) ab.copyAttributes(annotation);
-		
 		//	check success
-		if (ab == null) return null;
+		if (ab == null)
+			return null;
+		
+		//	copy attributes
+		ab.copyAttributes(annotation);
 		
 		//	notify listeners
 		this.notifyAnnotationAdded(ab);
@@ -659,7 +663,8 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		AnnotationBase ab = this.addAnnotationAbsolute(type, startIndex, size);
 		
 		//	check success
-		if (ab == null) return null;
+		if (ab == null)
+			return null;
 		
 		//	notify listeners
 		this.notifyAnnotationAdded(ab);

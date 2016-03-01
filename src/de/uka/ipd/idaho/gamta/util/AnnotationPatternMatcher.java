@@ -771,7 +771,11 @@ public class AnnotationPatternMatcher {
 					if (annots[a] instanceof QueriableAnnotation)
 						qAnnot = ((QueriableAnnotation) annots[a]);
 					else qAnnot = new QueriableAnnotationWrapper(annots[a]);
-					filterMatch = GPath.evaluateExpression(pattern[elementIndex].annotationAttributes.getAttribute("test"), qAnnot, null).asBoolean().value;
+					String filter = pattern[elementIndex].annotationAttributes.getAttribute("test");
+					if (!filter.startsWith("(") || !filter.endsWith(")"))
+						filter = ("(" + filter + ")"); // let's substitute enclosing expression parenthesis only symmetrically
+					filterMatch = GPath.evaluateExpression(filter, qAnnot, null).asBoolean().value;
+//					filterMatch = GPath.evaluateExpression(pattern[elementIndex].annotationAttributes.getAttribute("test"), qAnnot, null).asBoolean().value;
 				} catch (GPathException gpe) {}
 				if (filterMatch) {
 					matchTree.addLast(new MatchTreeLeaf(pattern[elementIndex], annots[a]));

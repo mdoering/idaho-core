@@ -996,11 +996,8 @@ public class GPathEngine implements GPathConstants {
 				throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
 			
 			StringBuffer assembler = new StringBuffer("");
-			for (int a = 0; a < args.length; a++) {
-//				if (!(args[a] instanceof GPathString) && false)
-//					throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
+			for (int a = 0; a < args.length; a++)
 				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
-			}
 			return new GPathString(assembler.toString());
 		}
 		else if ("local-name".equalsIgnoreCase(functionName)) {
