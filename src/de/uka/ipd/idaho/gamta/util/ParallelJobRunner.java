@@ -46,6 +46,30 @@ public class ParallelJobRunner {
 	//	we don't want to be instatiated
 	private ParallelJobRunner() {}
 	
+	private static boolean runLinear = false;
+	
+	/**
+	 * Test if parallel job execution is switched on ot of.
+	 * @return the linear property
+	 */
+	public static boolean isLinear() {
+		return runLinear;
+	}
+	
+	/**
+	 * Switch on or off all parallelization. Setting the 'linear' property to
+	 * true forces all parallel operations to actually run linear, independent
+	 * of the number of available CPU cores. This is helpful in situations of
+	 * running multiple potentially CPU intensive JVMs on a single machine at
+	 * the same time. Namely, it prevents each single JVM from occupying all
+	 * the available resources for itself. However, this only applies to code
+	 * parallelized by means of this class.
+	 * @param linear the linear property to set
+	 */
+	public static void setLinear(boolean linear) {
+		runLinear = linear;
+	}
+	
 	/**
 	 * Execute a <code>Runnable</code> in multiple threads in parallel. If
 	 * the <code>maxCores</code> parameter is set to a value less than 1, the
@@ -59,7 +83,7 @@ public class ParallelJobRunner {
 	 * @param maxCores the maximum number of CPU cores to use
 	 */
 	public static void runParallelJob(Runnable job, int maxCores) {
-		if (maxCores == 1) {
+		if (runLinear || (maxCores == 1)) {
 			job.run();
 			return;
 		}
@@ -161,7 +185,7 @@ public class ParallelJobRunner {
 	public static void runParallelFor(ParallelFor loop, int from, int to, int maxCores) {
 		if (to <= from)
 			return;
-		if (((to - from) != 1) && (maxCores != 1))
+		if (((to - from) != 1) && (maxCores != 1) && !runLinear)
 			runParallelJob(new ParallelForJob(loop, from, to), Math.min(maxCores, (to - from)));
 		else try {
 			if ((to - from) == 1)
@@ -249,7 +273,7 @@ public class ParallelJobRunner {
 	public static void runParallelIteration(ParallelIteration loop, Object[] objects, int maxCores) {
 		if (objects.length == 0)
 			return;
-		if ((objects.length != 1) && (maxCores != 1))
+		if ((objects.length != 1) && (maxCores != 1) && !runLinear)
 			runParallelIteration(loop, Arrays.asList(objects).iterator(), Math.min(maxCores, objects.length));
 		else try {
 			if (objects.length == 1)
@@ -315,7 +339,7 @@ public class ParallelJobRunner {
 	public static void runParallelIteration(ParallelIteration loop, Iterator iterator, int maxCores) {
 		if (!iterator.hasNext())
 			return;
-		if (maxCores != 1)
+		if ((maxCores != 1) && !runLinear)
 			runParallelJob(new ParallelIterationJob(loop, iterator), maxCores);
 		else try {
 			while (iterator.hasNext())
@@ -392,7 +416,7 @@ public class ParallelJobRunner {
 	 * @param maxCores the maximum number of CPU cores to use
 	 */
 	public static void runParallelWhile(ParallelWhile loop, int maxCores) {
-		if (maxCores != 1)
+		if ((maxCores != 1) && !runLinear)
 			runParallelJob(new ParallelWhileJob(loop), maxCores);
 		else try {
 			while (loop.doWhile()) {}
