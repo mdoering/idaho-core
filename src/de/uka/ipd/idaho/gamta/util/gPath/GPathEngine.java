@@ -63,6 +63,7 @@ import de.uka.ipd.idaho.gamta.util.gPath.types.GPathBoolean;
 import de.uka.ipd.idaho.gamta.util.gPath.types.GPathNumber;
 import de.uka.ipd.idaho.gamta.util.gPath.types.GPathObject;
 import de.uka.ipd.idaho.gamta.util.gPath.types.GPathString;
+import de.uka.ipd.idaho.stringUtils.StringUtils;
 
 /**
  * Default implementation of a GamtaPath engine.
@@ -819,25 +820,28 @@ public class GPathEngine implements GPathConstants {
 			return function.execute(contextAnnotation, contextPosition, contextSize, args);
 		} catch (Exception e) {}
 		
+		//	boolean functions
 		if ("boolean".equalsIgnoreCase(functionName)) {
 			if (args.length != 1)
 				throw new InvalidArgumentsException("The function 'boolean' requires 1 argument(s) of type(s) GPathObject.");
 			return args[0].asBoolean();
 		}
-		else if ("contains".equalsIgnoreCase(functionName)) {
-			if (args.length != 2)
-				throw new InvalidArgumentsException("The function 'contains' requires 2 argument(s) of type(s) GPathString.");
-			return new GPathBoolean(args[0].asString().value.indexOf(args[1].asString().value) != -1);
+		else if ("true".equalsIgnoreCase(functionName)) {
+			if (args.length != 0)
+				throw new InvalidArgumentsException("The function 'true' requires 0 argument(s).");
+			return new GPathBoolean(true);
 		}
-		else if ("matches".equalsIgnoreCase(functionName)) {
-			if (args.length != 2) throw new InvalidArgumentsException("The function 'matches' requires 2 argument(s) of type(s) GPathString.");
-			try {
-				return new GPathBoolean(args[0].asString().value.matches(args[1].asString().value));
-			}
-			catch (PatternSyntaxException pse) {
-				throw new InvalidArgumentsException("The function 'matches' requires a GPathString representing a valid pattern as it's second argument.");
-			}
+		else if ("false".equalsIgnoreCase(functionName)) {
+			if (args.length != 0)
+				throw new InvalidArgumentsException("The function 'false' requires 0 argument(s).");
+			return new GPathBoolean(false);
 		}
+		
+		//	negator function
+		else if ("not".equalsIgnoreCase(functionName))
+			return new GPathBoolean(!args[0].asBoolean().value);
+		
+		//	GAMTA string classifier functions
 		else if ("isWord".equalsIgnoreCase(functionName)) {
 			if (args.length != 1)
 				throw new InvalidArgumentsException("The function 'isWord' requires 1 argument(s) of type(s) GPathString.");
@@ -908,49 +912,13 @@ public class GPathEngine implements GPathConstants {
 				throw new InvalidArgumentsException("The function 'isSentenceEnd' requires 1 argument(s) of type(s) GPathString.");
 			return new GPathBoolean(Gamta.isSentenceEnd(args[0].asString().value));
 		}
-		else if ("false".equalsIgnoreCase(functionName)) {
-			if (args.length != 0)
-				throw new InvalidArgumentsException("The function 'false' requires 0 argument(s).");
-			return new GPathBoolean(false);
-		}
 		else if ("lang".equalsIgnoreCase(functionName)) {
 			if ((args.length != 1) || !(args[0] instanceof GPathString))
 				throw new InvalidArgumentsException("The function 'lang' requires 1 argument(s) of type(s) GPathString.");
 			return new GPathBoolean(true);
 		}
-		else if ("not".equalsIgnoreCase(functionName))
-			return new GPathBoolean(!args[0].asBoolean().value);
 		
-		else if ("starts-with".equalsIgnoreCase(functionName)) {
-			if (args.length != 2)
-				throw new InvalidArgumentsException("The function 'starts-with' requires 2 argument(s) of type(s) GPathString.");
-			return new GPathBoolean(args[0].asString().value.startsWith(args[1].asString().value));
-		}
-		else if ("true".equalsIgnoreCase(functionName)) {
-			if (args.length != 0)
-				throw new InvalidArgumentsException("The function 'true' requires 0 argument(s).");
-			return new GPathBoolean(true);
-		}
-		else if ("ceiling".equalsIgnoreCase(functionName)) {
-			if (args.length != 1)
-				throw new InvalidArgumentsException("The function 'ceiling' requires 1 argument(s) of type(s) GPathNumber.");
-			return new GPathNumber(Math.ceil(args[0].asNumber().value));
-		}
-		else if ("count".equalsIgnoreCase(functionName)) {
-			if ((args.length == 1) && (args[0] instanceof GPathAnnotationSet))
-				return new GPathNumber(((GPathAnnotationSet) args[0]).size());
-			throw new InvalidArgumentsException("The function 'count' requires 1 argument(s) of type(s) GPathAnnotationSet.");
-		}
-		else if ("floor".equalsIgnoreCase(functionName)) {
-			if (args.length != 1)
-				throw new InvalidArgumentsException("The function 'floor' requires 1 argument(s) of type(s) GPathNumber.");
-			return new GPathNumber(Math.floor(args[0].asNumber().value));
-		}
-		else if ("last".equalsIgnoreCase(functionName)) {
-			if (args.length != 0)
-				throw new InvalidArgumentsException("The function 'last' requires 0 argument(s).");
-			return new GPathNumber(contextSize);
-		}
+		//	number functions
 		else if ("number".equalsIgnoreCase(functionName)) {
 			if (args.length == 0) {
 				GPathAnnotationSet annotationSet = new GPathAnnotationSet();
@@ -961,25 +929,32 @@ public class GPathEngine implements GPathConstants {
 				return args[0].asNumber();
 			else throw new InvalidArgumentsException("The function 'number' requires 0 argument(s) or 1 argument(s) of type(s) GPathObject.");
 		}
-		else if ("position".equalsIgnoreCase(functionName)) {
-			if (args.length != 0)
-				throw new InvalidArgumentsException("The function 'position' requires 0 argument(s).");
-			return new GPathNumber(contextPosition);
+		else if ("floor".equalsIgnoreCase(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'floor' requires 1 argument(s) of type(s) GPathNumber.");
+			return new GPathNumber(Math.floor(args[0].asNumber().value));
+		}
+		else if ("ceiling".equalsIgnoreCase(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'ceiling' requires 1 argument(s) of type(s) GPathNumber.");
+			return new GPathNumber(Math.ceil(args[0].asNumber().value));
 		}
 		else if ("round".equalsIgnoreCase(functionName)) {
 			if (args.length != 1)
 				throw new InvalidArgumentsException("The function 'round' requires 1 argument(s) of type(s) GPathNumber.");
 			return new GPathNumber(Math.round(args[0].asNumber().value));
 		}
-		else if ("string-length".equalsIgnoreCase(functionName)) {
-			if (args.length == 0) {
-				GPathAnnotationSet annotationSet = new GPathAnnotationSet();
-				annotationSet.add(contextAnnotation);
-				return new GPathNumber(annotationSet.asString().value.length());
-			}
-			else if (args.length == 1)
-				return new GPathNumber(args[0].asString().value.length());
-			else throw new InvalidArgumentsException("The function 'string-length' requires 0 argument(s) or 1 argument(s) of type(s) GPathString.");
+		else if ("abs".equalsIgnoreCase(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'abs' requires 1 argument(s) of type(s) GPathNumber.");
+			return new GPathNumber(Math.abs(args[0].asNumber().value));
+		}
+		
+		//	aggregation functions
+		else if ("count".equalsIgnoreCase(functionName)) {
+			if ((args.length == 1) && (args[0] instanceof GPathAnnotationSet))
+				return new GPathNumber(((GPathAnnotationSet) args[0]).size());
+			throw new InvalidArgumentsException("The function 'count' requires 1 argument(s) of type(s) GPathAnnotationSet.");
 		}
 		else if ("sum".equalsIgnoreCase(functionName)) {
 			if ((args.length != 1) || !(args[0] instanceof GPathAnnotationSet))
@@ -991,15 +966,20 @@ public class GPathEngine implements GPathConstants {
 				sum += new GPathString(annotationSet.get(s).getValue()).asNumber().value;
 			return new GPathNumber(sum);
 		}
-		else if ("concat".equalsIgnoreCase(functionName)) {
-			if (args.length < 2)
-				throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
-			
-			StringBuffer assembler = new StringBuffer("");
-			for (int a = 0; a < args.length; a++)
-				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
-			return new GPathString(assembler.toString());
+		
+		//	positional functions
+		else if ("last".equalsIgnoreCase(functionName)) {
+			if (args.length != 0)
+				throw new InvalidArgumentsException("The function 'last' requires 0 argument(s).");
+			return new GPathNumber(contextSize);
 		}
+		else if ("position".equalsIgnoreCase(functionName)) {
+			if (args.length != 0)
+				throw new InvalidArgumentsException("The function 'position' requires 0 argument(s).");
+			return new GPathNumber(contextPosition);
+		}
+		
+		//	annotation type functions
 		else if ("local-name".equalsIgnoreCase(functionName)) {
 			if (args.length == 0)
 				return new GPathString(contextAnnotation.getType());
@@ -1025,6 +1005,71 @@ public class GPathEngine implements GPathConstants {
 				return new GPathString("This implementation uses generic namespaces.");
 			else throw new InvalidArgumentsException("The function 'namespace-uri' requires 0 argument(s) or 1 argument(s) of type(s) GPathAnnotationSet.");
 		}
+		
+		//	attribute function with default
+		else if ("getAttribute".equalsIgnoreCase(functionName)) {
+			if ((args.length < 1) || (args.length > 2))
+				throw new InvalidArgumentsException("The function 'getAttribute' requires 1 or 2 argument(s) of type(s) GPathString.");
+			Object attributeValue = contextAnnotation.getAttribute(args[0].asString().value);
+			if (attributeValue == null)
+				return new GPathString((args.length == 1) ? "" : args[1].asString().value);
+			else return new GPathString(attributeValue.toString());
+		}
+		
+		//	string functions
+		else if ("string".equalsIgnoreCase(functionName)) {
+			if (args.length == 0) {
+				GPathAnnotationSet annotationSet = new GPathAnnotationSet();
+				annotationSet.add(contextAnnotation);
+				return annotationSet.asString();
+			}
+			else if (args.length == 1)
+				return args[0].asString();
+			else throw new InvalidArgumentsException("The function 'string' requires 0 argument(s) or 1 argument(s) of type(s) GPathObject.");
+		}
+		else if ("string-length".equalsIgnoreCase(functionName)) {
+			if (args.length == 0) {
+				GPathAnnotationSet annotationSet = new GPathAnnotationSet();
+				annotationSet.add(contextAnnotation);
+				return new GPathNumber(annotationSet.asString().value.length());
+			}
+			else if (args.length == 1)
+				return new GPathNumber(args[0].asString().value.length());
+			else throw new InvalidArgumentsException("The function 'string-length' requires 0 argument(s) or 1 argument(s) of type(s) GPathString.");
+		}
+		else if ("contains".equalsIgnoreCase(functionName)) {
+			if (args.length != 2)
+				throw new InvalidArgumentsException("The function 'contains' requires 2 argument(s) of type(s) GPathString.");
+			return new GPathBoolean(args[0].asString().value.indexOf(args[1].asString().value) != -1);
+		}
+		else if ("starts-with".equalsIgnoreCase(functionName)) {
+			if (args.length != 2)
+				throw new InvalidArgumentsException("The function 'starts-with' requires 2 argument(s) of type(s) GPathString.");
+			return new GPathBoolean(args[0].asString().value.startsWith(args[1].asString().value));
+		}
+		else if ("ends-with".equalsIgnoreCase(functionName)) {
+			if (args.length != 2)
+				throw new InvalidArgumentsException("The function 'ends-with' requires 2 argument(s) of type(s) GPathString.");
+			return new GPathBoolean(args[0].asString().value.endsWith(args[1].asString().value));
+		}
+		else if ("matches".equalsIgnoreCase(functionName)) {
+			if (args.length != 2) throw new InvalidArgumentsException("The function 'matches' requires 2 argument(s) of type(s) GPathString.");
+			try {
+				return new GPathBoolean(args[0].asString().value.matches(args[1].asString().value));
+			}
+			catch (PatternSyntaxException pse) {
+				throw new InvalidArgumentsException("The function 'matches' requires a GPathString representing a valid pattern as it's second argument.");
+			}
+		}
+		else if ("concat".equalsIgnoreCase(functionName)) {
+			if (args.length < 2)
+				throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
+			
+			StringBuffer assembler = new StringBuffer("");
+			for (int a = 0; a < args.length; a++)
+				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
+			return new GPathString(assembler.toString());
+		}
 		else if ("normalize-space".equalsIgnoreCase(functionName)) {
 			String toNormalize;
 			if (args.length == 0) {
@@ -1038,29 +1083,56 @@ public class GPathEngine implements GPathConstants {
 			
 			boolean lastWasWhitespace = false;
 			StringBuffer assembler = new StringBuffer();
-			for (int s = 0; s < toNormalize.length(); s++) {
-				char c = toNormalize.charAt(s);
-				if (c > 32) {
-					assembler.append(c);
+			for (int c = 0; c < toNormalize.length(); c++) {
+				char ch = toNormalize.charAt(c);
+				if (ch > 32) {
+					assembler.append(ch);
 					lastWasWhitespace = false;
 				}
 				else if (!lastWasWhitespace) {
-					assembler.append(c);
+					assembler.append(' ');
 					lastWasWhitespace = true;
 				}
 			}
 			
 			return new GPathString(assembler.toString().trim());
 		}
-		else if ("string".equalsIgnoreCase(functionName)) {
+		else if ("normalize-chars".equalsIgnoreCase(functionName)) {
+			String toNormalize;
 			if (args.length == 0) {
 				GPathAnnotationSet annotationSet = new GPathAnnotationSet();
 				annotationSet.add(contextAnnotation);
-				return annotationSet.asString();
+				toNormalize = annotationSet.asString().value;
 			}
 			else if (args.length == 1)
-				return args[0].asString();
-			else throw new InvalidArgumentsException("The function 'string' requires 0 argument(s) or 1 argument(s) of type(s) GPathObject.");
+				toNormalize = args[0].asString().value;
+			else throw new InvalidArgumentsException("The function 'normalize-chars' requires 0 argument(s) or 1 argument(s) of type(s) GPathString.");
+			
+			boolean lastWasWhitespace = false;
+			StringBuffer assembler = new StringBuffer();
+			for (int s = 0; s < toNormalize.length(); s++) {
+				char ch = toNormalize.charAt(s);
+				if (ch > 32) {
+					assembler.append(StringUtils.getNormalForm(ch));
+					lastWasWhitespace = false;
+				}
+				else if (!lastWasWhitespace) {
+					assembler.append(' ');
+					lastWasWhitespace = true;
+				}
+			}
+			
+			return new GPathString(assembler.toString().trim());
+		}
+		else if ("upper-case".equals(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'upper-case' requires 1 argument(s) of type(s) GPathString.");
+			return new GPathString(args[0].asString().value.toUpperCase());
+		}
+		else if ("lower-case".equals(functionName)) {
+			if (args.length != 1)
+				throw new InvalidArgumentsException("The function 'lower-case' requires 1 argument(s) of type(s) GPathString.");
+			return new GPathString(args[0].asString().value.toLowerCase());
 		}
 		else if ("substring".equalsIgnoreCase(functionName)) {
 			if ((args.length != 2) && (args.length != 3))
@@ -1151,6 +1223,7 @@ public class GPathEngine implements GPathConstants {
 			return new GPathString(assembler.toString());
 		}
 		
+		//	date and time functions
 		else if ("date".equalsIgnoreCase(functionName)) {
 			if (args.length > 1)
 				throw new InvalidArgumentsException("The function 'date' requires no or 1 argument(s) of type GPathNumber.");
@@ -1182,15 +1255,7 @@ public class GPathEngine implements GPathConstants {
 			return new GPathString(dateTimeDateFormatUTC.format(new Date((args.length == 0) ? System.currentTimeMillis() : Long.parseLong(args[0].asString().value))));
 		}
 		
-		else if ("getAttribute".equalsIgnoreCase(functionName)) {
-			if ((args.length < 1) || (args.length > 2))
-				throw new InvalidArgumentsException("The function 'getAttribute' requires 1 or 2 argument(s) of type(s) GPathString.");
-			Object attributeValue = contextAnnotation.getAttribute(args[0].asString().value);
-			if (attributeValue == null)
-				return new GPathString((args.length == 1) ? "" : args[1].asString().value);
-			else return new GPathString(attributeValue.toString());
-		}
-		
+		//	introspective functions
 		else if ("isFunctionAvailable".equalsIgnoreCase(functionName)) {
 			if (args.length != 1)
 				throw new InvalidArgumentsException("The function 'isFunctionAvailable' requires 1 argument of type GPathString.");
