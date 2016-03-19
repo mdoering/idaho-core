@@ -47,6 +47,45 @@ import de.uka.ipd.idaho.easyIO.streams.PeekReader;
 public class JsonParser {
 	
 	/**
+	 * Escape a string for JavaScript and JSON use, expecting a single quote to
+	 * go around the escaped string. Use the two-argument version of this
+	 * method to escape a string for other quoters, e.g. double quotes.
+	 * @param str the string to escape
+	 * @return the escaped string
+	 */
+	public static String escape(String str) {
+		return escape(str, '\'');
+	}
+	
+	/**
+	 * Escape a string for JavaScript and JSON use.
+	 * @param str the string to escape
+	 * @param quot the quoter to go around the escaped string
+	 * @return the escaped string
+	 */
+	public static String escape(String str, char quot) {
+		if (str == null)
+			return null;
+		StringBuffer escaped = new StringBuffer();
+		char ch;
+		for (int c = 0; c < str.length(); c++) {
+			ch = str.charAt(c);
+			if (ch == '\r')
+				escaped.append("\\r");
+			else if (ch == '\n')
+				escaped.append("\\n");
+			else if (ch < 32)
+				escaped.append(' ');
+			else {
+				if ((ch == quot) || (ch == '\\'))
+					escaped.append('\\');
+				escaped.append(ch);
+			}
+		}
+		return escaped.toString();
+	}
+	
+	/**
 	 * Get a Map representing a JSON object from a List representing a JSON
 	 * array. If the object at the argument index is not a Map, this method
 	 * returns null.
