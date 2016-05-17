@@ -48,6 +48,7 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -191,14 +192,6 @@ public class GenericGamtaXML extends TokenReceiver {
 					aToken.setAttribute(attributeNames[n], unescapeAttributeValue(this.tokenAttributes.getAttribute(attributeNames[n])));
 				this.tokenAttributes = null;
 			}
-//			this.document.addTokens(AnnotationUtils.unescapeFromXml(token));
-//			if (this.tokenAttributes != null) {
-//				Token last = this.document.lastToken();
-//				String[] attributeNames = this.tokenAttributes.getAttributeNames();
-//				for (int n = 0; n < attributeNames.length; n++)
-//					last.setAttribute(attributeNames[n], unescapeAttributeValue(this.tokenAttributes.getAttribute(attributeNames[n])));
-//				this.tokenAttributes = null;
-//			}
 		}
 	}
 	
@@ -278,9 +271,6 @@ public class GenericGamtaXML extends TokenReceiver {
 	 * @throws IOException
 	 */
 	public static DocumentRoot readDocument(File file) throws IOException {
-//		FileReader fr = new FileReader(file);
-//		DocumentRoot doc = readDocument(fr);
-//		fr.close();
 		FileInputStream fis = new FileInputStream(file);
 		DocumentRoot doc = readDocument(fis);
 		fis.close();
@@ -413,19 +403,12 @@ public class GenericGamtaXML extends TokenReceiver {
 			
 			//	write end markers of annotations ending before current token
 			LinkedList endingAnnotationList = ((LinkedList) annotationsByEndIndex.remove(new Integer(t)));
-			if (endingAnnotationList != null) {
+			if (endingAnnotationList != null)
 				while (endingAnnotationList.size() != 0) {
 					Annotation annotation = ((Annotation) endingAnnotationList.removeLast());
 					Integer annotationNumber = ((Integer) annotationNumbersByID.remove(annotation.getAnnotationID()));
 					buf.write(produceEndTag(annotation, annotationNumber.intValue()));
 				}
-//				for (int a = 0; a < endingAnnotationList.size(); a++) {
-//					Annotation annotation = ((Annotation) endingAnnotationList.get(a));
-//					Integer annotationNumber = ((Integer) annotationNumbersByID.remove(annotation.getAnnotationID()));
-//					buf.write(produceEndTag(annotation, annotationNumber.intValue()));
-//				}
-//				endingAnnotationList.clear();
-			}
 			
 			//	write a single space character if previous token has whitespace after it and is not a line break
 			if (((lastToken != null) && !lastToken.hasAttribute(Token.PARAGRAPH_END_ATTRIBUTE)) && (t != 0) && (data.getWhitespaceAfter(t-1).length() != 0))
@@ -462,19 +445,12 @@ public class GenericGamtaXML extends TokenReceiver {
 		
 		//	write end markers of annotations ending at end of document
 		LinkedList endingAnnotationList = ((LinkedList) annotationsByEndIndex.remove(new Integer(data.size())));
-		if (endingAnnotationList != null) {
-//			for (int a = 0; a < endingAnnotationList.size(); a++) {
-//				Annotation annotation = ((Annotation) endingAnnotationList.get(a));
-//				Integer annotationNumber = ((Integer) annotationNumbersByID.remove(annotation.getAnnotationID()));
-//				buf.write(produceEndTag(annotation, annotationNumber.intValue()));
-//			}
+		if (endingAnnotationList != null)
 			while (endingAnnotationList.size() != 0) {
 				Annotation annotation = ((Annotation) endingAnnotationList.removeLast());
 				Integer annotationNumber = ((Integer) annotationNumbersByID.remove(annotation.getAnnotationID()));
 				buf.write(produceEndTag(annotation, annotationNumber.intValue()));
 			}
-//			endingAnnotationList.clear();
-		}
 		
 		//	close generic document tag if given
 		if ((nestedAnnotations.length == 0) || !DocumentRoot.DOCUMENT_TYPE.equals(nestedAnnotations[0].getType()))
@@ -593,13 +569,13 @@ public class GenericGamtaXML extends TokenReceiver {
 	}
 	
 	/**
-	 * Specialized input stream for transfering the generic GAMTA XML
+	 * Specialized input stream for transferring the generic GAMTA XML
 	 * representation of a document. This class allows for manipulating the
 	 * document's attributes without actually instantiating the whole document.
 	 * This is helpful in cases where a document is transferred through a pipe
 	 * or a network connection, being used as a fully instantiated document only
 	 * on the receiving end of the connection. In particular, it allows avoiding
-	 * to instatiate the whole document on the sending side of the connection.
+	 * to instantiate the whole document on the sending side of the connection.
 	 * The data provided by streams of this class is intended only for two
 	 * purposes: to be decoded by GenericGamtaXML.readDocument(), or to be
 	 * written to an output stream and the decoded on this streams receiving
@@ -886,13 +862,13 @@ public class GenericGamtaXML extends TokenReceiver {
 	
 	
 	/**
-	 * Specialized reader for transfering the generic GAMTA XML representation
+	 * Specialized reader for transferring the generic GAMTA XML representation
 	 * of a document. This class allows for manipulating the document's
 	 * attributes without actually instantiating the whole document. This is
 	 * helpful in cases where a document is transferred through a pipe or a
 	 * network connection, being used as a fully instantiated document only on
 	 * the receiving end of the connection. In particular, it allows avoiding to
-	 * instatiate the whole document on the sending side of the connection. The
+	 * instantiate the whole document on the sending side of the connection. The
 	 * data provided by readers of this class is intended only for two purposes:
 	 * to be decoded by GenericGamtaXML.readDocument(), or to be written to a
 	 * writer and the decoded on this writer's receiving end. It is the
@@ -926,23 +902,23 @@ public class GenericGamtaXML extends TokenReceiver {
 			this.docLength = docLength;
 			
 			//	read start tag and parse attributes
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			int lastByte = 0;
-			int currentByte = 0;
-			while (currentByte != -1) {
-				lastByte = currentByte;
-				currentByte = this.in.read();
-				baos.write(currentByte);
-				if ((currentByte == '>') && (lastByte == '/'))
-					currentByte = -1;
+			StringWriter sw = new StringWriter();
+			int lastChar = 0;
+			int currentChar = 0;
+			while (currentChar != -1) {
+				lastChar = currentChar;
+				currentChar = this.in.read();
+				sw.write((char) currentChar);
+				if ((currentChar == '>') && (lastChar == '/'))
+					currentChar = -1;
 			}
 			
 			//	check success
-			if (lastByte != '/')
+			if (lastChar != '/')
 				throw new IOException("Document tag broken");
 			
 			//	instantiate start tag and get annotation number
-			String startTag = new String(baos.toByteArray(), "UTF-8");
+			String startTag = sw.toString();
 			this.ostLength = startTag.length();
 			String type = GRAMMAR.getType(startTag);
 			this.annotationNumber = (type.endsWith("0") ? 0 : -1);
@@ -1085,7 +1061,7 @@ public class GenericGamtaXML extends TokenReceiver {
 			if (this.startTagBuffer != null)
 				throw new IllegalStateException("Attributes can be modified only before reading from this stream.");
 			if (value == null)
-				return this.removeAttribute(name);
+				return this.attributes.remove(name);
 			else return this.attributes.put(name, value);
 		}
 		
@@ -1191,6 +1167,7 @@ public class GenericGamtaXML extends TokenReceiver {
 		public XmlDocumentInputStream(DocumentInputStream in) throws IOException {
 			this(in, null, null);
 		}
+		
 		/**
 		 * Constructor
 		 * @param in the document input stream to wrap
