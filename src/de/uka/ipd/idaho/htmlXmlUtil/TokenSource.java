@@ -39,7 +39,6 @@ import java.util.Vector;
 
 import de.uka.ipd.idaho.htmlXmlUtil.exceptions.ParseException;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar;
-import de.uka.ipd.idaho.htmlXmlUtil.grammars.Html;
 import de.uka.ipd.idaho.htmlXmlUtil.grammars.StandardGrammar;
 
 /**
@@ -475,26 +474,33 @@ public class TokenSource {
 	public static TokenSource getTokenSource(File file, Grammar grammar) throws IOException {
 		return getTokenSource(new FileInputStream(file), grammar);
 	}
-	
-	public static void main(String[] args) throws Exception {
-//		String html = "<?xml screw=it?><!element is><!element it><!element now><html>\r\n  <head><script>some & crap < with --> bad <!-- char > sequences</script></head>\r\n  <body test=test with space test2=with' width='100% hight=100%\">  Test  </body>\r\n<!-- comment -></html>";
-//		TokenSource ts = getTokenSource(html, new Html());
-//		while (ts.hasMoreTokens())
-//			System.out.println("Token: '" + ts.retrieveToken() + "'");
-		Html html = new Html();
-//		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), html);
-		File f = new File("E:/Projektdaten/Antfiles/Species  Camponotus (Camponotus) vagus - AntWeb.raw.htm");
-		InputStream in = new FileInputStream(f);
-		TokenSource ts = getTokenSource(in, html);
-		while (ts.hasMoreTokens()) {
-			String token = ts.retrieveToken();
-			if (!DEBUG) System.out.println("Token: '" + token + "'");
-//			if (html.isTag(token) && !html.isEndTag(token)) {
-//				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
-//				String[] ans = tnas.getAttributeNames();
-//				for (int a = 0; a < ans.length; a++)
-//					System.out.println(ans[a] + " = " + tnas.getAttribute(ans[a]));
-//			}
-		}
-	}
+//	
+//	public static void main(String[] args) throws Exception {
+////		String html = "<?xml screw=it?><!element is><!element it><!element now><html>\r\n  <head><script>some & crap < with --> bad <!-- char > sequences</script></head>\r\n  <body test=test with space test2=with' width='100% hight=100%\">  Test  </body>\r\n<!-- comment -></html>";
+////		TokenSource ts = getTokenSource(html, new Html());
+////		while (ts.hasMoreTokens())
+////			System.out.println("Token: '" + ts.retrieveToken() + "'");
+////		TokenSource ts = getTokenSource((new URL("http://www.plantsystematics.org/taxpage/0/genus/Agave.html").openStream()), html);
+//		
+//		File f = new File("E:/Projektdaten/Antfiles/Species  Camponotus (Camponotus) vagus - AntWeb.raw.htm");
+//		InputStream in = new FileInputStream(f);
+//		TokenSource ts = getTokenSource(in, new Html());
+//		
+//		//	Tokenizes OK
+////		TokenSource ts = getTokenSource(new StringReader("<t a=\"value with \"invalid\" chars\">text</t>"), new StandardGrammar());
+//		//	Tokenizes OK
+////		TokenSource ts = getTokenSource(new StringReader("<t a=\"Støp­Bowitz, C. (1992) Polychètes pèlagiques des Campagnes de \" L’ombango \" dans les eaux équatoriales et tropicales ouest­africaines. Editions de l’ORSTOM. Coll. Études et Thèses. Paris, 115 pp.\">text</t>"), new StandardGrammar());
+//		//	Tokenizes BULLSHIT ==> TODO improve it !!!
+////		TokenSource ts = getTokenSource(new StringReader("<t a=\"Støp­Bowitz, C. (1992) Polychètes pèlagiques des Campagnes de \" L'ombango \" dans les eaux équatoriales et tropicales ouest­africaines. Editions de l'ORSTOM. Coll. Études et Thèses. Paris, 115 pp.\">text</t>"), new StandardGrammar());
+//		while (ts.hasMoreTokens()) {
+//			String token = ts.retrieveToken();
+//			if (!DEBUG) System.out.println("Token: '" + token + "'");
+////			if (html.isTag(token) && !html.isEndTag(token)) {
+////				TreeNodeAttributeSet tnas = TreeNodeAttributeSet.getTagAttributes(token, html);
+////				String[] ans = tnas.getAttributeNames();
+////				for (int a = 0; a < ans.length; a++)
+////					System.out.println(ans[a] + " = " + tnas.getAttribute(ans[a]));
+////			}
+//		}
+//	}
 }

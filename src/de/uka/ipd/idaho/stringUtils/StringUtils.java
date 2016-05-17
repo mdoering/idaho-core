@@ -81,8 +81,11 @@ public class StringUtils {
 	/** string constant containing common currency symbols */
 	public static final String CURRENCY_SYMBOLS 		= "€$£¥";
 	
-	/** string constant containing all punctuation marks */
+	/** string constant containing all ASCII punctuation marks */
 	public static final String PUNCTUATION 				= "°!\"§$%&/()=¿?{[]}\\@€£+*~#'´`<>|,;.:-_^";
+	
+	/** string constant containing all Unicode dashes */
+	public static final String DASHES = "-\u00AD\u2010\u2011\u2012\u2013\u2014\u2015\u2212";
 	
 	/** string constant containing punctuation marks that may appear within words, namely '-' and ''' (in their various forms) */
 	public static final String IN_WORD_PUNCTUATION 		= "-'­——’‘";
