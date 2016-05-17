@@ -262,6 +262,8 @@ public class AttributeEditor extends JPanel {
 		//	wrap and initialize attribute table
 		JScrollPane attributeTableBox = new JScrollPane(this.attributeTable);
 		attributeTableBox.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		attributeTableBox.getVerticalScrollBar().setUnitIncrement(50);
+		attributeTableBox.getVerticalScrollBar().setBlockIncrement(50);
 		attributeTableBox.setViewportBorder(BorderFactory.createLoweredBevelBorder());
 		this.attributeTable.updateAttributes();
 		

@@ -63,25 +63,21 @@ public class AbstractAttributed implements Attributed {
 			if (attributeNames.length == 0) return; // no need for initializing map if no attributes to copy
 			if (this.attributes == null) //	initialize with appropriate capacity so resizing won't occur here
 				this.attributes = new HashMap(Math.max(((3 * attributeNames.length) / 2), 2)) ;
-			for (int a = 0; a < attributeNames.length; a++) 
-				this.attributes.put(attributeNames[a], source.getAttribute(attributeNames[a]));
+			for (int a = 0; a < attributeNames.length; a++)
+				this.setAttribute(attributeNames[a], source.getAttribute(attributeNames[a]));
 		}
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#getAttribute(java.lang.String, java.lang.Object)
 	 */
 	public Object getAttribute(String name, Object def) {
-		if (this.attributes == null)
-			return def;
-		return (this.attributes.containsKey(name) ? this.attributes.get(name) : def);
+		return (((this.attributes != null) && this.attributes.containsKey(name)) ? this.attributes.get(name) : def);
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#getAttribute(java.lang.String)
 	 */
 	public Object getAttribute(String name) {
-		if (this.attributes == null)
-			return null;
-		return this.attributes.get(name);
+		return ((this.attributes == null) ? null : this.attributes.get(name));
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#getAttributeNames()
@@ -103,12 +99,7 @@ public class AbstractAttributed implements Attributed {
 	/** @see de.uka.ipd.idaho.gamta.Attributed#removeAttribute(java.lang.String)
 	 */
 	public Object removeAttribute(String name) {
-		if (this.attributes == null)
-			return null;
-		Object value = this.attributes.remove(name);
-		if (this.attributes.isEmpty())
-			this.attributes = null;
-		return value;
+		return this.setAttribute(name, null);
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String)
@@ -117,13 +108,25 @@ public class AbstractAttributed implements Attributed {
 		this.setAttribute(name, "true");
 	}
 	
-	/** @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
+	/**
+	 * All attribute modifications of this implementation delegate to this
+	 * method. Thus sub classes wanting to implement change tracking only ever
+	 * have to overwrite this method, none of the others.
+	 * @see de.uka.ipd.idaho.gamta.Attributed#setAttribute(java.lang.String, java.lang.Object)
 	 */
 	public Object setAttribute(String name, Object value) {
-		if (value == null)
-			return this.removeAttribute(name);
-		if (this.attributes == null)
-			this.attributes = new HashMap(2);
-		return this.attributes.put(name, value);
+		if (value == null) {
+			if (this.attributes == null)
+				return null;
+			Object oldValue = this.attributes.remove(name);
+			if (this.attributes.isEmpty())
+				this.attributes = null;
+			return oldValue;
+		}
+		else {
+			if (this.attributes == null)
+				this.attributes = new HashMap(2);
+			return this.attributes.put(name, value);
+		}
 	}
 }
