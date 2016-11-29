@@ -32,6 +32,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -262,6 +263,85 @@ public class JsonParser {
 	}
 	
 	/**
+	 * Serialize a JSON object into its string representation. If the argument
+	 * object is neither of Map, List, String, Number, or Boolean, this method
+	 * returns null. Likewise, it ignores all all content objects that are of
+	 * neither of those three classes.
+	 * @param obj the object to serialize
+	 * @param quot the quotation mark to use for strings
+	 * @return the string representation of the argument object 
+	 */
+	public static String toString(Object obj) {
+		return toString(obj, '"');
+	}
+	
+	/**
+	 * Serialize a JSON object into its string representation. If the argument
+	 * object is neither of Map, List, String, Number, or Boolean, this method
+	 * returns null. Likewise, it ignores all all content objects that are of
+	 * neither of those three classes.
+	 * @param obj the object to serialize
+	 * @param quot the quotation mark to use for strings
+	 * @return the string representation of the argument object 
+	 */
+	public static String toString(Object obj, char quot) {
+		if (obj instanceof Map)
+			return toString((Map) obj, quot);
+		else if (obj instanceof List)
+			return toString((List) obj, quot);
+		else if (obj instanceof String)
+			return toString((String) obj, quot);
+		else if (obj instanceof Number)
+			return toString((Number) obj);
+		else if (obj instanceof Boolean)
+			return toString((Boolean) obj);
+		else return null;
+	}
+	
+	private static String toString(Map object, char quot) {
+		StringBuffer sb = new StringBuffer("{");
+		for (Iterator kit = object.keySet().iterator(); kit.hasNext();) {
+			Object key = ((String) kit.next());
+			if (!(key instanceof String))
+				continue;
+			String value = toString(object.get(key), quot);
+			if (value == null)
+				continue;
+			if (sb.length() > 1)
+				sb.append(", ");
+			sb.append(toString(((String) key), quot));
+			sb.append(": ");
+			sb.append(value);
+		}
+		return sb.append("}").toString();
+	}
+	
+	private static String toString(List array, char quot) {
+		StringBuffer sb = new StringBuffer("[");
+		for (int i = 0; i < array.size(); i++) {
+			String element = toString(array.get(i), quot);
+			if (element == null)
+				continue;
+			if (sb.length() > 1)
+				sb.append(", ");
+			sb.append(element);
+		}
+		return sb.append("]").toString();
+	}
+	
+	private static String toString(String string, char quot) {
+		return ("" + quot + escape(string, quot) + quot);
+	}
+	
+	private static String toString(Number number) {
+		return number.toString();
+	}
+	
+	private static String toString(Boolean bool) {
+		return bool.toString();
+	}
+	
+	/**
 	 * Parse JSON data from a character stream.
 	 * @param in the reader to read from
 	 * @return the de-serialized object
@@ -394,10 +474,11 @@ public class JsonParser {
 		pr.skipSpace();
 		StringBuffer fracBuf = new StringBuffer();
 		if (pr.peek() == '.') {
-			numBuf.append((char) pr.peek());
-			pr.read();
-			while ("0123456789".indexOf(pr.peek()) != -1)
+			numBuf.append((char) pr.read());
+			while ("0123456789".indexOf(pr.peek()) != -1) {
+				numBuf.append((char) pr.peek());
 				fracBuf.append((char) pr.read());
+			}
 		}
 		pr.skipSpace();
 		StringBuffer expBuf = new StringBuffer();
@@ -405,8 +486,7 @@ public class JsonParser {
 			numBuf.append('e');
 			pr.read();
 			if (pr.peek() == '-') {
-				numBuf.append((char) pr.peek());
-				pr.read();
+				numBuf.append((char) pr.read());
 				pr.skipSpace();
 			}
 			else if (pr.peek() == '+') {
@@ -427,6 +507,7 @@ public class JsonParser {
 	public static void main(String[] args) throws Exception {
 		String json = "{" +
 					"\"id\": \"113503575767148437762\"," +
+					"\"float\": 0.5," +
 //					"\"name\": \"Guido Sautter\"," +
 //					"\"given_name\": \"Guido\"," +
 //					"\"family_name\": \"Sautter\"," +
