@@ -1010,7 +1010,7 @@ public class XsltUtils {
 		if (transformerFactoryTestedForCaching)
 			return null;
 		
-		//	chaching behavior yet to be tested, do it right now
+		//	caching behavior yet to be tested, do it right now
 		try {
 			System.out.println("XsltUtils: testing XSL Transformer Factory for internal caching behavior ...");
 			TransformerFactory tf = TransformerFactory.newInstance();
@@ -1080,7 +1080,7 @@ public class XsltUtils {
 				if (transformerFactory != null)
 					return transformerFactory.newTransformer(new StreamSource(new InputStreamReader(new ByteArrayInputStream(stylesheet), "UTF-8")));
 				
-				//	chaching behavior yet to be tested, do it right now
+				//	caching behavior yet to be tested, do it right now
 				if (!transformerFactoryTestedForCaching)
 					return XsltUtils.produceTransformer(this.stylesheet);
 				
@@ -1346,15 +1346,15 @@ public class XsltUtils {
 				this.parent = parent;
 				this.transformer = transformer;
 			}
-			void prepare(HashMap parameters, Properties oformat, URIResolver uriResolver) {
+			void prepare(HashMap parameters, Properties outFormat, URIResolver uriResolver) {
 				for (Iterator pit = parameters.keySet().iterator(); pit.hasNext();) {
 					String name = ((String) pit.next());
 					this.transformer.setParameter(name, parameters.get(name));
 				}
 				
-				for (Iterator pit = oformat.keySet().iterator(); pit.hasNext();) {
+				for (Iterator pit = outFormat.keySet().iterator(); pit.hasNext();) {
 					String name = ((String) pit.next());
-					this.transformer.setOutputProperty(name, oformat.getProperty(name));
+					this.transformer.setOutputProperty(name, outFormat.getProperty(name));
 				}
 				
 				this.transformer.setURIResolver(uriResolver);
