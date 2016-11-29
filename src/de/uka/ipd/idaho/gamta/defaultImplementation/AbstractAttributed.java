@@ -50,9 +50,11 @@ public class AbstractAttributed implements Attributed {
 	/** @see de.uka.ipd.idaho.gamta.Attributed#clearAttributes()
 	 */
 	public void clearAttributes() {
-		if (this.attributes != null)
-			this.attributes.clear();
-		this.attributes = null;
+		if (this.attributes == null)
+			return;
+		String[] attributeNames = this.getAttributeNames();
+		for (int a = 0; a < attributeNames.length; a++)
+			this.removeAttribute(attributeNames[a]);
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.Attributed#copyAttributes(de.uka.ipd.idaho.gamta.Attributed)

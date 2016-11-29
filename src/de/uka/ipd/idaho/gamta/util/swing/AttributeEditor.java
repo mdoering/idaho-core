@@ -44,6 +44,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -70,11 +71,131 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
 
 /**
  * An editor widget for manipulating the attributes of an Attributed object in
- * a GUI
+ * a GUI.
+ * <br>This class also provides a centralized registration point for components
+ * that offer lists of suggested values for specific attributes of given
+ * attributed objects.
  * 
  * @author sautter
  */
 public class AttributeEditor extends JPanel {
+	
+	/**
+	 * A provider of attribute and value suggestions for given attributed
+	 * objects.
+	 * 
+	 * @author sautter
+	 */
+	public static interface AttributeValueProvider {
+		
+		/**
+		 * Retrieve a list of suggested attributes for some attributed object.
+		 * Implementations are suggested to determine the type of the argument
+		 * attributed object in some way and then loop through to the version
+		 * of this method that takes a string as an argument.
+		 * @param attributed the attributed object the suggestions are for
+		 * @return an array containing the suggestions, or null, if there are
+		 *            no suggestions available from this provider
+		 */
+		public abstract String[] getAttributesFor(Attributed attributed);
+		
+		/**
+		 * Get suggested attribute names for a given object type.
+		 * @param type the object type to get the attribute names for
+		 * @return an array holding the suggested attribute names
+		 */
+		public abstract String[] getAttributesFor(String type);
+		
+		/**
+		 * Retrieve a list of value suggestions for a given attribute of some
+		 * attributed object. Implementations are suggested to determine the
+		 * type of the argument attributed object in some way and then loop
+		 * through to the version of this method that takes two strings as
+		 * arguments.
+		 * @param attributed the attributed object the suggestions are for
+		 * @param attributeName the name of the attribute to get the
+		 *            suggestions for
+		 * @return a list containing the suggestions, or null, if there is no
+		 *            such list available from this provider
+		 */
+		public abstract AttributeValueList getValuesFor(Attributed attributed, String attributeName);
+		
+		/**
+		 * Get suggested values for a given attribute of a given object type.
+		 * @param type the type of object the attribute belongs to
+		 * @param attributeName the attribute name to get the values for
+		 * @return a list holding the suggested attribute values
+		 */
+		public abstract AttributeValueList getValuesFor(String type, String attributeName);
+	}
+	
+	/**
+	 * A list of suggested values for a given attribute. Such a list may also
+	 * restrict the permitted values to the list content, effectively turning
+	 * the available values into a controlled vocabulary. In that case, the
+	 * list will also be used in its existing order, not sorted in ascending
+	 * lexicographical order.
+	 * 
+	 * @author sautter
+	 */
+	public static class AttributeValueList extends ArrayList {
+		
+		/** does this list represent a controlled set of <em>permitted</em> values? This property should be used with care. */
+		public final boolean isControlled;
+		
+		/** Constructor
+		 * @param isControlled does the list represent a controlled set of values?
+		 */
+		public AttributeValueList(boolean isControlled) {
+			this.isControlled = isControlled;
+		}
+		
+		/** Constructor
+		 * @param values a collection holding values to add
+		 * @param isControlled does the list represent a controlled set of values?
+		 */
+		public AttributeValueList(Collection values, boolean isControlled) {
+			super(values);
+			this.isControlled = isControlled;
+		}
+		
+		/**
+		 * Convert the list of values into an array of strings for display
+		 * purposes.
+		 * @return the list content as a string array
+		 */
+		public String[] toStringArray() {
+			return ((String[]) this.toArray(new String[this.size()]));
+		}
+	}
+	
+	private static ArrayList attributeValueProviders = new ArrayList();
+	
+	/**
+	 * Register an attribute value provider so it is available to all future
+	 * instances of this class.
+	 * @param avp the attribute value provider to add
+	 */
+	public static void addAttributeValueProvider(AttributeValueProvider avp) {
+		if (avp != null)
+			attributeValueProviders.add(avp);
+	}
+	
+	/**
+	 * Remove an attribute value provider.
+	 * @param avp the attribute value provider to remove
+	 */
+	public static void removeAttributeValueProvider(AttributeValueProvider avp) {
+		attributeValueProviders.remove(avp);
+	}
+	
+	/**
+	 * Retrieve the attribute value providers currently registered.
+	 * @return an array holding the attribute value providers
+	 */
+	public static AttributeValueProvider[] getAttributeValueProviders() {
+		return ((AttributeValueProvider[]) attributeValueProviders.toArray(new AttributeValueProvider[attributeValueProviders.size()]));
+	}
 	
 	private static final String DUMMY_ATTRIBUTE_NAME = "Attribute Name";
 	private static final String DUMMY_ATTRIBUTE_VALUE = "Attribute Value";
@@ -97,7 +218,7 @@ public class AttributeEditor extends JPanel {
 	 * @param annotation the Annotation whose attributes to edit
 	 */
 	public AttributeEditor(Annotation annotation) {
-		this(annotation, null);
+		this(annotation, annotation.getDocument());
 	}
 	
 	/**
@@ -144,8 +265,8 @@ public class AttributeEditor extends JPanel {
 		super(new BorderLayout(), true);
 		this.attributed = attributed;
 		
-		//	store attributes of annotation being edited
-		String[] attributeNames = attributed.getAttributeNames();
+		//	store attributes of object being edited
+		String[] attributeNames = this.attributed.getAttributeNames();
 		Arrays.sort(attributeNames, String.CASE_INSENSITIVE_ORDER);
 		for (int n = 0; n < attributeNames.length; n++)
 			this.attributes.put(attributeNames[n], this.attributed.getAttribute(attributeNames[n]));
@@ -159,6 +280,31 @@ public class AttributeEditor extends JPanel {
 					this.getValueSet(attributeNames[n]).add(attributeValue.toString());
 			}
 		}
+		
+		//	add attribute name suggestions from providers
+		for (int p = 0; p < attributeValueProviders.size(); p++) {
+			attributeNames = ((AttributeValueProvider) attributeValueProviders.get(p)).getAttributesFor(this.attributed);
+			if (attributeNames != null) {
+				for (int n = 0; n < attributeNames.length; n++)
+					this.getValueSet(attributeNames[n]); // this creates the value set, thus storing the attribute name in the map
+			}
+		}
+		
+		//	add attribute value suggestions from providers
+		for (Iterator anit = this.contextAttributeValueSetsByName.keySet().iterator(); anit.hasNext();) {
+			String attributeName = ((String) anit.next());
+			for (int p = 0; p < attributeValueProviders.size(); p++) {
+				AttributeValueList attributeValueList = ((AttributeValueProvider) attributeValueProviders.get(p)).getValuesFor(this.attributed, attributeName);
+				if (attributeValueList != null) {
+					AttributeValueSet values = this.getValueSet(attributeName);
+					String[] attributeValues = attributeValueList.toStringArray();
+					for (int v = 0; v < attributeValues.length; v++)
+						values.add(attributeValues[v]);
+				}
+			}
+		}
+		
+		//	TODO restrict attributes we have controlled lists for
 		
 		//	initialize attribute editor fields
 		this.attributeNameField.setBorder(BorderFactory.createLoweredBevelBorder());

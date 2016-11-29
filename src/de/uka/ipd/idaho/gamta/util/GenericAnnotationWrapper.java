@@ -30,6 +30,7 @@ package de.uka.ipd.idaho.gamta.util;
 
 import de.uka.ipd.idaho.gamta.Annotation;
 import de.uka.ipd.idaho.gamta.Attributed;
+import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.Token;
 import de.uka.ipd.idaho.gamta.TokenSequence;
 import de.uka.ipd.idaho.gamta.Tokenizer;
@@ -201,6 +202,10 @@ public class GenericAnnotationWrapper implements Annotation {
 
 	public String toXML() {
 		return this.annotationData.toXML();
+	}
+	
+	public QueriableAnnotation getDocument() {
+		return this.annotationData.getDocument();
 	}
 	
 	public String changeTypeTo(String newType) {

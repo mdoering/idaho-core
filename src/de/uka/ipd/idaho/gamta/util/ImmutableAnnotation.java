@@ -288,7 +288,14 @@ public class ImmutableAnnotation implements QueriableAnnotation {
 	public String toXML() {
 		return this.data.toXML();
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+	 */
+	public QueriableAnnotation getDocument() {
+		return new ImmutableAnnotation(this.data.getDocument());
+	}
+	
 	/* (non-Javadoc)
 	 * @see de.gamta.defaultImplementation.GamtaDocument#valueAt(int)
 	 */

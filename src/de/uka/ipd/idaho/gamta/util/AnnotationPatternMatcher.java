@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.TreeSet;
 import java.util.regex.PatternSyntaxException;
 
 import de.uka.ipd.idaho.gamta.Annotation;
@@ -411,6 +412,7 @@ public class AnnotationPatternMatcher {
 	 */
 	public static class AnnotationIndex {
 		HashMap index = new HashMap();
+		HashSet annotTypes = new HashSet();
 		AnnotationIndex defIndex;
 		QueriableAnnotation data;
 		HashSet dataRetrievedTypes;
@@ -453,7 +455,30 @@ public class AnnotationPatternMatcher {
 				this.getAnnotationList(type, annots[a].getStartIndex(), true).add(annots[a]);
 		}
 		
-		Annotation[] getAnnotations(String type, int startIndex) {
+		/**
+		 * Retrieve the types of annotations indexed in this annotation index.
+		 * If the annotation index has an underlying document or an underlying
+		 * default annotation index, the annotation types from these two are
+		 * also included.
+		 * @return an array holding the annotation types
+		 */
+		public String[] getAnnotationTypes() {
+			TreeSet annotTypes = new TreeSet(this.annotTypes);
+			if (this.defIndex != null)
+				annotTypes.addAll(Arrays.asList(this.defIndex.getAnnotationTypes()));
+			if (this.data != null)
+				annotTypes.addAll(Arrays.asList(this.data.getAnnotationTypes()));
+			return ((String[]) annotTypes.toArray(new String[annotTypes.size()]));
+		}
+		
+		/**
+		 * Retrieve annotations of a specific type starting at a specific
+		 * index.
+		 * @param type the type of the sought annotations
+		 * @param startIndex the start index of the sought annotations
+		 * @return an array holding the matching annotations
+		 */
+		public Annotation[] getAnnotations(String type, int startIndex) {
 			ArrayList al = this.getAnnotationList(type, startIndex, false);
 			if ((al == null) && (this.data != null) && this.dataRetrievedTypes.add(type)) {
 				this.addAnnotations(this.data.getAnnotations(type), type);
@@ -471,6 +496,8 @@ public class AnnotationPatternMatcher {
 		}
 		
 		ArrayList getAnnotationList(String type, int startIndex, boolean create) {
+			if (create)
+				this.annotTypes.add(type);
 			String alk = ("" + startIndex + " " + type);
 			ArrayList al = ((ArrayList) this.index.get(alk));
 			if ((al == null) && create) {

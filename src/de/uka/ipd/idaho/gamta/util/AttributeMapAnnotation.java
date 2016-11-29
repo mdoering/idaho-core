@@ -10,6 +10,7 @@ import java.util.Map;
 import de.uka.ipd.idaho.easyIO.util.RandomByteSource;
 import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.Gamta;
+import de.uka.ipd.idaho.gamta.MutableAnnotation;
 import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.Token;
 import de.uka.ipd.idaho.gamta.TokenSequence;
@@ -249,6 +250,13 @@ public class AttributeMapAnnotation extends AbstractAttributed implements Queria
 	 */
 	public String toXML() {
 		return (AnnotationUtils.produceStartTag(this) + AnnotationUtils.escapeForXml(this.getValue()) + AnnotationUtils.produceEndTag(this));
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+	 */
+	public MutableAnnotation getDocument() {
+		return ((this.tokens instanceof MutableAnnotation) ? ((MutableAnnotation) this.tokens) : null);
 	}
 	
 	/* (non-Javadoc)

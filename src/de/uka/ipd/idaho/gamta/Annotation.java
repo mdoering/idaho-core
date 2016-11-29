@@ -179,11 +179,17 @@ public interface Annotation extends Attributed, TokenSequence, Comparable, CharS
 	public abstract String getValue();
 	
 	/**
-	 * @return this Annotaion's value surrounded by start and end tag of this
+	 * @return this Annotation's value surrounded by start and end tag of this
 	 *         annotation's type, start tag containing the Annotation's
 	 *         attributes whose values are Strings
 	 */
 	public abstract String toXML();
+	
+	/**
+	 * @return the document this Annotation belongs to, or null, if it does not
+	 *         belong to one.
+	 */
+	public abstract QueriableAnnotation getDocument();
 	
 	/**
 	 * Get a property of the document this Annotation belongs to.

@@ -36,6 +36,7 @@ import de.uka.ipd.idaho.gamta.Annotation;
 import de.uka.ipd.idaho.gamta.AnnotationSet;
 import de.uka.ipd.idaho.gamta.AnnotationUtils;
 import de.uka.ipd.idaho.gamta.Gamta;
+import de.uka.ipd.idaho.gamta.QueriableAnnotation;
 import de.uka.ipd.idaho.gamta.StandaloneAnnotation;
 import de.uka.ipd.idaho.gamta.Token;
 import de.uka.ipd.idaho.gamta.TokenSequence;
@@ -530,6 +531,12 @@ public class TemporaryAnnotationSet extends AbstractAttributed implements Annota
 	 */
 	public String toXML() {
 		return (AnnotationUtils.produceStartTag(this) + AnnotationUtils.escapeForXml(this.getValue()) + AnnotationUtils.produceEndTag(this));
+	}
+	
+	/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+	 */
+	public QueriableAnnotation getDocument() {
+		return ((this.tokens instanceof QueriableAnnotation) ? ((QueriableAnnotation) this.tokens) : null);
 	}
 	
 	/** @see de.uka.ipd.idaho.gamta.TokenSequence#tokenAt(int)

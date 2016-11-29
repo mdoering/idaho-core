@@ -72,6 +72,10 @@ public class GenericQueriableAnnotationWrapper extends GenericAnnotationWrapper 
 		return this.queriableAnnotationData.getAbsoluteStartIndex();
 	}
 	
+	public QueriableAnnotation getDocument() {
+		return this.wrapAnnotation(this.annotationData.getDocument());
+	}
+	
 	public QueriableAnnotation[] getAnnotations() {
 		QueriableAnnotation[] annotations = this.queriableAnnotationData.getAnnotations();
 		for (int a = 0; a < annotations.length; a++)

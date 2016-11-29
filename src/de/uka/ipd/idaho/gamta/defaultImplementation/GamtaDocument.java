@@ -246,6 +246,13 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 	}
 	
 	/* (non-Javadoc)
+	 * @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+	 */
+	public QueriableAnnotation getDocument() {
+		return this;
+	}
+	
+	/* (non-Javadoc)
 	 * @see de.gamta.Annotation#getDocumentProperty(java.lang.String)
 	 */
 	public String getDocumentProperty(String propertyName) {
@@ -1011,6 +1018,12 @@ public class GamtaDocument extends AbstractAttributed implements DocumentRoot {
 		 */
 		public String toXML() {
 			return (AnnotationUtils.produceStartTag(this) + AnnotationUtils.escapeForXml(this.getValue()) + AnnotationUtils.produceEndTag(this));
+		}
+		/* (non-Javadoc)
+		 * @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return GamtaDocument.this;
 		}
 		/* (non-Javadoc)
 		 * @see de.gamta.defaultImplementation.GamtaDocument.AnnotationBase#getWhitespaceAfter(int)

@@ -35,9 +35,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.PatternSyntaxException;
 
 import de.uka.ipd.idaho.gamta.Annotation;
@@ -966,6 +968,50 @@ public class GPathEngine implements GPathConstants {
 				sum += new GPathString(annotationSet.get(s).getValue()).asNumber().value;
 			return new GPathNumber(sum);
 		}
+		else if ("min".equalsIgnoreCase(functionName)) {
+			if ((args.length != 1) || !(args[0] instanceof GPathAnnotationSet))
+				throw new InvalidArgumentsException("The function 'min' requires 1 argument(s) of type(s) GPathAnnotationSet.");
+			GPathAnnotationSet annotationSet = ((GPathAnnotationSet) args[0]);
+			double minNum = 0;
+			String minStr = null;
+			for (int s = 0; s < annotationSet.size(); s++) {
+				GPathString str = new GPathString(annotationSet.get(s).getValue());
+				if (minStr == null)
+					minStr = str.value;
+				else if (str.value.compareTo(minStr) < 0)
+					minStr = str.value;
+				GPathNumber num = str.asNumber();
+				if (Double.isNaN(num.value))
+					minNum = Double.NaN;
+				else if (!Double.isNaN(minNum))
+					minNum = Math.min(minNum, num.value);
+			}
+			if (Double.isNaN(minNum))
+				return new GPathString((minStr == null) ? "" : minStr);
+			else return new GPathNumber(minNum);
+		}
+		else if ("max".equalsIgnoreCase(functionName)) {
+			if ((args.length != 1) || !(args[0] instanceof GPathAnnotationSet))
+				throw new InvalidArgumentsException("The function 'max' requires 1 argument(s) of type(s) GPathAnnotationSet.");
+			GPathAnnotationSet annotationSet = ((GPathAnnotationSet) args[0]);
+			double maxNum = 0;
+			String maxStr = null;
+			for (int s = 0; s < annotationSet.size(); s++) {
+				GPathString str = new GPathString(annotationSet.get(s).getValue());
+				if (maxStr == null)
+					maxStr = str.value;
+				else if (str.value.compareTo(maxStr) > 0)
+					maxStr = str.value;
+				GPathNumber num = str.asNumber();
+				if (Double.isNaN(num.value))
+					maxNum = Double.NaN;
+				else if (!Double.isNaN(maxNum))
+					maxNum = Math.max(maxNum, num.value);
+			}
+			if (Double.isNaN(maxNum))
+				return new GPathString((maxStr == null) ? "" : maxStr);
+			else return new GPathNumber(maxNum);
+		}
 		
 		//	positional functions
 		else if ("last".equalsIgnoreCase(functionName)) {
@@ -1053,15 +1099,28 @@ public class GPathEngine implements GPathConstants {
 			return new GPathBoolean(args[0].asString().value.endsWith(args[1].asString().value));
 		}
 		else if ("matches".equalsIgnoreCase(functionName)) {
-			if (args.length != 2) throw new InvalidArgumentsException("The function 'matches' requires 2 argument(s) of type(s) GPathString.");
+			if (args.length != 2)
+				throw new InvalidArgumentsException("The function 'matches' requires 2 argument(s) of type(s) GPathString.");
 			try {
 				return new GPathBoolean(args[0].asString().value.matches(args[1].asString().value));
 			}
 			catch (PatternSyntaxException pse) {
-				throw new InvalidArgumentsException("The function 'matches' requires a GPathString representing a valid pattern as it's second argument.");
+				throw new InvalidArgumentsException("The function 'matches' requires a GPathString representing a valid pattern as its second argument.");
 			}
 		}
 		else if ("concat".equalsIgnoreCase(functionName)) {
+			if (args.length < 1)
+				throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
+			
+			if ((args[0] instanceof GPathAnnotationSet) && (args.length < 3)) {
+				GPathAnnotationSet gpas = ((GPathAnnotationSet) args[0]);
+				String separator = ((args.length == 1) ? " " : args[1].asString().value);
+				StringBuffer assembler = new StringBuffer("");
+				for (int a = 0; a < gpas.size(); a++)
+					assembler.append(((a == 0) ? "" : separator) + gpas.get(a).getValue());
+				return new GPathString(assembler.toString());
+			}
+			
 			if (args.length < 2)
 				throw new InvalidArgumentsException("The function 'concat' requires 2 or more argument(s) of type(s) GPathString.");
 			
@@ -1069,6 +1128,43 @@ public class GPathEngine implements GPathConstants {
 			for (int a = 0; a < args.length; a++)
 				assembler.append(((a == 0) ? "" : " ") + args[a].asString().value);
 			return new GPathString(assembler.toString());
+		}
+		else if ("concat-distinct".equalsIgnoreCase(functionName)) {
+			if (args.length < 1)
+				throw new InvalidArgumentsException("The function 'concat-distinct' requires one argument of type GPathAnnotationSet, and optionally a second one of type GPathString.");
+			
+			if (args[0] instanceof GPathAnnotationSet) {
+				GPathAnnotationSet gpas = ((GPathAnnotationSet) args[0]);
+				String separator = ((args.length == 1) ? " " : args[1].asString().value);
+				StringBuffer assembler = new StringBuffer("");
+				TreeSet assembled = new TreeSet();
+				for (int a = 0; a < gpas.size(); a++) {
+					String annotValue = gpas.get(a).getValue();
+					if (assembled.add(annotValue))
+						assembler.append(((a == 0) ? "" : separator) + annotValue);
+				}
+				return new GPathString(assembler.toString());
+			}
+			else throw new InvalidArgumentsException("The function 'concat-distinct' requires one argument of type GPathAnnotationSet, and optionally a second one of type GPathString.");
+		}
+		else if ("concat-distinct-ordered".equalsIgnoreCase(functionName)) {
+			if (args.length < 1)
+				throw new InvalidArgumentsException("The function 'concat-distinct-ordered' requires one argument of type GPathAnnotationSet, and optionally a second one of type GPathString.");
+			
+			if (args[0] instanceof GPathAnnotationSet) {
+				GPathAnnotationSet gpas = ((GPathAnnotationSet) args[0]);
+				TreeSet collector = new TreeSet();
+				for (int a = 0; a < gpas.size(); a++)
+					collector.add(gpas.get(a).getValue());
+				String separator = ((args.length == 1) ? " " : args[1].asString().value);
+				StringBuffer assembler = new StringBuffer("");
+				for (Iterator avit = collector.iterator(); avit.hasNext();) {
+					String annotValue = ((String) avit.next());
+					assembler.append(annotValue + (avit.hasNext() ? separator : ""));
+				}
+				return new GPathString(assembler.toString());
+			}
+			else throw new InvalidArgumentsException("The function 'concat-distinct-ordered' requires one argument of type GPathAnnotationSet, and optionally a second one of type GPathString.");
 		}
 		else if ("normalize-space".equalsIgnoreCase(functionName)) {
 			String toNormalize;
@@ -1538,6 +1634,12 @@ public class GPathEngine implements GPathConstants {
 			return this;
 		}
 		
+		/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return this;
+		}
+
 		/** @see de.uka.ipd.idaho.gamta.MutableAnnotation#getAnnotations()
 		 */
 		public QueriableAnnotation[] getAnnotations() {
@@ -1694,7 +1796,13 @@ public class GPathEngine implements GPathConstants {
 		public int getAbsoluteStartOffset() {
 			return this.source.getAbsoluteStartOffset() - ((this.doc == null) ? 0 : this.doc.source.getAbsoluteStartOffset());
 		}
-
+		
+		/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return this.doc;
+		}
+		
 		/** @see de.uka.ipd.idaho.gamta.MutableAnnotation#getAnnotations()
 		 */
 		public QueriableAnnotation[] getAnnotations() {
@@ -1857,6 +1965,12 @@ public class GPathEngine implements GPathConstants {
 		public String toXML() {
 			String type = (this.source.getType() + "." + this.type);
 			return ("<" + type + ">" + AnnotationUtils.escapeForXml(this.getValue()) + "</" + type + ">");
+		}
+		
+		/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return this.source.getDocument();
 		}
 		
 		/** @see de.uka.ipd.idaho.gamta.MutableAnnotation#getAnnotations()
@@ -2092,6 +2206,12 @@ public class GPathEngine implements GPathConstants {
 		 */
 		public String toXML() {
 			return ("<" + Token.TOKEN_ANNOTATION_TYPE + ">" + AnnotationUtils.escapeForXml(this.getValue()) + "</" + Token.TOKEN_ANNOTATION_TYPE + ">");
+		}
+		
+		/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return this.source.getDocument();
 		}
 		
 		/** @see de.uka.ipd.idaho.gamta.MutableAnnotation#getAnnotations()
@@ -2362,6 +2482,12 @@ public class GPathEngine implements GPathConstants {
 		 */
 		public String toXML() {
 			return ("<" + Token.TOKEN_ANNOTATION_TYPE + ">" + AnnotationUtils.escapeForXml(this.getValue()) + "</" + Token.TOKEN_ANNOTATION_TYPE + ">");
+		}
+		
+		/** @see de.uka.ipd.idaho.gamta.Annotation#getDocument()
+		 */
+		public QueriableAnnotation getDocument() {
+			return this.source.getDocument();
 		}
 		
 		/** @see de.uka.ipd.idaho.gamta.MutableAnnotation#getAnnotations()
