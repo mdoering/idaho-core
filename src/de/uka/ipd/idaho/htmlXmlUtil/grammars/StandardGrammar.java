@@ -186,7 +186,7 @@ public class StandardGrammar extends Grammar {
 	/** @see de.uka.ipd.idaho.htmlXmlUtil.grammars.Grammar#isCharCode(String)
 	 */
 	public boolean isCharCode(String code) {
-		return ("&amp;".equals(code) || "&lt;".equals(code) || "&gt;".equals(code) || "&quot;".equals(code) || super.isCharCode(code));
+		return ("&amp;".equals(code) || "&lt;".equals(code) || "&gt;".equals(code) || "&quot;".equals(code) || "&apos;".equals(code) || super.isCharCode(code));
 	}
 	
 	/**
@@ -206,6 +206,8 @@ public class StandardGrammar extends Grammar {
 				escapedString.append("&gt;");
 			else if (ch == '"')
 				escapedString.append("&quot;");
+//			else if (ch == '\'') // this does a lot more harm than good, as many applications don't understand the entity
+//				escapedString.append("&apos;");
 			else if (ch == '&')
 				escapedString.append("&amp;");
 			else escapedString.append(ch);
@@ -239,6 +241,10 @@ public class StandardGrammar extends Grammar {
 				}
 				else if (escapedString.startsWith("quot;", (c+1))) {
 					string.append('"');
+					c+=6;
+				}
+				else if (escapedString.startsWith("apos;", (c+1))) {
+					string.append('\'');
 					c+=6;
 				}
 				else if ((escapedString.startsWith("#", (c+1)) || escapedString.startsWith("x", (c+1))) && (escapedString.indexOf(';', (c+1)) != -1)) {

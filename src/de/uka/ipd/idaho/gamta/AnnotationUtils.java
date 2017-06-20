@@ -710,6 +710,8 @@ public class AnnotationUtils {
 				escapedString.append("&gt;");
 			else if (ch == '"')
 				escapedString.append("&quot;");
+//			else if (ch == '\'') // this does a lot more harm than good, as many applications don't understand the entity
+//				escapedString.append("&apos;");
 			else if (ch == '&')
 				escapedString.append("&amp;");
 			else if ((ch < 32) || (ch == 127) || (ch == 129) || (ch == 141) || (ch == 143) || (ch == 144) || (ch == 157)) {
@@ -747,6 +749,10 @@ public class AnnotationUtils {
 				}
 				else if (escapedString.startsWith("quot;", (c+1))) {
 					string.append('"');
+					c+=6;
+				}
+				else if (escapedString.startsWith("apos;", (c+1))) {
+					string.append('\'');
 					c+=6;
 				}
 				else if (escapedString.startsWith("#x", (c+1))) {

@@ -71,6 +71,9 @@ public interface LocationConstants extends NamedEntityConstants {
 	/** the annotation type for marking a geographical coordinate in the text of a document*/
 	public static final String GEO_COORDINATE_TYPE = "geoCoordinate";
 	
+	/** the annotation type for marking a pair of geographical coordinate in the text of a document, i.e., a pair that identifies a point on earth*/
+	public static final String GEO_COORDINATE_PAIR_TYPE = "geoCoordinatePair";
+	
 	/** the attribute holding the precision (in meters) of a single geographical coordinate in a respective annotation*/
 	public static final String PRECISION_ATTRIBUTE = "precision";
 	

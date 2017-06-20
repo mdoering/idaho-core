@@ -557,6 +557,8 @@ public class Html extends StandardGrammar {
 				escapedString.append("&gt;");
 			else if (ch == '"')
 				escapedString.append("&quot;");
+//			else if (ch == '\'') // this does a lot more harm than good, as many applications don't understand the entity
+//				escapedString.append("&apos;");
 			else if (ch == '&') {
 				int escapeEnd = string.indexOf(';', c);
 				if ((escapeEnd != -1) && ((escapeEnd - c) <= this.charLookahead) && this.isCharCode(string.substring(c, (escapeEnd+1))))

@@ -348,14 +348,17 @@ public class JsonParser {
 	 * @throws IOException
 	 */
 	public static Object parseJson(Reader in) throws IOException {
-		PeekReader pr = new PeekReader(in, 5);
-		return cropNext(pr, false);
+		if (in instanceof PeekReader)
+			return cropNext(((PeekReader) in), false);
+		else return cropNext(new PeekReader(in, 5), false);
 	}
 	
 	private static Object cropNext(PeekReader pr, boolean inArrayOrObject) throws IOException {
 		pr.skipSpace();
 		if (pr.peek() == '"')
-			return cropString(pr);
+			return cropString(pr, '"');
+		else if (pr.peek() == '\'')
+			return cropString(pr, '\'');
 		else if (pr.peek() == '{')
 			return cropObject(pr);
 		else if (pr.peek() == '[')
@@ -384,7 +387,9 @@ public class JsonParser {
 		pr.skipSpace();
 		Map map = new HashMap();
 		while (pr.peek() != '}') {
-			String key = cropString(pr);
+			if ((pr.peek() != '"') && (pr.peek() != '\''))
+				throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
+			String key = cropString(pr, ((char) pr.peek()));
 			pr.skipSpace();
 			if (pr.peek() != ':')
 				throw new IOException("Unexpected char '" + ((char) pr.peek()) + "'");
@@ -422,7 +427,7 @@ public class JsonParser {
 		return array;
 	}
 	
-	private static String cropString(PeekReader pr) throws IOException {
+	private static String cropString(PeekReader pr, char quot) throws IOException {
 		pr.read(); // consume opening quotes
 		boolean escaped = false;
 		StringBuffer string = new StringBuffer();
@@ -452,7 +457,7 @@ public class JsonParser {
 			}
 			else if (ch == '\\')
 				escaped = true;
-			else if (ch == '"')
+			else if (ch == quot)
 				break;
 			else string.append(ch);
 		}
@@ -518,6 +523,7 @@ public class JsonParser {
 					"}," +
 					"\"link\": \"https://plus.google.com/113503575767148437762\"," +
 					"\"gender\": \"male\"," +
+					"\"married\": false," +
 					"\"locale\": \"en\"," +
 					"\"locales\": [-3.8e7, {\"primary\": \"en\"}, \"de\", \"fr\"]" +
 				"}";

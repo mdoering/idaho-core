@@ -27,16 +27,20 @@
  */
 package de.uka.ipd.idaho.easyIO.web;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Enumeration;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
+import de.uka.ipd.idaho.easyIO.util.JsonParser;
 import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder;
 
 /**
@@ -46,17 +50,12 @@ import de.uka.ipd.idaho.htmlXmlUtil.accessories.HtmlPageBuilder;
  * @author sautter
  */
 public class ReCAPTCHA {
-//	private static final String PROPERTY_THEME = "theme";
-//	private static final String PROPERTY_TABINDEX = "tabindex";
-//	
 	private static final String DEFAULT_SERVER_URL = "http://www.google.com/recaptcha/api";
-	private static final String DEFAULT_VERIFY_URL = "http://www.google.com/recaptcha/api/verify";
+	private static final String DEFAULT_VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify";
 	
 	private final String publicKey;
 	private final String privateKey;
-	private final boolean includeNoscript;
 	
-	private final String serverUrl;
 	private final String verifyUrl;
 	
 	/**
@@ -83,7 +82,7 @@ public class ReCAPTCHA {
 	 * @param serverUrl
 	 */
 	public ReCAPTCHA(String publicKey, String privateKey, boolean includeNoscript, String serverUrl) {
-		this(publicKey, privateKey, includeNoscript, serverUrl, (serverUrl + "/verify"));
+		this(publicKey, privateKey, includeNoscript, serverUrl, (serverUrl + "/siteverify"));
 	}
 	
 	/**
@@ -96,8 +95,6 @@ public class ReCAPTCHA {
 	public ReCAPTCHA(String publicKey, String privateKey, boolean includeNoscript, String serverUrl, String verifyUrl) {
 		this.publicKey = publicKey;
 		this.privateKey = privateKey;
-		this.includeNoscript = includeNoscript;
-		this.serverUrl = serverUrl;
 		this.verifyUrl = verifyUrl;
 	}
 	
@@ -110,40 +107,16 @@ public class ReCAPTCHA {
 	 * @return
 	 */
 	public String createRecaptchaHtml(String errorMessage, Properties options) throws IOException {
-		String errorPart = (errorMessage == null ? "" : "&amp;error=" + URLEncoder.encode(errorMessage, "UTF-8"));
-		String html = this.getJSOptions(options);
-		
-		html += "<script type=\"text/javascript\" src=\"" + this.serverUrl + "/challenge?k=" + this.publicKey + errorPart + "\"></script>\r\n";
-		
-		if (this.includeNoscript) {
-			String noscript = "<noscript>\r\n" + 
-				"	   <iframe src=\"" + this.serverUrl + "/noscript?k=" + this.publicKey + errorPart + "\" height=\"300\" width=\"500\" frameborder=\"0\"></iframe><br/>\r\n" +
-				"	   <textarea name=\"recaptcha_challenge_field\" rows=\"3\" cols=\"40\"></textarea>\r\n" + 
-				"	   <input type=\"hidden\" name=\"recaptcha_response_field\" value=\"manual_challenge\"/>\r\n" + 
-				"</noscript>";
-			html += noscript;
-		}
-		
+		String html = ("<div class=\"g-recaptcha\" data-sitekey=\"" + this.publicKey + "\" data-callback=\"easyIoSetReCaptchaResponse\" data-badge=\"inline\"></div>\r\n");
+		html += ("<input type=\"hidden\" name=\"recaptcha_response_field\" id=\"easyIoReCaptchaResponseField\"/>\r\n");
+		html += ("<script type=\"text/javascript\">\r\n" +
+				"function easyIoSetReCaptchaResponse(rcr) {\r\n" +
+				"  var rcrField = document.getElementById('easyIoReCaptchaResponseField');\r\n" +
+				"  rcrField.value = rcr;\r\n" +
+				"}\r\n" +
+				"</script>\r\n");
+		html += ("<script type=\"text/javascript\" src=\"https://www.google.com/recaptcha/api.js\"></script>");
 		return html;
-	}
-	
-	private String getJSOptions(Properties properties) {
-		if ((properties == null) || (properties.size() == 0))
-			return "";
-		
-		StringBuffer jsOptions = new StringBuffer("<script type=\"text/javascript\">\r\n"); 
-		
-		jsOptions.append("var RecaptchaOptions = {");
-		for (Enumeration pne = properties.keys(); pne.hasMoreElements(); ) {
-			String property = ((String) pne.nextElement());
-			jsOptions.append(property + ": '" + properties.getProperty(property) + "'");
-			if (pne.hasMoreElements())
-				jsOptions.append(",");
-		}
-		jsOptions.append("};\r\n");
-		
-		jsOptions.append("</script>\r\n");
-		return jsOptions.toString();
 	}
 	
 	/**
@@ -155,37 +128,18 @@ public class ReCAPTCHA {
 	 * @param hpb the HtmlPageBuilder to write to
 	 */
 	public void writeRecaptchaHtml(String errorMessage, Properties options, HtmlPageBuilder hpb) throws IOException {
-		String errorPart = (errorMessage == null ? "" : "&amp;error=" + URLEncoder.encode(errorMessage, "UTF-8"));
-		this.writeJSOptions(options, hpb);
 		
-		hpb.writeLine("<script type=\"text/javascript\" src=\"" + this.serverUrl + "/challenge?k=" + this.publicKey + errorPart + "\"></script>");
+		//	based upon https://developers.google.com/recaptcha/docs/display
 		
-		if (this.includeNoscript) {
-			hpb.writeLine("<noscript>"); 
-			hpb.writeLine("  <iframe src=\"" + this.serverUrl + "/noscript?k=" + this.publicKey + errorPart + "\" height=\"300\" width=\"500\" frameborder=\"0\"></iframe><br/>");
-			hpb.writeLine("  <textarea name=\"recaptcha_challenge_field\" rows=\"3\" cols=\"40\"></textarea>");
-			hpb.writeLine("  <input type=\"hidden\" name=\"recaptcha_response_field\" value=\"manual_challenge\"/>"); 
-			hpb.writeLine("</noscript>");
-		}
-	}
-	
-	private void writeJSOptions(Properties properties, HtmlPageBuilder hpb) throws IOException {
-		if ((properties == null) || (properties.size() == 0))
-			return;
-		
-		hpb.writeLine("<script type=\"text/javascript\">"); 
-		
-		hpb.writeLine("var RecaptchaOptions = {");
-		for (Enumeration pne = properties.keys(); pne.hasMoreElements(); ) {
-			String property = ((String) pne.nextElement());
-			hpb.write(property + ": '" + properties.getProperty(property) + "'");
-			if (pne.hasMoreElements())
-				hpb.write(",");
-			hpb.newLine();
-		}
-		hpb.writeLine("};");
-		
+		hpb.writeLine("<div class=\"g-recaptcha\" data-sitekey=\"" + this.publicKey + "\" data-callback=\"easyIoSetReCaptchaResponse\" data-badge=\"inline\"></div>");
+		hpb.writeLine("<input type=\"hidden\" name=\"recaptcha_response_field\" id=\"easyIoReCaptchaResponseField\"/>");
+		hpb.writeLine("<script type=\"text/javascript\">");
+		hpb.writeLine("function easyIoSetReCaptchaResponse(rcr) {");
+		hpb.writeLine("  var rcrField = document.getElementById('easyIoReCaptchaResponseField');");
+		hpb.writeLine("  rcrField.value = rcr;");
+		hpb.writeLine("}");
 		hpb.writeLine("</script>");
+		hpb.writeLine("<script type=\"text/javascript\" src=\"https://www.google.com/recaptcha/api.js\"></script>");
 	}
 	
 	/**
@@ -197,13 +151,15 @@ public class ReCAPTCHA {
 	 * @return a Response object wrapping an indicator for pass or fail together with an error message
 	 */
 	public Response checkAnswer(String remoteAddr, String challenge, String userResponse) throws IOException {
-		String verifyParams = "" +
-				"privatekey=" + URLEncoder.encode(this.privateKey, "UTF-8") + 
-				"&remoteip=" + URLEncoder.encode(remoteAddr, "UTF-8") +
-				"&challenge=" + URLEncoder.encode(challenge, "UTF-8") + 
-				"&response=" + URLEncoder.encode(userResponse, "UTF-8");
 		
-		String verifyResponse;
+		//	based upon https://developers.google.com/recaptcha/docs/verify
+		
+		String verifyParams = "" +
+				"secret=" + URLEncoder.encode(this.privateKey, "UTF-8") + 
+				"&response=" + URLEncoder.encode(userResponse, "UTF-8") +
+				"&remoteip=" + URLEncoder.encode(remoteAddr, "UTF-8");
+		
+		Object verifyResponseObj;
 		try {
 			HttpURLConnection verifyCon = ((HttpURLConnection) new URL(this.verifyUrl).openConnection());
 			verifyCon.setConnectTimeout(10000);
@@ -229,19 +185,34 @@ public class ReCAPTCHA {
 			vbOut.close();
 			vrIn.close();
 			
-			verifyResponse = vrOut.toString("UTF-8");
-			if (verifyResponse == null)
+			verifyResponseObj = JsonParser.parseJson(new InputStreamReader(new ByteArrayInputStream(vrOut.toByteArray()), "UTF-8"));
+			if (verifyResponseObj == null)
 				return new Response(false, "ReCAPTCHA-Not-Reachable");
 		}
 		catch (IOException ioe) {
 			return new Response(false, "ReCAPTCHA-Not-Reachable");
 		}
 		
-		String[] verifyResponseParts = verifyResponse.split("\\r?\\n");
-		if (verifyResponseParts.length < 1)
-			return new Response(false, "No answer returned from ReCAPTCHA: " + verifyResponse);
-		boolean valid = "true".equals(verifyResponseParts[0]);
-		return new Response(valid, (valid ? null : ((verifyResponseParts.length < 2) ? "Missing-Error-Message" : verifyResponseParts[1])));
+		Map verifyResponse;
+		if (verifyResponseObj instanceof Map)
+			verifyResponse = ((Map) verifyResponseObj);
+		else return new Response(false, ("Strange-ReCAPTCHA-Response-" + verifyResponseObj));
+		
+		Boolean success = JsonParser.getBoolean(verifyResponse, "success");
+		if (success == null)
+			return new Response(false, ("Strange-ReCAPTCHA-Response-" + verifyResponse));
+		
+		if (success.booleanValue())
+			return new Response(true, null);
+		
+		List errorCodes = JsonParser.getArray(verifyResponse, "error-codes");
+		if ((errorCodes == null) || errorCodes.isEmpty())
+			return new Response(false, "Missing-Error-Message");
+		
+		String errorCode = JsonParser.getString(errorCodes, 0);
+		if (errorCode == null)
+			return new Response(false, ("Strange-Error-Message-" + errorCodes));
+		else return new Response(false, errorCode);
 	}
 	
 	/**

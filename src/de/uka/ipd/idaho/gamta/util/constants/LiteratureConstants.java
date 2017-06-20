@@ -41,51 +41,54 @@ import de.uka.ipd.idaho.gamta.MutableAnnotation;
  */
 public interface LiteratureConstants {
 	
-	/**	the annotation type of a DocumentRoot, the generic root element of all Gamta documents*/
+	/**	the annotation type of a DocumentRoot, the generic root element of all Gamta documents */
 	public static final String DOCUMENT_TYPE = DocumentRoot.DOCUMENT_TYPE;
 	
-	/**	the attribute or document property holding the ID of a document*/
+	/**	the attribute or document property holding the ID of a document */
 	public static final String DOCUMENT_ID_ATTRIBUTE = DocumentRoot.DOCUMENT_ID_ATTRIBUTE;
 	
-	/**	the attribute or document property holding the name of a document, e.g. the name of the file it was loaded from*/
+	/**	the attribute or document property holding the name of a document, e.g. the name of the file it was loaded from */
 	public static final String DOCUMENT_NAME_ATTRIBUTE = "docName";
 	
-	/** the attribute or document property holding the title of a document*/
+	/**	the attribute or document property holding the type of a document */
+	public static final String DOCUMENT_TYPE_ATTRIBUTE = "docType";
+	
+	/** the attribute or document property holding the title of a document */
 	public static final String DOCUMENT_TITLE_ATTRIBUTE = "docTitle";
 	
-	/** the attribute or document property holding the author of a document*/
+	/** the attribute or document property holding the author of a document */
 	public static final String DOCUMENT_AUTHOR_ATTRIBUTE = "docAuthor";
 	
-	/** the attribute or document property holding the creation date of a document*/
+	/** the attribute or document property holding the creation date of a document */
 	public static final String DOCUMENT_DATE_ATTRIBUTE = "docDate";
 	
-	/** the attribute holding the URL of the original representation of a document, which may be a pdf, html page, or something else*/
+	/** the attribute holding the URL of the original representation of a document, which may be a pdf, html page, or something else */
 	public static final String DOCUMENT_SOURCE_LINK_ATTRIBUTE = "docSource";
 	
-	/** the attribute or document property holding the origin of a document (the publisher in case of a book, the journal or newspaper name in case of an article)*/
+	/** the attribute or document property holding the origin of a document (the publisher in case of a book, the journal or newspaper name in case of an article) */
 	public static final String DOCUMENT_ORIGIN_ATTRIBUTE = "docOrigin";
 	
 	
-	/**	the annotation type for marking a first level section in a document*/
+	/**	the annotation type for marking a first level section in a document */
 	public static final String SECTION_TYPE = MutableAnnotation.SECTION_TYPE;
 	
-	/**	the annotation type for marking a second level section (sub section) in a document*/
+	/**	the annotation type for marking a second level section (sub section) in a document */
 	public static final String SUB_SECTION_TYPE = MutableAnnotation.SUB_SECTION_TYPE;
 	
-	/**	the annotation type for marking a third level section (sub sub section) in a document*/
+	/**	the annotation type for marking a third level section (sub sub section) in a document */
 	public static final String SUB_SUB_SECTION_TYPE = MutableAnnotation.SUB_SUB_SECTION_TYPE;
 	
-	/**	the annotation type for marking a paragraph in a document*/
+	/**	the annotation type for marking a paragraph in a document */
 	public static final String PARAGRAPH_TYPE = MutableAnnotation.PARAGRAPH_TYPE;
 	
-	/**	the annotation type for marking a sentence in the text of a document*/
+	/**	the annotation type for marking a sentence in the text of a document */
 	public static final String SENTENCE_TYPE = MutableAnnotation.SENTENCE_TYPE;
 	
-	/** the attribute for further specifying the type of a section, sub section, etc., for instance 'abstract', 'acknowledgements', or 'conclusions'*/
+	/** the attribute for further specifying the type of a section, sub section, etc., for instance 'abstract', 'acknowledgments', or 'conclusions' */
 	public static final String TYPE_ATTRIBUTE = "type";
 	
 	
-	/**	the annotation type for marking a footnote in a document*/
+	/**	the annotation type for marking a footnote in a document */
 	public static final String FOOTNOTE_TYPE = "footnote";
 	
 	/**	the annotation type for marking a caption in a document (captions of a figure, table, or something else) */
@@ -120,36 +123,36 @@ public interface LiteratureConstants {
 	public static final String CITED_PUBLICATION_URL_ATTRIBUTE = "publicationUrl";
 	
 	
-	/**	the annotation type for marking a page in a print layouted document*/
+	/**	the annotation type for marking a page in a print layouted document */
 	public static final String PAGE_TYPE = "page";
 	
-	/**	the annotation type for marking a page number in a print layouted document*/
+	/**	the annotation type for marking a page number in a print layouted document */
 	public static final String PAGE_NUMBER_TYPE = "pageNumber";
 	
-	/**	the annotation type for marking tokens that originates from a page other than the one immediately preceding them in a print layouted document*/
+	/**	the annotation type for marking tokens that originates from a page other than the one immediately preceding them in a print layouted document */
 	public static final String PAGE_BREAK_TOKEN_TYPE = "pageBreakToken";
 	
-	/**	the annotation type for marking a page title in a print layouted document*/
+	/**	the annotation type for marking a page title in a print layouted document */
 	public static final String PAGE_TITLE_TYPE = "pageTitle";
 	
-	/**	the annotation type for marking a the representation of the border between two pages in a print layouted document*/
+	/**	the annotation type for marking a the representation of the border between two pages in a print layouted document */
 	public static final String PAGE_BORDER_TYPE = "pageBorder";
 	
-	/**	the string for representing the border between two pages in a print layouted document*/
+	/**	the string for representing the border between two pages in a print layouted document */
 	public static final String PAGE_BORDER_MARKER = "-------------------------------- page break --------------------------------";
 	
-	/** the attribute indicating that a page break token marks the beginning of a page in a print layouted document*/
+	/** the attribute indicating that a page break token marks the beginning of a page in a print layouted document */
 	public static final String PAGE_START_ATTRIBUTE = "start";
 	
-	/** the attribute holding the ID (zero-based sequential number) of the page some annotation starts on in a print layouted document*/
+	/** the attribute holding the ID (zero-based sequential number) of the page some annotation starts on in a print layouted document */
 	public static final String PAGE_ID_ATTRIBUTE = "pageId";
 	
-	/** the attribute holding the ID (zero-based sequential number) of the page some annotation ends on in a print layouted document*/
+	/** the attribute holding the ID (zero-based sequential number) of the page some annotation ends on in a print layouted document */
 	public static final String LAST_PAGE_ID_ATTRIBUTE = "lastPageId";
 	
-	/** the attribute holding the number of the page some annotation starts on in a print layouted document*/
+	/** the attribute holding the number of the page some annotation starts on in a print layouted document */
 	public static final String PAGE_NUMBER_ATTRIBUTE = "pageNumber";
 	
-	/** the attribute holding the number of the page some annotation ends on in a print layouted document*/
+	/** the attribute holding the number of the page some annotation ends on in a print layouted document */
 	public static final String LAST_PAGE_NUMBER_ATTRIBUTE = "lastPageNumber";
 }

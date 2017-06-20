@@ -52,7 +52,7 @@ import de.uka.ipd.idaho.stringUtils.StringVector;
 
 /**
  * This class loader loads classes from jar files, which can be added in a
- * variaty of ways, in particular, as Files, URLs, and arbitrary InputStreams.
+ * variety of ways, in particular, as Files, URLs, and arbitrary InputStreams.
  * The GamtaClassLoader is intended to take the place of a URLClassLoader where
  * the surrounding code needs to access jar files that cannot be provided as
  * URLs. This ClassLoader caches all added jars in memory in the form of byte
@@ -98,22 +98,22 @@ public class GamtaClassLoader extends ClassLoader {
 	 * folder. The runtime type of the component objects returned will be the
 	 * specified component class or a sub class of it. If a component requires
 	 * extra jars that are not on the surrounding application's class path,
-	 * deposit them in '&lt;componentFolder&gt;/&lt;componentJarName&gt;Bin',
+	 * deposit them in '&lt;componentFolder&gt;/&lt;componentJarName&gt;Lib',
 	 * where &lt;componentFolder&gt; is the specified folder and
 	 * &lt;componentJarName&gt; is the name of the jar file the component was
 	 * loaded from, without the '.jar' file extension.<br>
 	 * <br>
 	 * Example: Suppose the component folder is 'D:/MyApplication/Components',
 	 * and the component MyComponent resides in MyComponentJar.jar, then all
-	 * jars in 'D:/MyApplication/Components/MyComponentJarBin' will be placed on
+	 * jars in 'D:/MyApplication/Components/MyComponentJarLib' will be placed on
 	 * the class path for loading MyComponent. You have to create this folder
 	 * manually in case you need to make some additional jar files available.
-	 * @param componentFolder the folder containing the jar files to serch for
+	 * @param componentFolder the folder containing the jar files to search for
 	 *            components
 	 * @param componentSuperClass the common super class of all the components
 	 *            to load
 	 * @param componentInitializer an initializer that can do component class
-	 *            specific initialization after a component is instanciated (may
+	 *            specific initialization after a component is instantiated (may
 	 *            be null)
 	 * @return an array holding the components found in the jar files in the
 	 *         specified folder
@@ -178,19 +178,19 @@ public class GamtaClassLoader extends ClassLoader {
 	 * AnalyzerDataProvider. The runtime type of the component objects returned
 	 * will be the specified component class or a sub class of it. If a
 	 * component requires extra jars that are not on the surrounding
-	 * application's class path, deposit them in a '&lt;componentJarName&gt;Bin'
+	 * application's class path, deposit them in a '&lt;componentJarName&gt;Lib'
 	 * sub path, where &lt;componentJarName&gt; is the name of the jar file the
 	 * component was loaded from, without the '.jar' file extension.<br>
 	 * <br>
 	 * Example: Suppose the component MyComponent resides in MyComponentJar.jar,
-	 * then all jars in the path 'MyComponentJarBin/' will be placed on the
+	 * then all jars in the path 'MyComponentJarLib/' will be placed on the
 	 * class path for loading MyComponent.
 	 * @param dataProvider the data provider providing the jars to load
 	 * @param dataNamePrefix a prefix for filtering the data items
 	 * @param componentSuperClass the common super class of all the components
 	 *            to load
 	 * @param componentInitializer an initializer that can do component class
-	 *            specific initialization after a component is instanciated (may
+	 *            specific initialization after a component is instantiated (may
 	 *            be null)
 	 * @return an array holding the components found in the jar files available
 	 *         from the specified data provider
@@ -214,13 +214,13 @@ public class GamtaClassLoader extends ClassLoader {
 	 * the specified component class or a sub class of it. If a component
 	 * requires extra jars that are not on the surrounding application's class
 	 * path, deposit them in
-	 * '&lt;componentFolder&gt;/&lt;componentJarName&gt;Bin', where
+	 * '&lt;componentFolder&gt;/&lt;componentJarName&gt;Lib', where
 	 * &lt;componentFolder&gt; is the specified folder and
 	 * &lt;componentJarName&gt; is the name of the jar file the component was
 	 * loaded from, without the '.jar' file extension.<br>
 	 * <br>
 	 * Example: Suppose the component MyComponent resides in MyComponentJar.jar,
-	 * then all jars in the path 'MyComponentJarBin/' will be placed on the
+	 * then all jars in the path 'MyComponentJarLib/' will be placed on the
 	 * class path for loading MyComponent.
 	 * @param dataNames an array holding the names of the data items to search
 	 *            for components
@@ -230,7 +230,7 @@ public class GamtaClassLoader extends ClassLoader {
 	 * @param componentSuperClass the common super class of all the components
 	 *            to load
 	 * @param componentInitializer an initializer that can do component class
-	 *            specific initialization after a component is instanciated (may
+	 *            specific initialization after a component is instantiated (may
 	 *            be null)
 	 * @return an array holding the components found in the jar files found in
 	 *         the specified list
@@ -283,11 +283,18 @@ public class GamtaClassLoader extends ClassLoader {
 				// add name of jar to list of jars to load
 				jarNameList.addElement(jarName);
 
-				// check for binary folder
+				// check for binary folder (DEPRECATED, FOR BACKWARD COMPATIBILITY ONLY)
 				String[] jarBinJarNames = getJarNames(dataNames, (jarName.substring(0, (jarName.length() - 4)) + "Bin"));
 				for (int jbj = 0; jbj < jarBinJarNames.length; jbj++) {
 					System.out.println("    - " + jarBinJarNames[jbj]);
 					jarNameList.addElement(jarBinJarNames[jbj]);
+				}
+
+				// check for library folder
+				String[] jarLibJarNames = getJarNames(dataNames, (jarName.substring(0, (jarName.length() - 4)) + "Lib"));
+				for (int jlj = 0; jlj < jarLibJarNames.length; jlj++) {
+					System.out.println("    - " + jarLibJarNames[jlj]);
+					jarNameList.addElement(jarLibJarNames[jlj]);
 				}
 			}
 			catch (IOException ioe) {
@@ -296,12 +303,17 @@ public class GamtaClassLoader extends ClassLoader {
 			}
 		}
 		
-		// check for shared binary folder
+		// check for shared binary and library folder (Lib PREFERRED, Bin DEPRECATED, FOR BACKWARD COMPATIBILITY ONLY)
 		System.out.println("  adding shared jars:");
 		String[] binJarNames = getJarNames(dataNames, (dataNamePrefix + "Bin"));
 		for (int bj = 0; bj < binJarNames.length; bj++) {
 			System.out.println("    - " + binJarNames[bj]);
 			jarNameList.addElement(binJarNames[bj]);
+		}
+		String[] libJarNames = getJarNames(dataNames, (dataNamePrefix + "Lib"));
+		for (int lj = 0; lj < libJarNames.length; lj++) {
+			System.out.println("    - " + libJarNames[lj]);
+			jarNameList.addElement(libJarNames[lj]);
 		}
 		
 		// create class loader
@@ -558,7 +570,6 @@ public class GamtaClassLoader extends ClassLoader {
 	
 	private TreeMap classBytesByName = new TreeMap();
 	private TreeMap classesByName = new TreeMap();
-//	private ClassFactory classFactory = null;
 	
 	/**
 	 * Constructor

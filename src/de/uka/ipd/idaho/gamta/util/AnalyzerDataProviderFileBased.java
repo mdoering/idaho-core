@@ -125,11 +125,9 @@ public class AnalyzerDataProviderFileBased extends AbstractAnalyzerDataProvider 
 		StringVector resultFiles = new StringVector();
 		File[] files = directory.listFiles();
 		for (int f = 0; f < files.length; f++) {
-			if (files[f].isDirectory() && !files[f].equals(directory)) {
+			if (files[f].isDirectory() && !files[f].equals(directory))
 				resultFiles.addContent(this.readFileList(files[f]));
-			} else {
-				resultFiles.addElement(files[f].getAbsolutePath().substring(this.basePathLength + 1).replaceAll("\\\\", "/"));
-			}
+			else resultFiles.addElement(files[f].getAbsolutePath().substring(this.basePathLength + 1).replaceAll("\\\\", "/"));
 		}
 		return resultFiles.toStringArray();
 	}

@@ -169,11 +169,16 @@ public class PeekInputStream extends FilterInputStream {
 	 * Skip all leading whitespace, i.e., all leading bytes whose value is 0x20
 	 * or less. This method only stops if either reaches the first byte with a
 	 * value greater than 0x20, or the end of the stream.
+	 * @return the number of bytes skipped
 	 * @throws IOException
 	 */
-	public void skipSpace() throws IOException {
-		while ((this.peek() < 33) && (this.peek() != -1))
+	public int skipSpace() throws IOException {
+		int skipped = 0;
+		while ((this.peek() < 33) && (this.peek() != -1)) {
 			this.read();
+			skipped++;
+		}
+		return skipped;
 	}
 	
 	/**

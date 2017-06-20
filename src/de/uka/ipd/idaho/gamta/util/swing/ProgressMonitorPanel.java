@@ -143,16 +143,17 @@ public class ProgressMonitorPanel extends JPanel implements ControllingProgressM
 		return (this.pauseResumeButton != null);
 	}
 	void pauseResume() {
-		if (this.pause)
-			synchronized(this.pauseLock) {
+		synchronized(this.pauseLock) {
+			if (this.pause) {
 				this.pause = false;
 				this.pauseResumeButton.setText("Pause");
 				this.pauseLock.notify();
 			}
-		else {
-			this.pause = true;
-			this.pauseResumeButton.setText("Pausing ...");
-			this.pauseResumeButton.setEnabled(false);
+			else {
+				this.pause = true;
+				this.pauseResumeButton.setText("Pausing ...");
+				this.pauseResumeButton.setEnabled(false);
+			}
 		}
 	}
 	
@@ -302,13 +303,15 @@ public class ProgressMonitorPanel extends JPanel implements ControllingProgressM
 		if (this.pauseLock == null)
 			return;
 		
-		if (this.pause)
+		if (this.pause) // do unsynchronized check first (saves acquiring monitor in normal operation)
 			synchronized (this.pauseLock) {
-				this.pauseResumeButton.setText("Resume");
-				this.pauseResumeButton.setEnabled(true);
-				try {
-					this.pauseLock.wait();
-				} catch (InterruptedException ie) {}
+				if (this.pause) {
+					this.pauseResumeButton.setText("Resume");
+					this.pauseResumeButton.setEnabled(true);
+					try {
+						this.pauseLock.wait();
+					} catch (InterruptedException ie) {}
+				}
 			}
 		
 		if (this.abort)
