@@ -37,17 +37,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import javax.mail.Address;
 import javax.mail.Authenticator;
@@ -443,6 +437,10 @@ public class EasyIO {
 			}
 			public boolean jdbcCompliant() {
 				return this.driver.jdbcCompliant();
+			}
+
+			public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+				throw new SQLFeatureNotSupportedException("");
 			}
 		}
 		

@@ -1,2 +1,0 @@
-#! /bin/bash
-java -jar Updater.jar $1
