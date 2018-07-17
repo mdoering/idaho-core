@@ -7,7 +7,7 @@
 
     <groupId>de.uka.ipd</groupId>
     <artifactId>idaho-core</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Idaho Core</name>
 

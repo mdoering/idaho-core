@@ -60,19 +60,34 @@ public class StringUtils {
 	/** 'null' as a character, namely '\u0000' */
 	public static final char NULLCHAR = '\u0000';
 	
-	/** string constant containing all latin letters in upper and lower case, plus derived characters with accents and the like, ligatures, etc. */
+	/** string constant containing all Latin letters in upper and lower case */
+	public static final String LATIN_LETTERS 					= "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	
+	/** string constant containing all Latin vowels in upper and lower case */
+	public static final String LATIN_VOWELS 					= "aeiouAEIOU";
+	
+	/** string constant containing all Latin consonants in upper and lower case */
+	public static final String LATIN_CONSONANTS 				= "bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
+	
+	/** string constant containing all Latin letters in upper case */
+	public static final String LATIN_UPPER_CASE_LETTERS 		= "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	
+	/** string constant containing all Latin letters in lower case */
+	public static final String LATIN_LOWER_CASE_LETTERS 		= "abcdefghijklmnopqrstuvwxyz";
+	
+	/** string constant containing all Latin letters in upper and lower case, plus derived characters with accents and the like, ligatures, etc. */
 	public static final String LETTERS 					= "abcdefghijklmnopqrstuvwxyzßàáâãäåæçèéêëìíîïñòóôõöœøùúûüıÿABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖØŒÙÚÛÜİ";
 	
-	/** string constant containing all latin vowels in upper and lower case, plus derived characters with accents and the like, ligatures, etc. */
+	/** string constant containing all Latin vowels in upper and lower case, plus derived characters with accents and the like, ligatures, etc. */
 	public static final String VOWELS 					= "aeiouAEIOUàáâãäåæèéêëìíîïòóôõöøœùúûüÀÁÂÃÄÅÆÈÉÊËÌÍÎÏÒÓÔÕÖØŒÙÚÛÜ";
 	
-	/** string constant containing all latin consonants in upper and lower case, plus derived language specifc characters like the German 'ß', the Spanish 'ñ', and the French 'ç' */
+	/** string constant containing all Latin consonants in upper and lower case, plus derived language specifc characters like the German 'ß', the Spanish 'ñ', and the French 'ç' */
 	public static final String CONSONANTS 				= "bcdfghjklmnpqrstvwxyzçñßBCDFGHJKLMNPQRSTVWXYZÇÑ";
 	
-	/** string constant containing all latin letters in upper case, plus derived characters with accents and the like, ligatures, etc. */
+	/** string constant containing all Latin letters in upper case, plus derived characters with accents and the like, ligatures, etc. */
 	public static final String UPPER_CASE_LETTERS 		= "ABCDEFGHIJKLMNOPQRSTUVWXYZÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏĞÑÒÓÔÕÖØŒÙÚÛÜİ";
 	
-	/** string constant containing all latin letters in lower case, plus derived characters with accents and the like, ligatures, etc. */
+	/** string constant containing all Latin letters in lower case, plus derived characters with accents and the like, ligatures, etc. */
 	public static final String LOWER_CASE_LETTERS 		= "abcdefghijklmnopqrstuvwxyzßàáâãäåæçèéêëìíîïñòóôõöøœùúûüıÿ";
 	
 	/** string constant containing all digits 0 through 9 */
@@ -826,10 +841,22 @@ public class StringUtils {
 	 * @return	true if and only if the String is a word and contains at least one vowel
 	 */
 	public static boolean containsVowel(CharSequence string) {
+		return containsVowel(string, true);
+	}
+
+	/**	check if a String contains at least one vowel
+	 * @param	string	the String to be tested
+	 * @param	yIsVowel	count 'y' as a vowel?
+	 * @return	true if and only if the String is a word and contains at least one vowel
+	 */
+	public static boolean containsVowel(CharSequence string, boolean yIsVowel) {
 		if (string == null)
 			return false;
 		for (int c = 0; c < string.length(); c++) {
-			if (VOWELS.indexOf(string.charAt(c)) != -1)
+			char ch = getBaseChar(string.charAt(c));
+			if (VOWELS.indexOf(ch) != -1)
+				return true;
+			else if (yIsVowel && "yY".indexOf(ch) != -1)
 				return true;
 		}
 		return false;
@@ -848,10 +875,22 @@ public class StringUtils {
 	 * @return	true if and only if the String is a word and contains at least one consonant
 	 */
 	public static boolean containsConsonant(CharSequence string) {
+		return containsConsonant(string, true);
+	}
+
+	/**	check if a String contains at least one consonant
+	 * @param	string	the String to be tested
+	 * @param	yIsConsonant	count 'y' as a consonant?
+	 * @return	true if and only if the String is a word and contains at least one consonant
+	 */
+	public static boolean containsConsonant(CharSequence string, boolean yIsConsonant) {
 		if (string == null)
 			return false;
 		for (int c = 0; c < string.length(); c++) {
-			if (CONSONANTS.indexOf(string.charAt(c)) != -1)
+			char ch = getBaseChar(string.charAt(c));
+			if (CONSONANTS.indexOf(ch) != -1)
+				return true;
+			else if (yIsConsonant && "yY".indexOf(ch) != -1)
 				return true;
 		}
 		return false;
@@ -1506,6 +1545,10 @@ public class StringUtils {
 			return ch;
 		if (selfBasedChars.contains(new Character(ch)))
 			return ch;
+		if (ch == '\u1E9E')
+			return 'S'; // have to check this directly, as there is no PostScript name for this character
+		if (ch == '\u00DF')
+			return 's'; // check this directly, as PostScript is 'germandbls', not 'ss'
 		String[] charNames = getCharNames(ch);
 		for (int n = 0; n < charNames.length; n++) {
 			if (baseCharMappings.containsKey(charNames[n]))
@@ -1539,7 +1582,7 @@ public class StringUtils {
 	 * has no accents, it is simply returned. This method dissolves ligatures
 	 * and the like; if that effect is undesired, use the getBaseChar() method.
 	 * @param ch the original character
-	 * @return the normalzed form
+	 * @return the normalized form
 	 */
 	public static String getNormalForm(char ch) {
 		return getNormalForm(ch, null);
@@ -1725,7 +1768,7 @@ public class StringUtils {
 	private static HashSet selfBasedChars = new HashSet();
 	private static HashMap baseCharMappings = new HashMap();
 	private static HashMap ligatureMappings = new HashMap();
-	private static boolean initCharacters() {
+	private static synchronized boolean initCharacters() {
 		if (!doneInitCharacters) try {
 			doInitCharacters();
 		}
@@ -1742,9 +1785,8 @@ public class StringUtils {
 		String sucrn = StringUtils.class.getName().replaceAll("\\.", "/");
 		InputStream cmis = StringUtils.class.getClassLoader().getResourceAsStream(sucrn.substring(0, sucrn.lastIndexOf('/')) + "/PostscriptUnicodeGlyphList.txt");
 		BufferedReader cmr = new BufferedReader(new InputStreamReader(cmis, "UTF-8"));
-		String cml;
 		HashMap charsToCharNamesL = new HashMap();
-		while ((cml = cmr.readLine()) != null) {
+		for (String cml; (cml = cmr.readLine()) != null;) {
 			if (cml.startsWith("#"))
 				continue;
 			String[] cm = cml.split("\\;");
@@ -1779,6 +1821,7 @@ public class StringUtils {
 				charNamesToChars.put(cm[0], chs);
 			}
 		}
+		cmr.close();
 		for (Iterator cit = charsToCharNamesL.keySet().iterator(); cit.hasNext();) {
 			Character ch = ((Character) cit.next());
 			ArrayList cns = ((ArrayList) charsToCharNamesL.get(ch));
@@ -1874,7 +1917,7 @@ public class StringUtils {
 			selfBasedChars.add(new Character((char) gc));
 		for (int gc = 913; gc <= 937; gc++) // upper case Greek character range
 			selfBasedChars.add(new Character((char) gc));
-		//	TODO extend this (as the need arises)
+		//	TODO extend this (as the need arises, e.g. for Cyrillic)
 		
 		//	initialize custom base character mappings
 		baseCharMappings.put("Eng", new Character('N'));
@@ -1907,6 +1950,7 @@ public class StringUtils {
 		baseCharMappings.put("guilsinglright", new Character('"'));
 		baseCharMappings.put("dotlessi", new Character('i'));
 		baseCharMappings.put("dotlessj", new Character('j'));
+		baseCharMappings.put("germandbls", new Character('s'));
 		
 		//	initialize ligatures, including Roman numbers
 		mapSuffixLigatures("paren", ")");
@@ -1915,6 +1959,8 @@ public class StringUtils {
 		mapLetterLigatures();
 		mapLetterLigature("quoterightn", "'n", false, false, true);
 		mapLetterLigature("napostrophe", "n'", false, false, true);
+		ligatureMappings.put(new Character('\u00DF'), "ss"); // have to map this directly, as PostScript name is 'germandbls', not 'ss'
+		ligatureMappings.put(new Character('\u1E9E'), "SS"); // have to map this directly, as there is no PostScript name
 		
 		System.out.println("StringUtils: PostScript character mappings initialized.");
 		doneInitCharacters = true;
